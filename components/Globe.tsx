@@ -35,10 +35,10 @@ export default function Globe() {
 
     return (
         <View style={StyleSheet.absoluteFill}>
-        <GLView
-            style={StyleSheet.absoluteFill}
-    onContextCreate={onContextCreate}
-    />
-    </View>
-);
+            <GLView
+                style={StyleSheet.absoluteFill}
+                onContextCreate={onContextCreate}
+            />
+        </View>
+    );
 }
