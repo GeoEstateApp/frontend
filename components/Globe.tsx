@@ -5,7 +5,7 @@ import { ExpoWebGLRenderingContext, GLView } from "expo-gl";
 import * as THREE from "three";
 
 export default function Globe() {
-    const rotateSpeed = 0.01;
+    const rotateSpeed = 0.001;
 
     const onContextCreate = async (gl: ExpoWebGLRenderingContext) => {
         const { drawingBufferWidth: width, drawingBufferHeight: height } = gl;
