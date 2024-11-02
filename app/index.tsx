@@ -1,9 +1,10 @@
 import React, { useEffect } from "react";
 import { useDevice, useLocalStorage } from "@/hooks";
 import { Link } from "expo-router";
-import { Text, View, StyleSheet, Platform } from "react-native";
+import { Button, Text, View, StyleSheet, Platform, ScrollView } from "react-native";
 import Globe from "@/components/Globe";
-import {LinearGradient} from "expo-linear-gradient";
+import { LinearGradient } from 'expo-linear-gradient';
+import { FeaturesSection } from "@/components/Features";
 
 export default function Index() {
     const device = useDevice();
@@ -17,26 +18,38 @@ export default function Index() {
     }, [device]);
 
     return (
-        <View style={styles.container}>
-            <Globe />
-            <LinearGradient
-                colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.7)']}
-                style={styles.gradient}
-            />
-            <View style={styles.contentContainer}>
-                {device === "desktop" ? <DesktopLandingPage /> : <MobileLandingPage />}
+        <ScrollView style={styles.scrollView}>
+            <View style={styles.container}>
+                <View style={styles.heroSection}>
+                    <Globe />
+                    <LinearGradient
+                        colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.7)']}
+                        style={styles.gradient}
+                    />
+                    <View style={styles.contentContainer}>
+                        {device === "desktop" ? <DesktopLandingPage /> : <MobileLandingPage />}
+                    </View>
+                </View>
+                <FeaturesSection />
             </View>
-        </View>
+        </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
+    scrollView: {
+        flex: 1,
+        backgroundColor: '#000',
+    },
     container: {
         flex: 1,
+    },
+    heroSection: {
+        height: Platform.select({ web: 800, default: 600 }),
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#000",
         overflow: "hidden",
+        position: 'relative',
     },
     gradient: {
         position: 'absolute',
@@ -94,6 +107,8 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
 });
+
+// DesktopLandingPage and MobileLandingPage components remain the same
 
 const DesktopLandingPage = () => (
     <View style={{ alignItems: "center" }}>
