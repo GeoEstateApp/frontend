@@ -1,65 +1,84 @@
+import React, { useEffect } from "react";
 import { useDevice, useLocalStorage } from "@/hooks";
 import { Link } from "expo-router";
-import { useEffect } from "react";
-import { Button, Text, View } from "react-native"
+import { Button, Text, View, StyleSheet } from "react-native";
+import Globe from "@/components/Globe";
 
 export default function Index() {
-  const device = useDevice()
-  const [storedValue, setValue] = useLocalStorage("device", device)
+    const device = useDevice();
+    const [storedValue, setValue] = useLocalStorage("device", device);
 
-  useEffect(() => {
-    const handleDeviceChange = async () => {
-      await setValue(device)
+    useEffect(() => {
+        const handleDeviceChange = async () => {
+            await setValue(device);
+        };
+        handleDeviceChange();
+    }, [device]);
+
+    return (
+        <View style={styles.container}>
+            <Globe />
+            <View style={styles.contentContainer}>
+                {device === "desktop" ? <DesktopLandingPage /> : <MobileLandingPage />}
+            </View>
+        </View>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#f5f5f5",
+        overflow: "hidden",
+    },
+    contentContainer: {
+        position: "absolute",
+        alignItems: "center",
+    },
+    landingText: {
+        fontSize: 28,
+        fontWeight: "bold",
+        color: "#333",
+        textAlign: "center",
+        marginBottom: 20,
+    },
+    subText: {
+        fontSize: 16,
+        color: "#666",
+        textAlign: "center",
+        marginVertical: 10,
+    },
+    buttonContainer: {
+        marginTop: 20,
     }
+});
 
-    handleDeviceChange()
-  }, [device]);
-
-  return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      {device === "desktop" ? <DesktopLandingPage /> : <MobileLandingPage />}
+const DesktopLandingPage = () => (
+    <View style={{ alignItems: "center" }}>
+        <Text style={styles.landingText}>Welcome to GeoEstate</Text>
+        <Text style={styles.subText}>
+            Explore real estate properties around the world with GeoEstate.
+        </Text>
+        <Link href="/explore" asChild>
+            <View style={styles.buttonContainer}>
+                <Button title="Get Started" />
+            </View>
+        </Link>
     </View>
-  );
-}
+);
 
-const DesktopLandingPage = () => {
-  return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Text>Desktop Landing Page</Text>
-      <View style={{ height: 20 }} />
-      <Link href="/explore" asChild>
-        <Button title="Get started" />
-      </Link>
+const MobileLandingPage = () => (
+    <View style={{ alignItems: "center" }}>
+        <Text style={styles.landingText}>Welcome to GeoEstate</Text>
+        <Text style={styles.subText}>
+            Find your next property from the comfort of your mobile device.
+        </Text>
+        <Link href="/explore" asChild>
+            <View style={styles.buttonContainer}>
+                <Button title="Get Started" />
+            </View>
+        </Link>
     </View>
-  )
-}
-
-const MobileLandingPage = () => {
-  return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Text>Mobile Landing Page</Text>
-      <View style={{ height: 20 }} />
-      <Link href="/explore" asChild>
-        <Button title="Get started" />
-      </Link>
-    </View>
-  )
-}
+);
