@@ -1,7 +1,7 @@
 import { useDevice, useLocalStorage } from "@/hooks";
 import { Link } from "expo-router";
 import { useEffect } from "react";
-import { Button, Text, View } from "react-native"
+import { Button, Text, View, SafeAreaView } from "react-native"
 
 export default function Index() {
   const device = useDevice()
@@ -48,7 +48,7 @@ const DesktopLandingPage = () => {
 
 const MobileLandingPage = () => {
   return (
-    <View
+    <SafeAreaView
       style={{
         flex: 1,
         justifyContent: "center",
@@ -60,6 +60,6 @@ const MobileLandingPage = () => {
       <Link href="/explore" asChild>
         <Button title="Get started" />
       </Link>
-    </View>
+    </SafeAreaView>
   )
 }
