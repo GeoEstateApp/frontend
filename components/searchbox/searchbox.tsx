@@ -1,15 +1,55 @@
 import { View, StyleSheet, TextInput, Text, Platform } from 'react-native'
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { IconSearch } from '@tabler/icons-react'
+import { useMapsLibrary } from '@vis.gl/react-google-maps'
 
-const suggestions = [
-  "New York",
-  "Los Angeles",
-  "Chicago",
-]
+const MIN_SEARCH_LENGTH = 3
 
 export default function SearchBox() {
-  const [showSuggestions, setShowSuggestions] = React.useState(false)
+  const [placeAutocompleteService, setPlaceAutocompleteService] = useState<google.maps.places.AutocompleteService | null>(null)
+  const [selectedPlace, setSelectedPlace] = useState<google.maps.places.PlaceResult | null>(null)
+  const [searchText, setSearchText] = useState("")
+  const [predictions, setPredictions] = useState<Array<google.maps.places.AutocompletePrediction>>([])
+
+  const places = useMapsLibrary('places')
+
+  useEffect(() => {
+    if (!places) {
+      console.error('Google Maps Places library is not initialized')
+      return
+    }
+
+    setPlaceAutocompleteService(new places.AutocompleteService())
+  }, [places]);
+
+  useEffect(() => {
+    if (searchText.length < MIN_SEARCH_LENGTH) {
+      setPredictions([])
+      return
+    }
+
+    setPredictions([])
+
+    if (!placeAutocompleteService) return
+
+    placeAutocompleteService.getPlacePredictions({ input: searchText }, (predictions, status) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK) setPredictions(predictions || [])
+    })
+  }, [searchText])
+
+  const handleSelectPlace = (placeId: string) => {
+    if (placeId === "" || placeId === undefined || !places) return
+
+    const placesService = new places.PlacesService(document.createElement('div'))
+    placesService.getDetails({ placeId }, (place, status) => {
+      if (status !== google.maps.places.PlacesServiceStatus.OK) return
+      if (!place) return
+
+      setSelectedPlace(place)
+      setSearchText(place.name || "")
+      setPredictions([])
+    })
+  }
   
   return (
     <View style={styles.container}>
@@ -18,18 +58,24 @@ export default function SearchBox() {
         <TextInput
           style={styles.input}
           placeholder="Search for any place"
+          value={searchText}
+          onChangeText={(e) => setSearchText(e)}
           placeholderTextColor="#666" />
       </View>
 
-      {/* Suggestions */}
-      { 
-        showSuggestions && <View style={styles.suggestionsContainer}>
-          {suggestions.map((suggestion, index) => (
-            <View key={index} style={styles.suggestionItem}>
-              <Text style={styles.suggestionText}>{suggestion}</Text>
-            </View>
-          ))}
-        </View> 
+      {
+        predictions.length > 0 && (
+          <View style={styles.predictionsContainer}>
+            {predictions.map((prediction, index) => (
+              <Text
+                key={index}
+                style={styles.predictionsItem}
+                onPress={() => handleSelectPlace(prediction.place_id || "")}>
+                {prediction.description}
+              </Text>
+            ))}
+          </View>
+        )
       }
     </View>
   )
@@ -62,17 +108,25 @@ const styles = StyleSheet.create({
     borderWidth: 0,
     borderColor: 'transparent',
   },
-  suggestionsContainer: {
+  predictionsContainer: {
     marginTop: 8,
     marginHorizontal: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 8,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
-  suggestionItem: {
+  predictionsItem: {
     paddingVertical: 12,
     paddingHorizontal: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#e4e4e7',
   },
-  suggestionText: {
+  predictionsText: {
     fontSize: 16,
     color: '#27272a',
   },
