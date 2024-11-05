@@ -2,32 +2,33 @@ import { View, StyleSheet, TextInput, Text, Platform } from 'react-native'
 import React, { useEffect, useRef, useState } from 'react'
 import { IconSearch } from '@tabler/icons-react'
 import { useMapsLibrary } from '@vis.gl/react-google-maps'
+import { useMapStore } from '@/states/map'
 
 const MIN_SEARCH_LENGTH = 3
 
 export default function SearchBox() {
   const [placeAutocompleteService, setPlaceAutocompleteService] = useState<google.maps.places.AutocompleteService | null>(null)
-  const [selectedPlace, setSelectedPlace] = useState<google.maps.places.PlaceResult | null>(null)
-  const [searchText, setSearchText] = useState("")
   const [predictions, setPredictions] = useState<Array<google.maps.places.AutocompletePrediction>>([])
+  const [searchText, setSearchText] = useState("")
 
   const places = useMapsLibrary('places')
 
+  const searchTextRef = useRef<TextInput>(null)
+
+  const { setSelectedPlace } = useMapStore()
+
   useEffect(() => {
-    if (!places) {
-      console.error('Google Maps Places library is not initialized')
-      return
-    }
+    if (!places) return
 
     setPlaceAutocompleteService(new places.AutocompleteService())
   }, [places]);
 
-  useEffect(() => {
-    if (searchText.length < MIN_SEARCH_LENGTH) {
-      setPredictions([])
-      return
-    }
+  const handleSearchTextChange = (searchText: string) => {
+    setSearchText(searchText)
 
+    if (searchText.length < MIN_SEARCH_LENGTH) return
+
+    setSelectedPlace(null)
     setPredictions([])
 
     if (!placeAutocompleteService) return
@@ -35,7 +36,7 @@ export default function SearchBox() {
     placeAutocompleteService.getPlacePredictions({ input: searchText }, (predictions, status) => {
       if (status === google.maps.places.PlacesServiceStatus.OK) setPredictions(predictions || [])
     })
-  }, [searchText])
+  }
 
   const handleSelectPlace = (placeId: string) => {
     if (placeId === "" || placeId === undefined || !places) return
@@ -45,8 +46,8 @@ export default function SearchBox() {
       if (status !== google.maps.places.PlacesServiceStatus.OK) return
       if (!place) return
 
-      setSelectedPlace(place)
       setSearchText(place.name || "")
+      setSelectedPlace(place)
       setPredictions([])
     })
   }
@@ -56,10 +57,11 @@ export default function SearchBox() {
       <View style={styles.searchBoxContainer}>
         <IconSearch size={16} stroke="#e4e4e7" />
         <TextInput
+          ref={searchTextRef}
           style={styles.input}
-          placeholder="Search for any place"
           value={searchText}
-          onChangeText={(e) => setSearchText(e)}
+          placeholder="Search for any place"
+          onChangeText={(searchText) => handleSearchTextChange(searchText)}
           placeholderTextColor="#666" />
       </View>
 
