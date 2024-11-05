@@ -41,18 +41,10 @@ export default function Globe(): JSX.Element {
             // Load textures
             const textureLoader = new TextureLoader();
             const [earthMap, earthBump, earthSpec, cloudsMap] = await Promise.all([
-                textureLoader.loadAsync(
-                    "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg"
-                ),
-                textureLoader.loadAsync(
-                    "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_normal_2048.jpg"
-                ),
-                textureLoader.loadAsync(
-                    "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_specular_2048.jpg"
-                ),
-                textureLoader.loadAsync(
-                    "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_clouds_1024.png"
-                ),
+                textureLoader.loadAsync(require('./earth_atmos_2048.jpg')),
+                textureLoader.loadAsync(require('./earth_normal_2048.jpg')),
+                textureLoader.loadAsync(require('./earth_specular_2048.jpg')),
+                textureLoader.loadAsync(require('./earth_clouds_1024.png')),
             ]);
 
             // Earth
