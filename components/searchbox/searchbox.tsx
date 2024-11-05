@@ -13,8 +13,6 @@ export default function SearchBox() {
 
   const places = useMapsLibrary('places')
 
-  const searchTextRef = useRef<TextInput>(null)
-
   const { setSelectedPlace } = useMapStore()
 
   useEffect(() => {
@@ -57,7 +55,6 @@ export default function SearchBox() {
       <View style={styles.searchBoxContainer}>
         <IconSearch size={16} stroke="#e4e4e7" />
         <TextInput
-          ref={searchTextRef}
           style={styles.input}
           value={searchText}
           placeholder="Search for any place"
