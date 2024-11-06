@@ -13,6 +13,7 @@ export default function Globe(): JSX.Element {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const earthRef = useRef<THREE.Mesh | null>(null);
     const cloudsRef = useRef<THREE.Mesh | null>(null);
+    const starFieldRef = useRef<THREE.Points[]>([]);
     const autoRotateSpeed = 0.0005;
     let isDragging = false;
     let previousTouch: TouchPosition = { x: 0, y: 0 };
@@ -37,8 +38,13 @@ export default function Globe(): JSX.Element {
         sunLight.position.set(5, 3, 5);
         scene.add(sunLight);
 
+        // Atmosphere light
+        const atmosphereLight = new THREE.PointLight(0x4444ff, 0.5, 100);
+        atmosphereLight.position.set(-5, 0, 5);
+        scene.add(atmosphereLight);
+
         try {
-            // Load textures
+            // Textures
             const textureLoader = new TextureLoader();
             const [earthMap, earthBump, earthSpec, cloudsMap] = await Promise.all([
                 textureLoader.loadAsync(require('./earth_atmos_2048.jpg')),
@@ -80,21 +86,52 @@ export default function Globe(): JSX.Element {
             setIsLoading(false);
         }
 
-        // Stars background
-        const starsGeometry = new THREE.BufferGeometry();
-        const starsVertices: number[] = [];
-        for (let i = 0; i < 10000; i++) {
-            const x = THREE.MathUtils.randFloatSpread(2000);
-            const y = THREE.MathUtils.randFloatSpread(2000);
-            const z = THREE.MathUtils.randFloatSpread(2000);
-            starsVertices.push(x, y, z);
-        }
-        starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
-        const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 1 });
-        const starField = new THREE.Points(starsGeometry, starsMaterial);
-        scene.add(starField);
+        // Star background
+        const createStarField = (count: number, size: number, depth: number): THREE.Points => {
+            const geometry = new THREE.BufferGeometry();
+            const vertices = new Float32Array(count * 3);
+            const colors = new Float32Array(count * 3);
 
-        // Touch handling (if not in background)
+            for (let i = 0; i < count * 3; i += 3) {
+                // Position
+                vertices[i] = THREE.MathUtils.randFloatSpread(2000) * depth;
+                vertices[i + 1] = THREE.MathUtils.randFloatSpread(2000) * depth;
+                vertices[i + 2] = THREE.MathUtils.randFloatSpread(2000) * depth;
+
+                // Color variation for twinkling
+                const brightness = 0.5 + Math.random() * 0.5;
+                colors[i] = brightness;
+                colors[i + 1] = brightness;
+                colors[i + 2] = brightness;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: size,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8,
+            });
+
+            return new THREE.Points(geometry, material);
+        };
+
+        // Create multiple star layers
+        const starLayers = [
+            { count: 1000, size: 2, depth: 1 },    // Bright, close stars
+            { count: 5000, size: 1.5, depth: 1.5 }, // Medium stars
+            { count: 10000, size: 1, depth: 2 },    // Distant stars
+        ];
+
+        starLayers.forEach(layer => {
+            const starField = createStarField(layer.count, layer.size, layer.depth);
+            scene.add(starField);
+            starFieldRef.current.push(starField);
+        });
+
+        // Touch handling
         const handleTouchStart = (event: TouchEvent): void => {
             isDragging = true;
             const touch = event.touches[0];
@@ -104,6 +141,7 @@ export default function Globe(): JSX.Element {
         const handleTouchMove = (event: TouchEvent): void => {
             if (!isDragging) return;
 
+            // Rotate the globe based on touch movement
             const touch = event.touches[0];
             const deltaX = touch.clientX - previousTouch.x;
             const deltaY = touch.clientY - previousTouch.y;
@@ -125,16 +163,17 @@ export default function Globe(): JSX.Element {
             isDragging = false;
         };
 
-        // Add touch event listeners with proper typing
         if (gl.canvas) {
             gl.canvas.addEventListener('touchstart', handleTouchStart as unknown as EventListener);
             gl.canvas.addEventListener('touchmove', handleTouchMove as unknown as EventListener);
             gl.canvas.addEventListener('touchend', handleTouchEnd as unknown as EventListener);
         }
 
-        // Render animation loop
+        // Render loop with star animation
+        let time = 0;
         const render = (): void => {
             requestAnimationFrame(render);
+            time += 0.001;
 
             if (!isDragging) {
                 // Auto-rotate when not being dragged
@@ -145,6 +184,21 @@ export default function Globe(): JSX.Element {
                     cloudsRef.current.rotation.y += autoRotateSpeed * 1.1;
                 }
             }
+
+            starFieldRef.current.forEach((starField, index) => {
+                starField.rotation.y = time * (0.05 + index * 0.01);
+                starField.rotation.x = time * 0.03;
+
+                // Flicker effect
+                const colors = starField.geometry.attributes.color;
+                for (let i = 0; i < colors.array.length; i += 3) {
+                    const flicker = 0.95 + 0.05 * Math.sin(time * 10 + i);
+                    colors.array[i] = flicker;
+                    colors.array[i + 1] = flicker;
+                    colors.array[i + 2] = flicker;
+                }
+                colors.needsUpdate = true;
+            });
 
             renderer.render(scene, camera);
             gl.endFrameEXP();
