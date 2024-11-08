@@ -5,10 +5,10 @@ import { useMapStore } from '@/states/map';
 import { fetchPolygonCoordinates } from '@/api/osm';
 
 const INITIAL_VIEW_PROPS: Map3DCameraProps = {
-  center: { lat: 40.713754032181356, lng: -74.00807587502253, altitude: 1300 },
-  range: 500,
-  heading: 61,
-  tilt: 69,
+  center: { lat: 40.7212803, lng: -74.0004602, altitude: 300 },
+  range: 0,
+  heading: 0,
+  tilt: 0,
   roll: 0
 }
 
@@ -25,7 +25,7 @@ export default function Earth() {
       const lng = selectedPlace.geometry?.location?.lng() || 0
 
       const coordinates = await fetchPolygonCoordinates(lat, lng)
-      setSelectedPlacePolygonCoordinates(coordinates)
+      setSelectedPlacePolygonCoordinates(coordinates || [])
 
       setViewProps(p => ({...p, center: { lat, lng, altitude: 15 }}))
     }

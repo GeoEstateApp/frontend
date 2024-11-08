@@ -1,3 +1,7 @@
+/* 
+  TODO: Figure out something when we dont get any details or coordinates from the API 
+  (we need to increase the range but we also get additional data. we have to figure it out)
+*/
 export interface PolygonCoordinates {
   lat: number;
   lng: number;
@@ -18,6 +22,12 @@ export const fetchPolygonCoordinates = async (lat: number, lng: number) => {
     if (!response.ok) return []
 
     const data = await response.json()
+    if (!data.elements) return []
+    if (data.elements.length <= 0) {
+      console.log("No elements found... Try increasing the range")
+      return []
+    }
+
     const height = Number(data.elements[0].tags.height) || 22
     const postcode = data.elements[0].tags.postcode || ""
 
@@ -25,15 +35,14 @@ export const fetchPolygonCoordinates = async (lat: number, lng: number) => {
       if (element.type === 'node') return { lat: element.lat, lng: element.lon, altitude: height + 2 }
     }).filter((coordinates: any) => coordinates)
 
+    console.log(coordinates)
     return convexHull(coordinates)
   } catch (err) {
     console.log(err)
   }
 }
 
-// Convex Hull implementation
 const convexHull = (coordinates: PolygonCoordinates[]) => {
-  // Sort points by latitude, then by longitude
   const sorted = coordinates.slice().sort((a, b) =>
     a.lat === b.lat ? a.lng - b.lng : a.lat - b.lat
   )
@@ -54,7 +63,6 @@ const convexHull = (coordinates: PolygonCoordinates[]) => {
     upper.push(point)
   }
 
-  // Remove the last point of each half because it's repeated at the beginning of the other half
   upper.pop()
   lower.pop()
 

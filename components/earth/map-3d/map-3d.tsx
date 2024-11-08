@@ -12,6 +12,7 @@ import {useCallbackRef, useDeepCompareEffect} from '../../../hooks/utility-hooks
 
 import './map-3d-types'
 import { useMapStore } from '@/states/map'
+import { fetchPolygonCoordinates } from '@/api/osm'
 
 export type Map3DProps = google.maps.maps3d.Map3DElementOptions & {
   onCameraChange?: (cameraProps: Map3DCameraProps) => void
@@ -34,7 +35,7 @@ declare global {
 }
 
 export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<google.maps.maps3d.Map3DElement | null>) => {
-  const { selectedPlacePolygonCoordinates } = useMapStore()
+  const { selectedPlacePolygonCoordinates, setSelectedPlacePolygonCoordinates } = useMapStore()
 
   useMapsLibrary('maps3d')
 
@@ -45,6 +46,19 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
 
     props.onCameraChange(p)
   });
+
+  useEffect(() => {
+    if (!map3DElement) return;
+  
+    map3DElement.addEventListener('dblclick', async (event: any) => {
+      const { lat, lng, altitude } = event.target.Eg.center
+
+      const coordinates = await fetchPolygonCoordinates(lat, lng)
+      if (coordinates && coordinates.length <= 0) return
+
+      setSelectedPlacePolygonCoordinates(coordinates || [])
+    });
+  }, [map3DElement]);
 
   const [customElementsReady, setCustomElementsReady] = useState(false)
   useEffect(() => {
@@ -57,10 +71,11 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
   }, [])
 
   useEffect(() => {
+    if (selectedPlacePolygonCoordinates.length <= 0) return
+    
     const polygon = document.querySelector('gmp-polygon-3d')
     if (!polygon) return
-    
-    if (selectedPlacePolygonCoordinates.length <= 0) return
+
     customElements.whenDefined(polygon.localName).then(() => {
       (polygon as any).outerCoordinates = selectedPlacePolygonCoordinates
     })
