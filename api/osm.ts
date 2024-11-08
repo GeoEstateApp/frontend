@@ -8,7 +8,12 @@ export interface PolygonCoordinates {
   altitude: number;
 }
 
-export const fetchPolygonCoordinates = async (lat: number, lng: number) => {
+export interface LatLng {
+  lat: number;
+  lng: number;
+}
+
+const fetchPolygonCoordinates = async (lat: number, lng: number) => {
   const query = `[out:json];(way["building"](around:1, ${lat}, ${lng}););out body;>;out skel qt;`
 
   try {
@@ -36,6 +41,32 @@ export const fetchPolygonCoordinates = async (lat: number, lng: number) => {
     }).filter((coordinates: any) => coordinates)
 
     return convexHull(coordinates)
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+const fetchMultiplePolygonCoordinates = async (coordinates: LatLng[]) => {
+  const query = `[out:json];(${coordinates.map((coordinate) => `way["building"](around:1, ${coordinate.lat}, ${coordinate.lng});`).join('')});out body;>;out skel qt;`
+
+  try {
+    const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+    })
+
+    if (!response.ok) return []
+
+    const data = await response.json()
+    if (!data.elements) return []
+    if (data.elements.length <= 0) {
+      console.log("No elements found... Try increasing the range")
+      return []
+    }
+
+    // TODO: Map for every way (way is a building) and get the coordinates
   } catch (err) {
     console.log(err)
   }
@@ -71,3 +102,5 @@ const convexHull = (coordinates: PolygonCoordinates[]) => {
 const crossProduct = (o: PolygonCoordinates, a: PolygonCoordinates, b: PolygonCoordinates) => {
   return (a.lat - o.lat) * (b.lng - o.lng) - (a.lng - o.lng) * (b.lat - o.lat)
 }
+
+export { fetchPolygonCoordinates, fetchMultiplePolygonCoordinates }

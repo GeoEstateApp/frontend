@@ -46,10 +46,6 @@ export default function SearchBox() {
       if (status !== google.maps.places.PlacesServiceStatus.OK) return
       if (!place) return
 
-      setSearchText(place.name || "")
-      setSelectedPlace(place)
-      setPredictions([])
-
       const address = place.formatted_address || ""
       const lat = place.geometry?.location?.lat() || 0.0
       const lng = place.geometry?.location?.lng() || 0.0
@@ -58,7 +54,11 @@ export default function SearchBox() {
       const types = place.types || []
       const url = place.url || ""
 
-      setSidePanelPlace({ address, photosUrl, rating, types })
+      setSearchText(address || "")
+      setSelectedPlace(place)
+      setPredictions([])
+
+      setSidePanelPlace({ address, photosUrl, rating, types, lat, lng })
       setShowPanel(true)
     })
   }

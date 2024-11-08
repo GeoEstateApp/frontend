@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 
 interface SelectedPlace {
+  lat: number
+  lng: number
   address: string
   photosUrl: string[]
   rating: number

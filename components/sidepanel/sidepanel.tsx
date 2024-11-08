@@ -2,19 +2,16 @@ import { View, Text, StyleSheet, Pressable, ScrollView, Image } from 'react-nati
 import React, { useEffect, useRef, useState } from 'react'
 import { IconFilter } from '@tabler/icons-react'
 import { useSidePanelStore } from '@/states/sidepanel'
-
-const filters = [
-  "School",
-  "Hospital",
-  "Restaurant",
-  "Cafe",
-  "Park",
-  "Shopping Mall",
-]
+import { getPlaceInsights } from '@/api/insights'
+import { useMapsLibrary } from '@vis.gl/react-google-maps'
+import { UI_FILTERS } from '@/const/filters'
 
 export default function SidePanel() {
+  const places = useMapsLibrary('places')
+ 
   const { togglePanel, showPanel, selectedPlace } = useSidePanelStore()
   const [selectedFilters, setSelectedFilters] = useState<string[]>([])
+  const [callFilterAPI, setCallFilterAPI] = useState(false)
 
   const [imageUri, setImageUri] = useState<string | null>(null)
 
@@ -36,11 +33,24 @@ export default function SidePanel() {
     return () => clearInterval(interval)
   }, [selectedPlace])
 
-  const handleOnFilterPress = (filter: string) => {
+  useEffect(() => {
+    if (!callFilterAPI) return
+
+    if (!selectedPlace) return
+    const includingFilters = selectedFilters.map(filter => filter.split(' ').join('_').toLowerCase())
+    getPlaceInsights(selectedPlace.lat, selectedPlace.lng, includingFilters)
+
+    setCallFilterAPI(false)
+  }, [selectedFilters])
+
+  const handleOnFilterPress = async (filter: string) => {
+    if (!selectedPlace) return
+
     if (selectedFilters.includes(filter)) {
       setSelectedFilters(selectedFilters.filter(f => f !== filter))
     } else {
       setSelectedFilters([...selectedFilters, filter])
+      setCallFilterAPI(true)
     }
   }
 
@@ -53,7 +63,7 @@ export default function SidePanel() {
           showsHorizontalScrollIndicator={false} 
           style={styles.filters}
           contentContainerStyle={{gap: 8}}>
-            {filters.map((filter, index) => {
+            {UI_FILTERS.map((filter, index) => {
               return (
                 <Pressable
                   key={index}
