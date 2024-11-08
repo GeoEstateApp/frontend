@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { IconSearch } from '@tabler/icons-react'
 import { useMapsLibrary } from '@vis.gl/react-google-maps'
 import { useMapStore } from '@/states/map'
+import { useSidePanelStore } from '@/states/sidepanel'
 
 const MIN_SEARCH_LENGTH = 3
 
@@ -14,6 +15,7 @@ export default function SearchBox() {
   const places = useMapsLibrary('places')
 
   const { setSelectedPlace } = useMapStore()
+  const { setShowPanel, setSidePanelPlace } = useSidePanelStore()
 
   useEffect(() => {
     if (!places) return
@@ -47,6 +49,17 @@ export default function SearchBox() {
       setSearchText(place.name || "")
       setSelectedPlace(place)
       setPredictions([])
+
+      const address = place.formatted_address || ""
+      const lat = place.geometry?.location?.lat() || 0.0
+      const lng = place.geometry?.location?.lng() || 0.0
+      const photosUrl = place.photos?.map(photo => photo.getUrl({ maxWidth: 300, maxHeight: 300 })) || []
+      const rating = place.rating || 0.0
+      const types = place.types || []
+      const url = place.url || ""
+
+      setSidePanelPlace({ address, photosUrl, rating, types })
+      setShowPanel(true)
     })
   }
   

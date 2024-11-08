@@ -13,6 +13,8 @@ import {useCallbackRef, useDeepCompareEffect} from '../../../hooks/utility-hooks
 import './map-3d-types'
 import { useMapStore } from '@/states/map'
 import { fetchPolygonCoordinates } from '@/api/osm'
+import { getPlaceId } from '@/api/geocoding'
+import { useSidePanelStore } from '@/states/sidepanel'
 
 export type Map3DProps = google.maps.maps3d.Map3DElementOptions & {
   onCameraChange?: (cameraProps: Map3DCameraProps) => void
@@ -36,8 +38,10 @@ declare global {
 
 export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<google.maps.maps3d.Map3DElement | null>) => {
   const { selectedPlacePolygonCoordinates, setSelectedPlacePolygonCoordinates } = useMapStore()
+  const { setSidePanelPlace, setShowPanel } = useSidePanelStore()
 
   useMapsLibrary('maps3d')
+  const places = useMapsLibrary('places')
 
   const [map3DElement, map3dRef] = useCallbackRef<google.maps.maps3d.Map3DElement>()
 
@@ -57,6 +61,26 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
       if (coordinates && coordinates.length <= 0) return
 
       setSelectedPlacePolygonCoordinates(coordinates || [])
+
+      const placeId = await getPlaceId(lat, lng)
+      
+      if (!places) return
+      const placesService = new places.PlacesService(document.createElement('div'))
+      placesService.getDetails({ placeId }, (place, status) => {
+        if (status !== google.maps.places.PlacesServiceStatus.OK) return
+        if (!place) return
+
+        const address = place.formatted_address || ""
+        const lat = place.geometry?.location?.lat() || 0.0
+        const lng = place.geometry?.location?.lng() || 0.0
+        const photosUrl = place.photos?.map(photo => photo.getUrl({ maxWidth: 300, maxHeight: 300 })) || []
+        const rating = place.rating || 0.0
+        const types = place.types || []
+        const url = place.url || ""
+
+        setSidePanelPlace({ address, photosUrl, rating, types })
+        setShowPanel(true)
+      })
     });
   }, [map3DElement]);
 

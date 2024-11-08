@@ -35,7 +35,6 @@ export const fetchPolygonCoordinates = async (lat: number, lng: number) => {
       if (element.type === 'node') return { lat: element.lat, lng: element.lon, altitude: height + 2 }
     }).filter((coordinates: any) => coordinates)
 
-    console.log(coordinates)
     return convexHull(coordinates)
   } catch (err) {
     console.log(err)

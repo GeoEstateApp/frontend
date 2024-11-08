@@ -1,4 +1,4 @@
-import { Earth, SearchBox } from '@/components'
+import { Earth, SearchBox, SidePanel } from '@/components'
 import { APIProvider } from '@vis.gl/react-google-maps'
 import { StyleSheet, Text, View } from 'react-native'
 
@@ -20,6 +20,7 @@ export default function index() {
         <Earth />
 
         <SearchBox />
+        <SidePanel />
       </APIProvider>
     </View>
   )
