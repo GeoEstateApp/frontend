@@ -1,5 +1,3 @@
-// TODO: Multiple polygons can be selected on the map
-
 import {useMapsLibrary} from '@vis.gl/react-google-maps'
 import React, {
   ForwardedRef,
