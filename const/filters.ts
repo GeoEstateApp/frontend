@@ -12,7 +12,7 @@ export const CORRESPONDING_FILTERS = {
 }
 
 export const SUPPORTED_FILTERS_MAP = {
-  manual: { fill: "#00000050", stroke: "#000000" },
+  manual: { fill: "#FFFFFF50", stroke: "#FFFFFF" },
   accounting: { fill: "rgba(66, 133, 244, 0.5)", stroke: "#4285F4" },
   airport: { fill: "rgba(72, 173, 235, 0.5)", stroke: "#48ADEB" },
   amusement_park: { fill: "rgba(255, 167, 38, 0.5)", stroke: "#FFA726" },

@@ -1,3 +1,5 @@
+// TODO: Multiple polygons can be selected on the map
+
 import {useMapsLibrary} from '@vis.gl/react-google-maps'
 import React, {
   ForwardedRef,
@@ -110,7 +112,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
       polygon.setAttribute('altitude-mode', 'relative-to-ground')
       polygon.setAttribute('fill-color', fill)
       polygon.setAttribute('stroke-color', stroke)
-      polygon.setAttribute('stroke-width', '5')
+      polygon.setAttribute('stroke-width', '3')
       polygon.setAttribute('extruded', '')
       polygon.setAttribute('id', `${insight.type}-${idx}`)
 
@@ -134,19 +136,12 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
   useEffect(() => {
     if (selectedPlacePolygonCoordinates.length <= 0) return
     
-    const polygon = document.createElement('gmp-polygon-3d')
+    const polygon = document.querySelector('gmp-polygon-3d')
     if (!polygon) return
     if (!map3DElement) return
 
-    polygon.setAttribute('altitude-mode', 'relative-to-ground')
-    polygon.setAttribute('fill-color', SUPPORTED_FILTERS_MAP.manual.fill)
-    polygon.setAttribute('stroke-color', SUPPORTED_FILTERS_MAP.manual.stroke)
-    polygon.setAttribute('stroke-width', '5')
-    polygon.setAttribute('extruded', '')
-
     customElements.whenDefined(polygon.localName).then(() => {
       (polygon as any).outerCoordinates = selectedPlacePolygonCoordinates
-      map3DElement.appendChild(polygon)
     })
   }, [selectedPlacePolygonCoordinates])
 
@@ -181,7 +176,9 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
       range={String(props.range)}
       heading={String(props.heading)}
       tilt={String(props.tilt)}
-      roll={String(props.roll)}></gmp-map-3d>
+      roll={String(props.roll)}>
+        <gmp-polygon-3d altitude-mode="relative-to-ground" fill-color={SUPPORTED_FILTERS_MAP.manual.fill} stroke-color={SUPPORTED_FILTERS_MAP.manual.stroke} stroke-width="3" extruded></gmp-polygon-3d>
+      </gmp-map-3d>
     )
   }
 )
