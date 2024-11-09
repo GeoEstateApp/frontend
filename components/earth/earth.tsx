@@ -5,10 +5,10 @@ import { useMapStore } from '@/states/map';
 import { fetchPolygonCoordinates } from '@/api/osm';
 
 const INITIAL_VIEW_PROPS: Map3DCameraProps = {
-  center: { lat: 40.7212803, lng: -74.0004602, altitude: 300 },
+  center: { lat: 40.7212803, lng: -74.0004602, altitude: 2500 },
   range: 0,
   heading: 0,
-  tilt: 0,
+  tilt: 60,
   roll: 0
 }
 

@@ -1,3 +1,5 @@
+import { PlaceInsight } from "./insights";
+
 /* 
   TODO: Figure out something when we dont get any details or coordinates from the API 
   (we need to increase the range but we also get additional data. we have to figure it out)
@@ -13,8 +15,8 @@ export interface LatLng {
   lng: number;
 }
 
-const fetchPolygonCoordinates = async (lat: number, lng: number) => {
-  const query = `[out:json];(way["building"](around:1, ${lat}, ${lng}););out body;>;out skel qt;`
+const fetchPolygonCoordinates = async (lat: number, lng: number, isInsights?: boolean) => {
+  const query = `[out:json];(way["building"](around:${isInsights ? "8" : "1"}, ${lat}, ${lng}););out body;>;out skel qt;`
 
   try {
     const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`, {
@@ -46,30 +48,23 @@ const fetchPolygonCoordinates = async (lat: number, lng: number) => {
   }
 }
 
-const fetchMultiplePolygonCoordinates = async (coordinates: LatLng[]) => {
-  const query = `[out:json];(${coordinates.map((coordinate) => `way["building"](around:1, ${coordinate.lat}, ${coordinate.lng});`).join('')});out body;>;out skel qt;`
+const fetchInsightsPolygonCoordinates = async (insights: PlaceInsight[]) => {
+  const newInsights: PlaceInsight[] = []
 
-  try {
-    const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
+  for (const insight of insights) {
+    const polygons = await fetchPolygonCoordinates(insight.lat, insight.lng, true)
+
+    newInsights.push({
+      lat: insight.lat,
+      lng: insight.lng,
+      type: insight.type,
+      name: insight.name,
+      address: insight.address,
+      polygons: polygons || []
     })
-
-    if (!response.ok) return []
-
-    const data = await response.json()
-    if (!data.elements) return []
-    if (data.elements.length <= 0) {
-      console.log("No elements found... Try increasing the range")
-      return []
-    }
-
-    // TODO: Map for every way (way is a building) and get the coordinates
-  } catch (err) {
-    console.log(err)
   }
+
+  return newInsights
 }
 
 const convexHull = (coordinates: PolygonCoordinates[]) => {
@@ -103,4 +98,4 @@ const crossProduct = (o: PolygonCoordinates, a: PolygonCoordinates, b: PolygonCo
   return (a.lat - o.lat) * (b.lng - o.lng) - (a.lng - o.lng) * (b.lat - o.lat)
 }
 
-export { fetchPolygonCoordinates, fetchMultiplePolygonCoordinates }
+export { fetchPolygonCoordinates, fetchInsightsPolygonCoordinates }

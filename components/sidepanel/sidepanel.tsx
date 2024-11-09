@@ -2,12 +2,12 @@ import { View, Text, StyleSheet, Pressable, ScrollView, Image } from 'react-nati
 import React, { useEffect, useRef, useState } from 'react'
 import { IconFilter } from '@tabler/icons-react'
 import { useSidePanelStore } from '@/states/sidepanel'
-import { getPlaceInsights } from '@/api/insights'
-import { useMapsLibrary } from '@vis.gl/react-google-maps'
+import { getPlaceInsights, PlaceInsight } from '@/api/insights'
 import { UI_FILTERS } from '@/const/filters'
+import { useInsightsStore } from '@/states/insights'
 
 export default function SidePanel() {
-  const places = useMapsLibrary('places')
+  const { insights, setInsights } = useInsightsStore()
  
   const { togglePanel, showPanel, selectedPlace } = useSidePanelStore()
   const [selectedFilters, setSelectedFilters] = useState<string[]>([])
@@ -28,7 +28,7 @@ export default function SidePanel() {
     const interval = setInterval(() => {
       currentIndex = (currentIndex + 1) % selectedPlace.photosUrl.length
       setImageUri(selectedPlace.photosUrl[currentIndex])
-    }, 7000)
+    }, 5000)
 
     return () => clearInterval(interval)
   }, [selectedPlace])
@@ -37,17 +37,34 @@ export default function SidePanel() {
     if (!callFilterAPI) return
 
     if (!selectedPlace) return
-    const includingFilters = selectedFilters.map(filter => filter.split(' ').join('_').toLowerCase())
-    getPlaceInsights(selectedPlace.lat, selectedPlace.lng, includingFilters)
+    const includingFilters = selectedFilters.map(filter => filter)
 
-    setCallFilterAPI(false)
+    const fetchInsights = async () => {
+      // TODO: move the camera to higher altitude (200) to see the insights
+
+      const insights: PlaceInsight[] = await getPlaceInsights(selectedPlace.lat, selectedPlace.lng, includingFilters) || []
+      setInsights(insights)
+      setCallFilterAPI(false)
+    }
+
+    fetchInsights()
   }, [selectedFilters])
 
   const handleOnFilterPress = async (filter: string) => {
     if (!selectedPlace) return
 
     if (selectedFilters.includes(filter)) {
+      const map3dElement = document.getElementsByTagName('gmp-map-3d')[0]
+      if (!map3dElement) return
+
+      const children = Array.from(map3dElement.children)
+      children.forEach(child => {
+        const type = child.id.split('-')[0]
+        if (type === filter) map3dElement.removeChild(child)
+      })
+
       setSelectedFilters(selectedFilters.filter(f => f !== filter))
+      if (insights && insights.length > 0) setInsights(insights.filter(insight => insight.type !== filter))
     } else {
       setSelectedFilters([...selectedFilters, filter])
       setCallFilterAPI(true)
@@ -64,16 +81,18 @@ export default function SidePanel() {
           style={styles.filters}
           contentContainerStyle={{gap: 8}}>
             {UI_FILTERS.map((filter, index) => {
+              const filterKey = filter.split(' ').join('_').toLowerCase()
+
               return (
                 <Pressable
                   key={index}
-                  onPress={() => handleOnFilterPress(filter)}
+                  onPress={() => handleOnFilterPress(filterKey)}
                   style={[{
                     padding: 10,
                     borderRadius: 5,
-                    backgroundColor: selectedFilters.includes(filter) ? '#4CAF50' : 'white',
+                    backgroundColor: selectedFilters.includes(filterKey) ? '#4CAF50' : 'white',
                   }]}>
-                    <Text style={{ color: selectedFilters.includes(filter) ? 'white' : 'black' }}>
+                    <Text style={{ color: selectedFilters.includes(filterKey) ? 'white' : 'black' }}>
                       {filter}
                     </Text>
                 </Pressable>

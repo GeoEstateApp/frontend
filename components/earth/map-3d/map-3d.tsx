@@ -15,6 +15,8 @@ import { useMapStore } from '@/states/map'
 import { fetchPolygonCoordinates } from '@/api/osm'
 import { getPlaceId } from '@/api/geocoding'
 import { useSidePanelStore } from '@/states/sidepanel'
+import { useInsightsStore } from '@/states/insights'
+import { SUPPORTED_FILTERS_MAP } from '@/const/filters'
 
 export type Map3DProps = google.maps.maps3d.Map3DElementOptions & {
   onCameraChange?: (cameraProps: Map3DCameraProps) => void
@@ -39,6 +41,7 @@ declare global {
 export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<google.maps.maps3d.Map3DElement | null>) => {
   const { selectedPlacePolygonCoordinates, setSelectedPlacePolygonCoordinates } = useMapStore()
   const { setSidePanelPlace, setShowPanel } = useSidePanelStore()
+  const { insights } = useInsightsStore()
 
   useMapsLibrary('maps3d')
   const places = useMapsLibrary('places')
@@ -55,6 +58,8 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
     if (!map3DElement) return;
   
     map3DElement.addEventListener('dblclick', async (event: any) => {
+      setSelectedPlacePolygonCoordinates([])
+
       const { lat, lng, altitude } = event.target.Eg.center
 
       const coordinates = await fetchPolygonCoordinates(lat, lng)
@@ -73,7 +78,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
         const address = place.formatted_address || ""
         const lat = place.geometry?.location?.lat() || 0.0
         const lng = place.geometry?.location?.lng() || 0.0
-        const photosUrl = place.photos?.map(photo => photo.getUrl({ maxWidth: 300, maxHeight: 300 })) || []
+        const photosUrl = Array.isArray(place.photos) ? place.photos.map(photo => photo.getUrl({ maxWidth: 300, maxHeight: 300 })) : []
         const rating = place.rating || 0.0
         const types = place.types || []
         const url = place.url || ""
@@ -83,6 +88,38 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
       })
     });
   }, [map3DElement]);
+
+  useEffect(() => {
+    if (!insights) return
+    if (insights.length <= 0) return
+    if (!map3DElement) return
+
+    const existingPolygons = map3DElement.querySelectorAll('gmp-polygon-3d')
+    const existingTypes = new Set(Array.from(existingPolygons).map(polygon => polygon.id.split('-')[0]))
+
+    if (insights.every(insight => existingTypes.has(insight.type))) return
+
+    insights.forEach((insight, idx) => {
+      const polygon = document.createElement('gmp-polygon-3d')
+      if (!polygon) return
+
+      const coordinates = insight.polygons || []
+      if (coordinates.length <= 0) return
+
+      const { fill, stroke } = SUPPORTED_FILTERS_MAP[insight.type as keyof typeof SUPPORTED_FILTERS_MAP] || SUPPORTED_FILTERS_MAP.manual
+      polygon.setAttribute('altitude-mode', 'relative-to-ground')
+      polygon.setAttribute('fill-color', fill)
+      polygon.setAttribute('stroke-color', stroke)
+      polygon.setAttribute('stroke-width', '5')
+      polygon.setAttribute('extruded', '')
+      polygon.setAttribute('id', `${insight.type}-${idx}`)
+
+      customElements.whenDefined(polygon.localName).then(() => {
+        (polygon as any).outerCoordinates = coordinates
+        map3DElement.appendChild(polygon)
+      })
+    })
+  }, [insights])
 
   const [customElementsReady, setCustomElementsReady] = useState(false)
   useEffect(() => {
@@ -97,11 +134,19 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
   useEffect(() => {
     if (selectedPlacePolygonCoordinates.length <= 0) return
     
-    const polygon = document.querySelector('gmp-polygon-3d')
+    const polygon = document.createElement('gmp-polygon-3d')
     if (!polygon) return
+    if (!map3DElement) return
+
+    polygon.setAttribute('altitude-mode', 'relative-to-ground')
+    polygon.setAttribute('fill-color', SUPPORTED_FILTERS_MAP.manual.fill)
+    polygon.setAttribute('stroke-color', SUPPORTED_FILTERS_MAP.manual.stroke)
+    polygon.setAttribute('stroke-width', '5')
+    polygon.setAttribute('extruded', '')
 
     customElements.whenDefined(polygon.localName).then(() => {
       (polygon as any).outerCoordinates = selectedPlacePolygonCoordinates
+      map3DElement.appendChild(polygon)
     })
   }, [selectedPlacePolygonCoordinates])
 
@@ -136,9 +181,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
       range={String(props.range)}
       heading={String(props.heading)}
       tilt={String(props.tilt)}
-      roll={String(props.roll)}>
-        <gmp-polygon-3d altitude-mode="relative-to-ground" fill-color="#c7ffb850" stroke-color="#43b524" stroke-width="5" extruded></gmp-polygon-3d>
-      </gmp-map-3d>
+      roll={String(props.roll)}></gmp-map-3d>
     )
   }
 )

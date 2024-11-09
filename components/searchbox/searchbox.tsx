@@ -49,12 +49,12 @@ export default function SearchBox() {
       const address = place.formatted_address || ""
       const lat = place.geometry?.location?.lat() || 0.0
       const lng = place.geometry?.location?.lng() || 0.0
-      const photosUrl = place.photos?.map(photo => photo.getUrl({ maxWidth: 300, maxHeight: 300 })) || []
+      const photosUrl = Array.isArray(place.photos) ? place.photos?.map(photo => photo.getUrl({ maxWidth: 300, maxHeight: 300 })) : []
       const rating = place.rating || 0.0
       const types = place.types || []
       const url = place.url || ""
 
-      setSearchText(address || "")
+      setSearchText(place.name || "")
       setSelectedPlace(place)
       setPredictions([])
 
@@ -96,7 +96,7 @@ export default function SearchBox() {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: Platform.OS === 'web' ? 16 : 32,
+    top: Platform.OS === 'web' ? 10 : 30,
     display: 'flex',
     flexDirection: 'column',
     width: '30%',

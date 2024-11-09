@@ -2,12 +2,17 @@ export const UI_FILTERS = [
   "School",
   "Bank",
   "Doctor",
-  "Restaurant",
   "Park",
+  "Restaurant",
   "Shopping Mall",
 ]
 
+export const CORRESPONDING_FILTERS = {
+  park: ["park", "garden"],
+}
+
 export const SUPPORTED_FILTERS_MAP = {
+  manual: { fill: "#00000050", stroke: "#000000" },
   accounting: { fill: "rgba(66, 133, 244, 0.5)", stroke: "#4285F4" },
   airport: { fill: "rgba(72, 173, 235, 0.5)", stroke: "#48ADEB" },
   amusement_park: { fill: "rgba(255, 167, 38, 0.5)", stroke: "#FFA726" },
@@ -85,7 +90,7 @@ export const SUPPORTED_FILTERS_MAP = {
   restaurant: { fill: "rgba(255, 61, 0, 0.5)", stroke: "#FF3D00" },
   roofing_contractor: { fill: "rgba(255, 152, 0, 0.5)", stroke: "#FF9800" },
   rv_park: { fill: "rgba(76, 175, 80, 0.5)", stroke: "#4CAF50" },
-  school: { fill: "rgba(63, 81, 181, 0.5)", stroke: "#3F51B5" },
+  school: { fill: "rgba(0, 0, 255, 0.5)", stroke: "#3F51B5" },
   secondary_school: { fill: "rgba(63, 81, 181, 0.5)", stroke: "#3F51B5" },
   shoe_store: { fill: "rgba(255, 193, 7, 0.5)", stroke: "#FFC107" },
   shopping_mall: { fill: "rgba(103, 58, 183, 0.5)", stroke: "#673AB7" },
