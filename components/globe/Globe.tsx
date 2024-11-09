@@ -9,7 +9,7 @@ interface TouchPosition {
     y: number;
 }
 
-// Atmosphere shade for glow effect
+// Atmosphere shader
 const atmosphereVertexShader = `
 varying vec3 vNormal;
 void main() {
@@ -20,8 +20,7 @@ void main() {
 const atmosphereFragmentShader = `
 varying vec3 vNormal;
 void main() {
-    // Reduced intensity and adjusted falloff for a more realistic atmosphere glow
-    float intensity = pow(0.5 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+    float intensity = pow(0.5 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.2);
     vec3 atmosphereColor = vec3(0.3, 0.6, 1.0);
     gl_FragColor = vec4(atmosphereColor, 1.0) * intensity;
 }`;
@@ -30,10 +29,9 @@ void main() {
 const innerGlowFragmentShader = `
 varying vec3 vNormal;
 void main() {
-    // Reduced intensity and adjusted falloff for a more realistic inner glow
-    float intensity = pow(0.4 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 1.2);
+    float intensity = pow(0.4 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 1.4);
     vec3 glowColor = vec3(0.3, 0.6, 1.0);
-    gl_FragColor = vec4(glowColor, 1.0) * intensity * 0.5;
+    gl_FragColor = vec4(glowColor, 1.0) * intensity * 0.4;
 }`;
 
 export default function Globe(): JSX.Element {
@@ -115,7 +113,7 @@ export default function Globe(): JSX.Element {
             cloudsRef.current = cloudsMesh;
 
             // Main atmosphere glow
-            const atmosphereGeometry = new THREE.SphereGeometry(1.35, 64, 64);
+            const atmosphereGeometry = new THREE.SphereGeometry(1.25, 64, 64);
             const atmosphereMaterial = new THREE.ShaderMaterial({
                 vertexShader: atmosphereVertexShader,
                 fragmentShader: atmosphereFragmentShader,
@@ -130,7 +128,7 @@ export default function Globe(): JSX.Element {
             atmosphereRef.current = atmosphereMesh;
 
             // Inner glow
-            const innerGlowGeometry = new THREE.SphereGeometry(1.02, 64, 64);
+            const innerGlowGeometry = new THREE.SphereGeometry(1.01, 64, 64);
             const innerGlowMaterial = new THREE.ShaderMaterial({
                 vertexShader: atmosphereVertexShader,
                 fragmentShader: innerGlowFragmentShader,
@@ -141,7 +139,7 @@ export default function Globe(): JSX.Element {
             });
 
             // Outer glow
-            const outerGlowGeometry = new THREE.SphereGeometry(1.4, 64, 64);
+            const outerGlowGeometry = new THREE.SphereGeometry(1.3, 64, 64);
             const outerGlowMaterial = new THREE.ShaderMaterial({
                 vertexShader: atmosphereVertexShader,
                 fragmentShader: atmosphereFragmentShader,
