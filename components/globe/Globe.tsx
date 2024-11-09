@@ -9,10 +9,38 @@ interface TouchPosition {
     y: number;
 }
 
+// Atmosphere shade for glow effect
+const atmosphereVertexShader = `
+varying vec3 vNormal;
+void main() {
+    vNormal = normalize(normalMatrix * normal);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}`;
+
+const atmosphereFragmentShader = `
+varying vec3 vNormal;
+void main() {
+    // Reduced intensity and adjusted falloff for a more realistic atmosphere glow
+    float intensity = pow(0.5 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+    vec3 atmosphereColor = vec3(0.3, 0.6, 1.0);
+    gl_FragColor = vec4(atmosphereColor, 1.0) * intensity;
+}`;
+
+// Inner glow shader
+const innerGlowFragmentShader = `
+varying vec3 vNormal;
+void main() {
+    // Reduced intensity and adjusted falloff for a more realistic inner glow
+    float intensity = pow(0.4 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 1.2);
+    vec3 glowColor = vec3(0.3, 0.6, 1.0);
+    gl_FragColor = vec4(glowColor, 1.0) * intensity * 0.5;
+}`;
+
 export default function Globe(): JSX.Element {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const earthRef = useRef<THREE.Mesh | null>(null);
     const cloudsRef = useRef<THREE.Mesh | null>(null);
+    const atmosphereRef = useRef<THREE.Mesh | null>(null);
     const starFieldRef = useRef<THREE.Points[]>([]);
     const autoRotateSpeed = 0.0005;
     let isDragging = false;
@@ -30,7 +58,7 @@ export default function Globe(): JSX.Element {
         renderer.setSize(width, height);
         renderer.setClearColor(0x000000, 1);
 
-        // Lighting
+        // Lighting setup
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
         scene.add(ambientLight);
 
@@ -38,10 +66,14 @@ export default function Globe(): JSX.Element {
         sunLight.position.set(5, 3, 5);
         scene.add(sunLight);
 
-        // Atmosphere light
-        const atmosphereLight = new THREE.PointLight(0x4444ff, 0.5, 100);
-        atmosphereLight.position.set(-5, 0, 5);
-        scene.add(atmosphereLight);
+        // Multiple atmosphere lights (for glow)
+        const atmosphereLight1 = new THREE.PointLight(0x4444ff, 0.6, 100);
+        atmosphereLight1.position.set(-5, 0, 5);
+        scene.add(atmosphereLight1);
+
+        const atmosphereLight2 = new THREE.PointLight(0x4444ff, 0.4, 100);
+        atmosphereLight2.position.set(5, 0, -5);
+        scene.add(atmosphereLight2);
 
         try {
             // Textures
@@ -53,8 +85,8 @@ export default function Globe(): JSX.Element {
                 textureLoader.loadAsync(require('./earth_clouds_1024.png')),
             ]);
 
-            // Earth
-            const earthGeometry = new THREE.SphereGeometry(1, 64, 64);
+            // Earth Geometry
+            const earthGeometry = new THREE.SphereGeometry(0.995, 64, 64);
             const earthMaterial = new THREE.MeshPhongMaterial({
                 map: earthMap,
                 bumpMap: earthBump,
@@ -69,16 +101,60 @@ export default function Globe(): JSX.Element {
             earthRef.current = earthMesh;
 
             // Clouds
-            const cloudsGeometry = new THREE.SphereGeometry(1.01, 64, 64);
+            const cloudsGeometry = new THREE.SphereGeometry(1.005, 64, 64);
             const cloudsMaterial = new THREE.MeshPhongMaterial({
                 map: cloudsMap,
                 transparent: true,
                 opacity: 0.4,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending,
             });
 
             const cloudsMesh = new THREE.Mesh(cloudsGeometry, cloudsMaterial);
             scene.add(cloudsMesh);
             cloudsRef.current = cloudsMesh;
+
+            // Main atmosphere glow
+            const atmosphereGeometry = new THREE.SphereGeometry(1.35, 64, 64);
+            const atmosphereMaterial = new THREE.ShaderMaterial({
+                vertexShader: atmosphereVertexShader,
+                fragmentShader: atmosphereFragmentShader,
+                blending: THREE.AdditiveBlending,
+                side: THREE.BackSide,
+                transparent: true,
+                depthWrite: false,
+            });
+
+            const atmosphereMesh = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+            scene.add(atmosphereMesh);
+            atmosphereRef.current = atmosphereMesh;
+
+            // Inner glow
+            const innerGlowGeometry = new THREE.SphereGeometry(1.02, 64, 64);
+            const innerGlowMaterial = new THREE.ShaderMaterial({
+                vertexShader: atmosphereVertexShader,
+                fragmentShader: innerGlowFragmentShader,
+                blending: THREE.AdditiveBlending,
+                side: THREE.FrontSide,
+                transparent: true,
+                depthWrite: false,
+            });
+
+            // Outer glow
+            const outerGlowGeometry = new THREE.SphereGeometry(1.4, 64, 64);
+            const outerGlowMaterial = new THREE.ShaderMaterial({
+                vertexShader: atmosphereVertexShader,
+                fragmentShader: atmosphereFragmentShader,
+                blending: THREE.AdditiveBlending,
+                side: THREE.BackSide,
+                transparent: true,
+                depthWrite: false,
+            });
+
+            const innerGlowMesh = new THREE.Mesh(innerGlowGeometry, innerGlowMaterial);
+            const outerGlowMesh = new THREE.Mesh(outerGlowGeometry, outerGlowMaterial);
+            scene.add(innerGlowMesh);
+            scene.add(outerGlowMesh);
 
             setIsLoading(false);
         } catch (error) {
@@ -93,12 +169,10 @@ export default function Globe(): JSX.Element {
             const colors = new Float32Array(count * 3);
 
             for (let i = 0; i < count * 3; i += 3) {
-                // Position
                 vertices[i] = THREE.MathUtils.randFloatSpread(2000) * depth;
                 vertices[i + 1] = THREE.MathUtils.randFloatSpread(2000) * depth;
                 vertices[i + 2] = THREE.MathUtils.randFloatSpread(2000) * depth;
 
-                // Color variation for twinkling
                 const brightness = 0.5 + Math.random() * 0.5;
                 colors[i] = brightness;
                 colors[i + 1] = brightness;
@@ -118,11 +192,11 @@ export default function Globe(): JSX.Element {
             return new THREE.Points(geometry, material);
         };
 
-        // Create multiple star layers
+        // Multiple star layers
         const starLayers = [
-            { count: 1000, size: 2, depth: 1 },    // Bright, close stars
-            { count: 5000, size: 1.5, depth: 1.5 }, // Medium stars
-            { count: 10000, size: 1, depth: 2 },    // Distant stars
+            { count: 1000, size: 2, depth: 1 },
+            { count: 5000, size: 1.5, depth: 1.5 },
+            { count: 10000, size: 1, depth: 2 },
         ];
 
         starLayers.forEach(layer => {
@@ -131,7 +205,7 @@ export default function Globe(): JSX.Element {
             starFieldRef.current.push(starField);
         });
 
-        // Touch handling
+        // Touch handling (if not in bg)
         const handleTouchStart = (event: TouchEvent): void => {
             isDragging = true;
             const touch = event.touches[0];
@@ -141,14 +215,15 @@ export default function Globe(): JSX.Element {
         const handleTouchMove = (event: TouchEvent): void => {
             if (!isDragging) return;
 
-            // Rotate the globe based on touch movement
             const touch = event.touches[0];
             const deltaX = touch.clientX - previousTouch.x;
             const deltaY = touch.clientY - previousTouch.y;
 
-            if (earthRef.current) {
+            if (earthRef.current && atmosphereRef.current) {
                 earthRef.current.rotation.y += deltaX * 0.005;
                 earthRef.current.rotation.x += deltaY * 0.005;
+                atmosphereRef.current.rotation.y += deltaX * 0.005;
+                atmosphereRef.current.rotation.x += deltaY * 0.005;
             }
 
             if (cloudsRef.current) {
@@ -176,9 +251,9 @@ export default function Globe(): JSX.Element {
             time += 0.001;
 
             if (!isDragging) {
-                // Auto-rotate when not being dragged
-                if (earthRef.current) {
+                if (earthRef.current && atmosphereRef.current) {
                     earthRef.current.rotation.y += autoRotateSpeed;
+                    atmosphereRef.current.rotation.y += autoRotateSpeed;
                 }
                 if (cloudsRef.current) {
                     cloudsRef.current.rotation.y += autoRotateSpeed * 1.1;
@@ -189,7 +264,6 @@ export default function Globe(): JSX.Element {
                 starField.rotation.y = time * (0.05 + index * 0.01);
                 starField.rotation.x = time * 0.03;
 
-                // Flicker effect
                 const colors = starField.geometry.attributes.color;
                 for (let i = 0; i < colors.array.length; i += 3) {
                     const flicker = 0.95 + 0.05 * Math.sin(time * 10 + i);
