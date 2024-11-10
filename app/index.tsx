@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { ArrowRight, ChevronDown, Search, BarChart2, Home, Calculator, MapPin, Clock, Shield } from "lucide-react";
+import { ArrowRight, ChevronDown, Search, Calculator, MapPin } from "lucide-react";
 import { Link } from "expo-router";
 import {
     Animated,
@@ -10,7 +10,6 @@ import {
     useWindowDimensions,
     Easing,
     Pressable,
-    SafeAreaView,
     ScrollView,
 } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
@@ -150,7 +149,7 @@ const HeroContent = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
     );
 };
 
-const FeatureCard = ({ feature, index }) => {
+const FeatureCard = ({ feature, index }: { feature: any; index: number }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const translateY = useRef(new Animated.Value(30)).current;
     const cardRef = useRef(null);
@@ -214,7 +213,7 @@ const FeatureCard = ({ feature, index }) => {
             <Text style={styles.featureTitle}>{feature.title}</Text>
             <Text style={styles.featureDescription}>{feature.description}</Text>
             <View style={styles.featureDetails}>
-                {feature.details.map((detail, idx) => (
+                {feature.details.map((detail: string, idx: number) => (
                     <View key={idx} style={styles.detailItem}>
                         <View style={styles.detailDot} />
                         <Text style={styles.detailText}>{detail}</Text>
@@ -384,7 +383,6 @@ const styles = StyleSheet.create({
     },
     headerContent: {
         height: Platform.select({web: 80, default: 60}),
-        height: Platform.select({web: 80, default: 60}),
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -545,7 +543,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.03)',
         borderRadius: 24,
         padding: 32,
-        width: Platform.select({web: 400, default: '100%'}),
+        width: Platform.select({ web: 400, default: 100 }),
         position: 'relative',
         overflow: 'hidden',
         borderWidth: 1,
@@ -630,7 +628,7 @@ const styles = StyleSheet.create({
     },
     teamMember: {
         alignItems: 'center',
-        width: Platform.select({ web: 250, default: '100%' }),
+        width: Platform.select({ web: 250, default: 100 }),
     },
     teamMemberImage: {
         width: 120,
