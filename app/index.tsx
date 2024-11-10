@@ -7,15 +7,20 @@ import {
     Text,
     StyleSheet,
     Platform,
+    TextInput,
+    TouchableOpacity,
+    Linking,
     useWindowDimensions,
     Easing,
     Pressable,
     SafeAreaView,
     ScrollView,
+    ImageBackground,
 } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Globe from '../components/globe/Globe';
+import Icon from 'react-native-vector-icons/FontAwesome'; // Use FontAwesome or another icon set
 
 export default function Index() {
     const { height } = useWindowDimensions();
@@ -55,7 +60,7 @@ export default function Index() {
                         <Text style={styles.headerLink}>About</Text>
                         <Link href="/explore" asChild>
                             <Pressable style={styles.headerButton}>
-                                <Text style={styles.headerButtonText}>Get Started</Text>
+                                <Text style={styles.headerButtonText}>Sign Up</Text>
                             </Pressable>
                         </Link>
                     </View>
@@ -87,12 +92,15 @@ export default function Index() {
                     </Animated.View>
                 </View>
 
+                {/* Merged Footer as part of scrollable content */}
                 <FeaturesSection />
                 <AboutSection />
+                <Footer /> {/* Footer is now part of the scrollable content */}
             </Animated.ScrollView>
         </View>
     );
 }
+
 
 const HeroContent = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -262,6 +270,10 @@ const FeaturesSection = () => {
 
     return (
         <View style={styles.featuresSection}>
+             <ImageBackground 
+            source={require('../assets/images/bg1.jpg')}
+            style={styles.featuresSectionBackground} 
+        ></ImageBackground>
             <LinearGradient
                 colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.9)', '#000']}
                 style={StyleSheet.absoluteFill}
@@ -316,6 +328,93 @@ const AboutSection = () => {
     );
 };
 
+const Footer = () => (
+    <SafeAreaView style={styles.footer}>
+      <View style={styles.footerContent}>
+
+        <View style={styles.footerColumns}>
+          <View style={styles.leftColumn}>
+            <Text style={styles.startUsingLabel}>Unlock Your{"\n"}Perfect Space☺️</Text>
+
+          <Text style={styles.emailLabel}>Subscribe</Text>
+          <View style={styles.emailInputContainer}>
+            <TextInput
+              style={styles.emailInput}
+              placeholder="Enter your email"
+              placeholderTextColor="#A1A1A1"
+            />
+            <TouchableOpacity style={styles.arrowIconContainer}>
+              <Icon name="arrow-right" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </View>
+  
+          <View style={styles.centerColumn}>
+            <Text style={styles.companyLabel}>Company</Text>
+            <View style={styles.underline} /> 
+  
+            <View style={styles.footerLinks}>
+              <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/about")}>About us</Text></Text>
+              <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/terms")}>Terms and Privacy</Text></Text>
+              <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/home")}>Home</Text></Text>
+              <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/help")}>Help</Text></Text>
+            </View>
+          </View>
+  
+          <View style={styles.resourcesColumn}>
+            <Text style={styles.companyLabel}>Resources</Text>
+            <View style={styles.underline} /> 
+  
+            <View style={styles.footerLinks}>
+              <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/blog")}>Blog</Text></Text>
+              <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/support")}>Support</Text></Text>
+              <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/contact")}>Contact Us</Text></Text>
+            </View>
+          </View>
+  
+          <View style={styles.followUsColumn}>
+            <Text style={styles.companyLabel}>Follow Us</Text>
+            <View style={styles.underline} /> 
+  
+            <View style={styles.iconLinks}>
+              <Icon
+                name="facebook"
+                size={30}
+                color="white"
+                style={styles.icon}
+                onPress={() => Linking.openURL("https://www.facebook.com")}
+              />
+              <Icon
+                name="instagram"
+                size={30}
+                color="white"
+                style={styles.icon}
+                onPress={() => Linking.openURL("https://www.instagram.com")}
+              />
+              <Icon
+                name="envelope"
+                size={30}
+                color="white"
+                style={styles.icon}
+                onPress={() => Linking.openURL("mailto:support@geoestate.com")}
+              />
+              <Icon
+                name="twitter"
+                size={30}
+                color="white"
+                style={styles.icon}
+                onPress={() => Linking.openURL("https://www.twitter.com")}
+              />
+            </View>
+          </View>
+        </View>
+  
+          <Text style={styles.footerText}>© 2024 GeoEstate. All Rights Reserved.</Text>
+      </View>
+    </SafeAreaView>
+  );
+  
+  
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -446,6 +545,10 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 14,
         marginBottom: 8,
+    },
+    featuresSectionBackground:  {
+        resizeMode: 'cover', 
+
     },
     featuresSection: {
         padding: Platform.select({web: 120, default: 80}),
@@ -603,4 +706,126 @@ const styles = StyleSheet.create({
         opacity: 0.8,
         textAlign: 'center',
     },
+
+   //footer
+   footer: {
+    backgroundColor: '#091015',
+    paddingVertical: 20,
+    paddingHorizontal: 10,
+    borderTopColor: '#d1d7e0',
+    borderTopLeftRadius: 40, 
+    borderTopRightRadius: 40, 
+    overflow: 'hidden',
+  },
+  footerContent: {
+    alignItems: 'center',
+  },
+  footerColumns: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  leftColumn: {
+    flex: 2, 
+    paddingRight: 10,
+  },
+  emailLabel: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginLeft: 35,
+  },
+  emailInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#007AFF',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginLeft: 32,
+    width: 280, 
+  },
+  emailInput: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 14,
+  },
+  arrowIconContainer: {
+    paddingLeft: 10,
+  },
+  centerColumn: {
+    flex: 1,  
+    paddingHorizontal: 10,
+    marginTop: 20,
+  },
+  resourcesColumn: {
+    flex: 1, 
+    paddingLeft: 10,
+    marginTop: 20,
+  },
+  followUsColumn: {
+    flex: 1,  
+    paddingLeft: 10,
+    marginTop: 20,
+  },
+  startUsingLabel: {
+    fontSize: Platform.select({ web: 40, default: 27 }),
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'left',
+    marginBottom: 10,
+    lineHeight: 40,
+    marginLeft: 40,
+    marginTop: 20,
+    lineHeight: Platform.select({ web: 55, default: 35 }),
+  },
+  companyLabel: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  underline: {
+    borderBottomColor: '#007AFF',
+    borderBottomWidth: 1,
+    width: '30%',
+    marginBottom: 10,
+  },
+  bulletPoint: {
+    color: '#007AFF',
+    marginVertical: 5,
+    fontSize: 14,
+  },
+  socialLink: {
+    color: '#007AFF',
+    marginVertical: 5,
+    fontSize: 14,
+  },
+  footerLinks: {
+    flexDirection: 'column',
+    marginTop: 10,
+  },
+  footerLink: {
+    color: 'white',
+    marginVertical: 5,
+  },
+  iconLinks: {
+    flexDirection: 'row', 
+    justifyContent: 'space-around',
+    marginTop: 10,
+    marginRight: 30,
+  },
+  icon: {
+    padding: 10,  
+    marginHorizontal: 5,  
+  },
+  footerText: {
+    color: 'white',
+    fontSize: 14,
+    marginTop: 20,
+    textAlign: 'center',
+  },
 });
