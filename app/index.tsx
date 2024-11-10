@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { ArrowRight, ChevronDown, Search, Calculator, MapPin } from "lucide-react";
+import { ArrowRight, ChevronDown, Search, BarChart2, Home, Calculator, MapPin, Clock, Shield } from "lucide-react";
 import { Link } from "expo-router";
 import {
     Animated,
@@ -13,6 +13,7 @@ import {
     useWindowDimensions,
     Easing,
     Pressable,
+    SafeAreaView,
     ScrollView,
     ImageBackground,
 } from "react-native";
@@ -157,71 +158,44 @@ const HeroContent = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
     );
 };
 
-const FeatureCard = ({ feature, index }: { feature: any; index: number }) => {
+const FeatureCard = ({ feature, index }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
-    const translateY = useRef(new Animated.Value(30)).current;
-    const cardRef = useRef(null);
+    const translateY = useRef(new Animated.Value(50)).current;
 
-    const startAnimation = () => {
+    useEffect(() => {
         Animated.parallel([
             Animated.timing(fadeAnim, {
                 toValue: 1,
                 duration: 800,
-                delay: index * 150, 
+                delay: 200 + index * 100,
                 useNativeDriver: true,
                 easing: Easing.out(Easing.cubic),
             }),
             Animated.timing(translateY, {
                 toValue: 0,
                 duration: 800,
-                delay: index * 150,
+                delay: 200 + index * 100,
                 useNativeDriver: true,
                 easing: Easing.out(Easing.cubic),
             }),
         ]).start();
-    };
-
-    useEffect(() => {
-        if (!cardRef.current) return;
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        startAnimation();
-                        observer.unobserve(entry.target);
-                    }
-                });
-            },
-            { threshold: 0.3 }
-        );
-
-        observer.observe(cardRef.current);
-
-        return () => {
-            if (cardRef.current) {
-                observer.unobserve(cardRef.current);
-            }
-        };
     }, []);
 
     return (
-        <Animated.View
-            ref={cardRef}
-            style={[
-                styles.featureCard,
-                {
-                    opacity: fadeAnim,
-                    transform: [{ translateY }],
-                }
-            ]}>
+        <Animated.View style={[
+            styles.featureCard,
+            {
+                opacity: fadeAnim,
+                transform: [{ translateY }],
+            }
+        ]}>
             <View style={styles.featureIconContainer}>
                 <feature.icon size={32} color="#007AFF" strokeWidth={1.5} />
             </View>
             <Text style={styles.featureTitle}>{feature.title}</Text>
             <Text style={styles.featureDescription}>{feature.description}</Text>
             <View style={styles.featureDetails}>
-                {feature.details.map((detail: string, idx: number) => (
+                {feature.details.map((detail, idx) => (
                     <View key={idx} style={styles.detailItem}>
                         <View style={styles.detailDot} />
                         <Text style={styles.detailText}>{detail}</Text>
@@ -241,9 +215,8 @@ const FeatureCard = ({ feature, index }: { feature: any; index: number }) => {
 const FeaturesSection = () => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const translateY = useRef(new Animated.Value(30)).current;
-    const sectionRef = useRef(null);
 
-    const startAnimation = () => {
+    useEffect(() => {
         Animated.parallel([
             Animated.timing(fadeAnim, {
                 toValue: 1,
@@ -260,30 +233,6 @@ const FeaturesSection = () => {
                 easing: Easing.out(Easing.cubic),
             }),
         ]).start();
-    };
-
-    useEffect(() => {
-        if (!sectionRef.current) return;
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        startAnimation();
-                        observer.unobserve(entry.target);
-                    }
-                });
-            },
-            { threshold: 0.4 } 
-        );
-
-        observer.observe(sectionRef.current);
-
-        return () => {
-            if (sectionRef.current) {
-                observer.unobserve(sectionRef.current);
-            }
-        };
     }, []);
 
     const features = [
@@ -476,6 +425,7 @@ const styles = StyleSheet.create({
     },
     headerContent: {
         height: Platform.select({web: 80, default: 60}),
+        height: Platform.select({web: 80, default: 60}),
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -640,7 +590,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.03)',
         borderRadius: 24,
         padding: 32,
-        width: Platform.select({ web: 400, default: 100 }),
+        width: Platform.select({web: 400, default: '100%'}),
         position: 'relative',
         overflow: 'hidden',
         borderWidth: 1,
@@ -725,7 +675,7 @@ const styles = StyleSheet.create({
     },
     teamMember: {
         alignItems: 'center',
-        width: Platform.select({ web: 250, default: 100 }),
+        width: Platform.select({ web: 250, default: '100%' }),
     },
     teamMemberImage: {
         width: 120,
