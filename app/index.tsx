@@ -14,7 +14,6 @@ import {
     Easing,
     Pressable,
     ScrollView,
-    ImageBackground,
 } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
@@ -426,25 +425,21 @@ const Footer = () => (
                             size={30}
                             color="white"
                             style={styles.icon}
-                            onPress={() => Linking.openURL("https://www.facebook.com")}
                         />
                         <Instagram
                             size={30}
                             color="white"
                             style={styles.icon}
-                            onPress={() => Linking.openURL("https://www.instagram.com")}
                         />
                         <Mail
                             size={30}
                             color="white"
                             style={styles.icon}
-                            onPress={() => Linking.openURL("mailto:support@geoestate.com")}
                         />
                         <Twitter
                             size={30}
                             color="white"
                             style={styles.icon}
-                            onPress={() => Linking.openURL("https://www.twitter.com")}
                         />
                     </View>
                 </View>
@@ -819,7 +814,6 @@ const styles = StyleSheet.create({
     lineHeight: 40,
     marginLeft: 40,
     marginTop: 20,
-    lineHeight: Platform.select({ web: 55, default: 35 }),
   },
   companyLabel: {
     color: 'white',
