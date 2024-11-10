@@ -6,6 +6,7 @@ export default function RootLayout() {
             <Stack.Screen name="index" /> {/* Landing Page */}
             <Stack.Screen name="explore" /> {/* Explore */}
             <Stack.Screen name="component" /> {/* Component Testings */}
+            <Stack.Screen name="authentication" /> {/* Authentication */}
         </Stack>
     )
 }
