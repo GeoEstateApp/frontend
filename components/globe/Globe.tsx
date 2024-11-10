@@ -57,10 +57,10 @@ export default function Globe(): JSX.Element {
         renderer.setClearColor(0x000000, 1);
 
         // Lighting setup
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Increased ambient light intensity
         scene.add(ambientLight);
 
-        const sunLight = new THREE.DirectionalLight(0xffffff, 0.9);
+        const sunLight = new THREE.DirectionalLight(0xffffff, 1.2); // Increased directional light intensity
         sunLight.position.set(5, 3, 5);
         scene.add(sunLight);
 
@@ -90,8 +90,8 @@ export default function Globe(): JSX.Element {
                 bumpMap: earthBump,
                 bumpScale: 0.05,
                 specularMap: earthSpec,
-                specular: new THREE.Color(0x333333),
-                shininess: 25,
+                specular: new THREE.Color(0x666666),
+                shininess: 30,
             });
 
             const earthMesh = new THREE.Mesh(earthGeometry, earthMaterial);
@@ -103,7 +103,7 @@ export default function Globe(): JSX.Element {
             const cloudsMaterial = new THREE.MeshPhongMaterial({
                 map: cloudsMap,
                 transparent: true,
-                opacity: 0.4,
+                opacity: 0.5,
                 depthWrite: false,
                 blending: THREE.AdditiveBlending,
             });
