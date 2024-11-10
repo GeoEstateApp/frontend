@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { ArrowRight, ChevronDown, Search, BarChart2, Home, Calculator, MapPin, Clock, Shield } from "lucide-react";
+import { ArrowRight, ChevronDown, Search, Calculator, MapPin } from "lucide-react";
 import { Link } from "expo-router";
 import {
     Animated,
@@ -10,7 +10,6 @@ import {
     useWindowDimensions,
     Easing,
     Pressable,
-    SafeAreaView,
     ScrollView,
 } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
@@ -150,44 +149,71 @@ const HeroContent = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
     );
 };
 
-const FeatureCard = ({ feature, index }) => {
+const FeatureCard = ({ feature, index }: { feature: any; index: number }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
-    const translateY = useRef(new Animated.Value(50)).current;
+    const translateY = useRef(new Animated.Value(30)).current;
+    const cardRef = useRef(null);
 
-    useEffect(() => {
+    const startAnimation = () => {
         Animated.parallel([
             Animated.timing(fadeAnim, {
                 toValue: 1,
                 duration: 800,
-                delay: 200 + index * 100,
+                delay: index * 150, 
                 useNativeDriver: true,
                 easing: Easing.out(Easing.cubic),
             }),
             Animated.timing(translateY, {
                 toValue: 0,
                 duration: 800,
-                delay: 200 + index * 100,
+                delay: index * 150,
                 useNativeDriver: true,
                 easing: Easing.out(Easing.cubic),
             }),
         ]).start();
+    };
+
+    useEffect(() => {
+        if (!cardRef.current) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        startAnimation();
+                        observer.unobserve(entry.target);
+                    }
+                });
+            },
+            { threshold: 0.3 }
+        );
+
+        observer.observe(cardRef.current);
+
+        return () => {
+            if (cardRef.current) {
+                observer.unobserve(cardRef.current);
+            }
+        };
     }, []);
 
     return (
-        <Animated.View style={[
-            styles.featureCard,
-            {
-                opacity: fadeAnim,
-                transform: [{ translateY }],
-            }
-        ]}>
+        <Animated.View
+            ref={cardRef}
+            style={[
+                styles.featureCard,
+                {
+                    opacity: fadeAnim,
+                    transform: [{ translateY }],
+                }
+            ]}>
             <View style={styles.featureIconContainer}>
                 <feature.icon size={32} color="#007AFF" strokeWidth={1.5} />
             </View>
             <Text style={styles.featureTitle}>{feature.title}</Text>
             <Text style={styles.featureDescription}>{feature.description}</Text>
             <View style={styles.featureDetails}>
-                {feature.details.map((detail, idx) => (
+                {feature.details.map((detail: string, idx: number) => (
                     <View key={idx} style={styles.detailItem}>
                         <View style={styles.detailDot} />
                         <Text style={styles.detailText}>{detail}</Text>
@@ -207,8 +233,9 @@ const FeatureCard = ({ feature, index }) => {
 const FeaturesSection = () => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const translateY = useRef(new Animated.Value(30)).current;
+    const sectionRef = useRef(null);
 
-    useEffect(() => {
+    const startAnimation = () => {
         Animated.parallel([
             Animated.timing(fadeAnim, {
                 toValue: 1,
@@ -225,6 +252,30 @@ const FeaturesSection = () => {
                 easing: Easing.out(Easing.cubic),
             }),
         ]).start();
+    };
+
+    useEffect(() => {
+        if (!sectionRef.current) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        startAnimation();
+                        observer.unobserve(entry.target);
+                    }
+                });
+            },
+            { threshold: 0.4 } 
+        );
+
+        observer.observe(sectionRef.current);
+
+        return () => {
+            if (sectionRef.current) {
+                observer.unobserve(sectionRef.current);
+            }
+        };
     }, []);
 
     const features = [
@@ -261,28 +312,30 @@ const FeaturesSection = () => {
     ];
 
     return (
-        <View style={styles.featuresSection}>
-            <LinearGradient
-                colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.9)', '#000']}
-                style={StyleSheet.absoluteFill}
-            />
-            <Animated.View style={[styles.featuresSectionHeader, {
-                opacity: fadeAnim,
-                transform: [{ translateY }]
-            }]}>
-                <Text style={styles.featuresSubtitle}>POWERFUL FEATURES</Text>
-                <Text style={styles.featuresTitle}>Everything you need to make informed real estate decisions</Text>
-                <Text style={styles.featuresDescription}>
-                    Discover how our comprehensive suite of tools and features can help you find,
-                    analyze, and secure your ideal property investment.
-                </Text>
-            </Animated.View>
-            <View style={styles.featuresGrid}>
-                {features.map((feature, index) => (
-                    <FeatureCard key={index} feature={feature} index={index} />
-                ))}
+        <Animated.View ref={sectionRef} style={{opacity: fadeAnim, transform: [{ translateY }]}}>
+            <View style={styles.featuresSection}>
+                <LinearGradient
+                    colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.9)', '#000']}
+                    style={StyleSheet.absoluteFill}
+                />
+                <Animated.View style={[styles.featuresSectionHeader, {
+                    opacity: fadeAnim,
+                    transform: [{ translateY }]
+                }]}>
+                    <Text style={styles.featuresSubtitle}>POWERFUL FEATURES</Text>
+                    <Text style={styles.featuresTitle}>Everything you need to make informed real estate decisions</Text>
+                    <Text style={styles.featuresDescription}>
+                        Discover how our comprehensive suite of tools and features can help you find,
+                        analyze, and secure your ideal property investment.
+                    </Text>
+                </Animated.View>
+                <View style={styles.featuresGrid}>
+                    {features.map((feature, index) => (
+                        <FeatureCard key={index} feature={feature} index={index} />
+                    ))}
+                </View>
             </View>
-        </View>
+        </Animated.View>
     );
 };
 
@@ -329,7 +382,6 @@ const styles = StyleSheet.create({
         zIndex: 1000,
     },
     headerContent: {
-        height: Platform.select({web: 80, default: 60}),
         height: Platform.select({web: 80, default: 60}),
         flexDirection: 'row',
         alignItems: 'center',
@@ -491,7 +543,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.03)',
         borderRadius: 24,
         padding: 32,
-        width: Platform.select({web: 400, default: '100%'}),
+        width: Platform.select({ web: 400, default: 100 }),
         position: 'relative',
         overflow: 'hidden',
         borderWidth: 1,
@@ -576,7 +628,7 @@ const styles = StyleSheet.create({
     },
     teamMember: {
         alignItems: 'center',
-        width: Platform.select({ web: 250, default: '100%' }),
+        width: Platform.select({ web: 250, default: 100 }),
     },
     teamMemberImage: {
         width: 120,
