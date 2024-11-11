@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ArrowRight, ChevronDown, Search, Calculator, MapPin, Facebook, Instagram, Mail, Twitter } from "lucide-react";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import {
     Animated,
     View,
@@ -18,6 +18,44 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import Globe from '../components/globe/Globe';
+import { auth } from '@/lib/firebase'
+import { onAuthStateChanged } from 'firebase/auth'
+import { IconUser, IconLogin } from '@tabler/icons-react'
+
+function HeaderNav() {
+    const [isLoggedIn, setIsLoggedIn] = useState(false)
+    const router = useRouter()
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setIsLoggedIn(!!user)
+        })
+        return () => unsubscribe()
+    }, [])
+
+    return (
+        <View style={styles.headerNav}>
+            <Text style={styles.headerLink}>Features</Text>
+            <Text style={styles.headerLink}>About</Text>
+            <TouchableOpacity 
+                style={styles.headerButton}
+                onPress={() => router.push(isLoggedIn ? '/explore' : '/authentication')}
+            >
+                {isLoggedIn ? (
+                    <>
+                        <Text style={styles.headerButtonText}>Explore</Text>
+                        <ArrowRight color="white" size={24} style={{marginLeft: 8}} />
+                    </>
+                ) : (
+                    <>
+                        <IconLogin size={24} stroke="#fff" style={{marginRight: 8}} />
+                        <Text style={styles.headerButtonText}>Sign In</Text>
+                    </>
+                )}
+            </TouchableOpacity>
+        </View>
+    )
+}
 
 export default function Index() {
     const { height } = useWindowDimensions();
@@ -52,15 +90,7 @@ export default function Index() {
                 />
                 <View style={styles.headerContent}>
                     <Text style={styles.headerTitle}>GeoEstate</Text>
-                    <View style={styles.headerNav}>
-                        <Text style={styles.headerLink}>Features</Text>
-                        <Text style={styles.headerLink}>About</Text>
-                        <Link href="/explore" asChild>
-                            <Pressable style={styles.headerButton}>
-                                <Text style={styles.headerButtonText}>Sign Up</Text>
-                            </Pressable>
-                        </Link>
-                    </View>
+                    <HeaderNav />
                 </View>
             </Animated.View>
 
@@ -477,23 +507,24 @@ const styles = StyleSheet.create({
     headerNav: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 32,
+        gap: 24
     },
     headerLink: {
         color: '#fff',
-        fontSize: 16,
-        opacity: 0.9,
+        fontSize: 16
     },
     headerButton: {
-        backgroundColor: 'rgba(255,255,255,0.1)',
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#007AFF',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 8
     },
     headerButtonText: {
         color: '#fff',
         fontSize: 16,
-        fontWeight: '500',
+        fontWeight: '600'
     },
     scrollView: {
         flex: 1,
