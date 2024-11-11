@@ -34,6 +34,7 @@ declare global {
   namespace JSX {
     interface IntrinsicElements {
       'gmp-polygon-3d': any;
+      'gmp-marker-3d': any;
     }
   }
 }
@@ -42,6 +43,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
   const { selectedPlacePolygonCoordinates, setSelectedPlacePolygonCoordinates } = useMapStore()
   const { setSidePanelPlace, setShowPanel } = useSidePanelStore()
   const { insights } = useInsightsStore()
+  const [markers, setMarkers] = useState<Array<{id: string, position: google.maps.LatLngLiteral}>>([])
 
   useMapsLibrary('maps3d')
   const places = useMapsLibrary('places')
@@ -123,13 +125,14 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
 
   const [customElementsReady, setCustomElementsReady] = useState(false)
   useEffect(() => {
-    customElements.whenDefined('gmp-map-3d').then(() => {
-      setCustomElementsReady(true)
-    })
-    customElements.whenDefined('gmp-polygon-3d').then(() => {
-      setCustomElementsReady(true)
-    })
-  }, [])
+    Promise.all([
+      customElements.whenDefined('gmp-map-3d'),
+      customElements.whenDefined('gmp-marker-3d'),
+      customElements.whenDefined('gmp-polygon-3d')
+    ]).then(() => {
+      setCustomElementsReady(true);
+    });
+  }, []);
 
   useEffect(() => {
     if (selectedPlacePolygonCoordinates.length <= 0) return
@@ -165,6 +168,23 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
     return [lat, lng, altitude].join(',')
   }, [center?.lat, center?.lng, center?.altitude])
 
+  useEffect(() => {
+    if (!insights) {
+      setMarkers([]);
+      return;
+    }
+
+    const newMarkers = insights.map((insight, index) => ({
+      id: `marker-${insight.type}-${index}-${insight?.id || ''}`,
+      position: {
+        lat: insight.lat,
+        lng: insight.lng
+      }
+    }));
+
+    setMarkers(newMarkers);
+  }, [insights]); 
+
   if (!customElementsReady) return null
 
   return (
@@ -175,8 +195,25 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
       heading={String(props.heading)}
       tilt={String(props.tilt)}
       roll={String(props.roll)}>
-        <gmp-polygon-3d altitude-mode="relative-to-ground" fill-color={SUPPORTED_FILTERS_MAP.manual.fill} stroke-color={SUPPORTED_FILTERS_MAP.manual.stroke} stroke-width="3" extruded></gmp-polygon-3d>
-      </gmp-map-3d>
-    )
-  }
-)
+      
+      <gmp-polygon-3d 
+        altitude-mode="relative-to-ground" 
+        fill-color={SUPPORTED_FILTERS_MAP.manual.fill} 
+        stroke-color={SUPPORTED_FILTERS_MAP.manual.stroke} 
+        stroke-width="3" 
+        extruded>
+      </gmp-polygon-3d>
+
+      {markers.map(marker => (
+        <gmp-marker-3d
+          key={marker.id}
+          position={`${marker.position.lat},${marker.position.lng}`}
+          title={marker.id}
+          altitude-mode="relative-to-ground"
+          scale="large">
+        </gmp-marker-3d>
+      ))}
+
+    </gmp-map-3d>
+  )
+})

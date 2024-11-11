@@ -20,6 +20,7 @@ declare global {
           [key in GmpMap3DAttributeNames]?: string;
         }
       >;
+      'gmp-marker-3d': any; 
     }
   }
 }
