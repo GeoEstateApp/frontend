@@ -208,9 +208,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
         <gmp-marker-3d
           key={marker.id}
           position={`${marker.position.lat},${marker.position.lng}`}
-          title={marker.id}
-          altitude-mode="relative-to-ground"
-          scale="large">
+          >
         </gmp-marker-3d>
       ))}
 
