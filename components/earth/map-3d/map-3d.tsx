@@ -8,7 +8,7 @@ import React, {
   useState
 } from 'react'
 import {useMap3DCameraEvents} from './use-map-3d-camera-events'
-import {useCallbackRef, useDeepCompareEffect} from '../../../hooks/utility-hooks'
+import {useCallbackRef, useDeepCompareEffect} from '@/hooks/utility-hooks'
 
 import './map-3d-types'
 import { useMapStore } from '@/states/map'
@@ -175,7 +175,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
     }
 
     const newMarkers = insights.map((insight, index) => ({
-      id: `marker-${insight.type}-${index}-${insight?.id || ''}`,
+      id: `marker-${insight.type}-${index}`, 
       position: {
         lat: insight.lat,
         lng: insight.lng
