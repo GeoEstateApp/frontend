@@ -43,10 +43,12 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
   const { selectedPlacePolygonCoordinates, setSelectedPlacePolygonCoordinates } = useMapStore()
   const { setSidePanelPlace, setShowPanel } = useSidePanelStore()
   const { insights } = useInsightsStore()
-  const [markers, setMarkers] = useState<Array<{id: string, position: google.maps.LatLngLiteral}>>([])
+  const [markers, setMarkers] = useState<Array<{id: string, position: google.maps.LatLngLiteral, pin?: any}>>([])
 
   useMapsLibrary('maps3d')
   const places = useMapsLibrary('places')
+  const maps3d = useMapsLibrary('maps3d')
+  const marker = useMapsLibrary('marker')
 
   const [map3DElement, map3dRef] = useCallbackRef<google.maps.maps3d.Map3DElement>()
 
@@ -169,21 +171,32 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
   }, [center?.lat, center?.lng, center?.altitude])
 
   useEffect(() => {
-    if (!insights) {
+    if (!insights || !maps3d || !marker || !map3DElement) {
       setMarkers([]);
       return;
     }
 
-    const newMarkers = insights.map((insight, index) => ({
-      id: `marker-${insight.type}-${index}`, 
-      position: {
-        lat: insight.lat,
-        lng: insight.lng
-      }
-    }));
+    const newMarkers = insights.map((insight, index) => {
+      const pin = new marker.PinElement({
+        background: SUPPORTED_FILTERS_MAP[insight.type]?.fill || '#1A73E8',
+        borderColor: SUPPORTED_FILTERS_MAP[insight.type]?.stroke || '#1A73E8',
+        glyphColor: '#FFFFFF',
+        scale: 1.2
+      });
+
+      return {
+        id: `marker-${insight.type}-${index}`,
+        position: {
+          lat: insight.lat,
+          lng: insight.lng,
+          altitude: 100 // default altitude
+        },
+        pin
+      };
+    });
 
     setMarkers(newMarkers);
-  }, [insights]); 
+  }, [insights, maps3d, marker, map3DElement]);
 
   if (!customElementsReady) return null
 
@@ -207,9 +220,20 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
       {markers.map(marker => (
         <gmp-marker-3d
           key={marker.id}
-          position={`${marker.position.lat},${marker.position.lng}`}
-          >
-        </gmp-marker-3d>
+          position={`${marker.position.lat},${marker.position.lng},${marker.position.altitude}`}
+          altitude-mode="relative-to-ground"
+          collisionBehavior="OPTIONAL_AND_HIDES_LOWER_PRIORITY"
+          extruded=""
+          ref={(el: any) => {
+            if (el && marker.pin) {
+              el.append(marker.pin);
+              customElements.whenDefined(el.localName).then(() => {
+                el.extruded = true;
+                el.altitudeMode = 'RELATIVE_TO_GROUND';
+              });
+            }
+          }}
+        />
       ))}
 
     </gmp-map-3d>
