@@ -189,7 +189,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
         position: {
           lat: insight.lat,
           lng: insight.lng,
-          altitude: 100 // default altitude
+          altitude: 75 // default altitude
         },
         pin
       };
