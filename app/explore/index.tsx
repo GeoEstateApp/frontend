@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router'
 import { IconUser, IconLogin } from '@tabler/icons-react'
 import { auth } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
+import Toast from 'react-native-toast-message'
 
 const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY
 const GOOGLE_MAP_VERSION = 'alpha'
@@ -53,6 +54,18 @@ export default function index() {
     )
   }
 
+  useEffect(() => {
+    Toast.show({
+      type: 'info',
+      text1: 'Welcome to Explore!',
+      text2: 'Use the search bar to find places',
+      autoHide: true,
+      visibilityTime: 5000,
+      text1Style: { fontSize: 16, fontWeight: 'bold' },
+      text2Style: { fontSize: 14 }
+    })
+  }, [])
+
   return (
     <View style={styles.container}>
       <HeaderButton />
@@ -61,6 +74,8 @@ export default function index() {
         <SearchBox />
         <SidePanel />
       </APIProvider>
+
+      <Toast position='bottom' bottomOffset={20} />
     </View>
   )
 }

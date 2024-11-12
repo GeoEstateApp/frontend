@@ -12,6 +12,9 @@ import {useCallbackRef, useDeepCompareEffect} from '@/hooks/utility-hooks'
 
 import './map-3d-types'
 import { useMapStore } from '@/states/map'
+
+type LatLngLiteralWithAltitude = google.maps.LatLngLiteral & { altitude: number };
+
 import { fetchPolygonCoordinates } from '@/api/osm'
 import { getPlaceId } from '@/api/geocoding'
 import { useSidePanelStore } from '@/states/sidepanel'
@@ -43,7 +46,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
   const { selectedPlacePolygonCoordinates, setSelectedPlacePolygonCoordinates } = useMapStore()
   const { setSidePanelPlace, setShowPanel } = useSidePanelStore()
   const { insights } = useInsightsStore()
-  const [markers, setMarkers] = useState<Array<{id: string, position: google.maps.LatLngLiteral, pin?: any}>>([])
+  const [markers, setMarkers] = useState<Array<{id: string, position: LatLngLiteralWithAltitude, pin?: any}>>([])
 
   useMapsLibrary('maps3d')
   const places = useMapsLibrary('places')
@@ -178,8 +181,8 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
 
     const newMarkers = insights.map((insight, index) => {
       const pin = new marker.PinElement({
-        background: SUPPORTED_FILTERS_MAP[insight.type]?.fill || '#1A73E8',
-        borderColor: SUPPORTED_FILTERS_MAP[insight.type]?.stroke || '#1A73E8',
+        background: SUPPORTED_FILTERS_MAP[insight.type as keyof typeof SUPPORTED_FILTERS_MAP]?.fill || '#1A73E8',
+        borderColor: SUPPORTED_FILTERS_MAP[insight.type as keyof typeof SUPPORTED_FILTERS_MAP]?.stroke || '#1A73E8',
         glyphColor: '#FFFFFF',
         scale: 1.2
       });

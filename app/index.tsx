@@ -21,6 +21,7 @@ import Globe from '../components/globe/Globe';
 import { auth } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { IconUser, IconLogin } from '@tabler/icons-react'
+import Toast from 'react-native-toast-message'
 
 function HeaderNav() {
     const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -63,6 +64,19 @@ export default function Index() {
     const scrollY = useRef(new Animated.Value(0)).current;
     const heroHeight = Platform.select({ web: 900, default: 700 });
     const scrollViewRef = useRef<ScrollView>(null);
+
+    useEffect(() => {
+        Toast.show({
+            type: 'info',
+            text1: 'Welcome to GeoEstate!',
+            text2: 'Discover your perfect property',
+            visibilityTime: 5000,
+            autoHide: true,
+            topOffset: 20,
+            text1Style: { fontSize: 16, fontWeight: 'bold' },
+            text2Style: { fontSize: 14 },
+        })
+    }, [])
 
     const headerOpacity = scrollY.interpolate({
         inputRange: [0, heroHeight / 3],
@@ -123,6 +137,8 @@ export default function Index() {
                 <FeaturesSection />
                 <AboutSection />
                 <Footer /> {/* Footer is now part of the scrollable content */}
+
+                <Toast position="top" topOffset={20} />
             </Animated.ScrollView>
         </View>
     );
