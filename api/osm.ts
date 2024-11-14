@@ -67,7 +67,7 @@ const fetchInsightsPolygonCoordinates = async (insights: PlaceInsight[]) => {
   return newInsights
 }
 
-const convexHull = (coordinates: PolygonCoordinates[]) => {
+export const convexHull = (coordinates: PolygonCoordinates[]) => {
   const sorted = coordinates.slice().sort((a, b) =>
     a.lat === b.lat ? a.lng - b.lng : a.lat - b.lat
   )
