@@ -11,10 +11,13 @@ import {
     Alert,
     Animated,
     ActivityIndicator,
+    Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesome } from '@expo/vector-icons';
-
+import { auth } from '@/lib/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendEmailVerification } from 'firebase/auth';
+import { useRouter } from 'expo-router';
 
 interface FormData {
     email: string;
@@ -28,7 +31,126 @@ interface ValidationError {
     message: string;
 }
 
+interface AuthError {
+    code: string;
+    message: string;
+}
+
+const CustomAlert = ({ 
+    visible, 
+    title, 
+    message, 
+    buttons,
+    onClose 
+}: {
+    visible: boolean;
+    title: string;
+    message: string;
+    buttons?: Array<{
+        text: string;
+        onPress?: () => void;
+        style?: 'default' | 'cancel';
+    }>;
+    onClose: () => void;
+}) => {
+    return (
+        <Modal
+            transparent
+            visible={visible}
+            onRequestClose={onClose}
+            animationType="fade"
+        >
+            <View style={alertStyles.overlay}>
+                <View style={alertStyles.alertContainer}>
+                    <Text style={alertStyles.alertTitle}>{title}</Text>
+                    <Text style={alertStyles.alertMessage}>{message}</Text>
+                    <View style={alertStyles.buttonContainer}>
+                        {(buttons || [{ text: 'OK', onPress: onClose }]).map((button, index) => (
+                            <TouchableOpacity
+                                key={index}
+                                style={[
+                                    alertStyles.button,
+                                    button.style === 'cancel' && alertStyles.cancelButton,
+                                    index > 0 && { marginLeft: 8 }
+                                ]}
+                                onPress={() => {
+                                    button.onPress?.();
+                                    onClose();
+                                }}
+                            >
+                                <Text style={[
+                                    alertStyles.buttonText,
+                                    button.style === 'cancel' && alertStyles.cancelButtonText
+                                ]}>
+                                    {button.text}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+            </View>
+        </Modal>
+    );
+};
+
+const alertStyles = StyleSheet.create({
+    overlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    alertContainer: {
+        backgroundColor: 'white',
+        borderRadius: 16,
+        padding: 24,
+        width: Platform.OS === 'web' ? 400 : '80%',
+        maxWidth: 400,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+    },
+    alertTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#2c3e50',
+        marginBottom: 12,
+    },
+    alertMessage: {
+        fontSize: 16,
+        color: '#7f8c8d',
+        marginBottom: 24,
+        lineHeight: 22,
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+    },
+    button: {
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        backgroundColor: '#2c3e50',
+        minWidth: 80,
+        alignItems: 'center',
+    },
+    buttonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    cancelButton: {
+        backgroundColor: '#e9ecef',
+    },
+    cancelButtonText: {
+        color: '#2c3e50',
+    },
+});
+
 export default function AuthScreen() {
+    const router = useRouter();
     const [isLogin, setIsLogin] = useState(true);
     const [formData, setFormData] = useState<FormData>({
         email: '',
@@ -39,6 +161,20 @@ export default function AuthScreen() {
     const [errors, setErrors] = useState<ValidationError[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+    const [alertConfig, setAlertConfig] = useState<{
+        visible: boolean;
+        title: string;
+        message: string;
+        buttons?: Array<{
+            text: string;
+            onPress?: () => void;
+            style?: 'default' | 'cancel';
+        }>;
+    }>({
+        visible: false,
+        title: '',
+        message: '',
+    });
 
     // Animation values
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -123,13 +259,103 @@ export default function AuthScreen() {
     };
 
     const handleSubmit = async () => {
+        if (isLoading) return;
         if (!validateForm()) return;
 
         setIsLoading(true);
         try {
-            // TODO: Implement authentication logic here
+            if (isLogin) {
+                const userCredential = await signInWithEmailAndPassword(
+                    auth, 
+                    formData.email, 
+                    formData.password
+                );
+                
+                if (!userCredential.user.emailVerified) {
+                    showCustomAlert(
+                        'Email Not Verified',
+                        'Please check your inbox and verify your email'
+                    );
+                    setIsLoading(false);
+                    return;
+                }
+                
+                router.push('/explore');
+            } else {
+                const userCredential = await createUserWithEmailAndPassword(
+                    auth, 
+                    formData.email, 
+                    formData.password
+                );
+                
+                await sendEmailVerification(userCredential.user);
+                showCustomAlert(
+                    'Success',
+                    'Account created! Please check your email to verify your account.',
+                    [
+                        {
+                            text: 'OK',
+                            onPress: () => {
+                                setIsLogin(true);
+                                setFormData(prev => ({
+                                    ...prev,
+                                    password: '',
+                                    confirmPassword: '',
+                                    fullName: ''
+                                }));
+                            }
+                        }
+                    ]
+                );
+                return;
+            }
         } catch (error) {
-            Alert.alert('Error', 'Authentication failed. Please try again.');
+            const authError = error as AuthError;
+            let errorMessage = 'Authentication failed. Please try again.';
+            
+            if (authError.code === 'auth/email-already-in-use') {
+                showCustomAlert(
+                    'Account Exists',
+                    'This email is already registered. Would you like to sign in instead?',
+                    [
+                        {
+                            text: 'Yes',
+                            onPress: () => {
+                                setIsLogin(true);
+                                setFormData(prev => ({
+                                    ...prev,
+                                    password: '',
+                                    confirmPassword: '',
+                                    fullName: ''
+                                }));
+                            }
+                        },
+                        {
+                            text: 'No',
+                            style: 'cancel'
+                        }
+                    ]
+                );
+                return;
+            }
+            
+            // Handle other error cases
+            switch (authError.code) {
+                case 'auth/invalid-email':
+                    errorMessage = 'Invalid email address.';
+                    break;
+                case 'auth/user-disabled':
+                    errorMessage = 'This account has been disabled.';
+                    break;
+                case 'auth/user-not-found':
+                    errorMessage = 'User not found.';
+                    break;
+                case 'auth/wrong-password':
+                    errorMessage = 'Invalid password.';
+                    break;
+            }
+            
+            showCustomAlert('Error', errorMessage);
         } finally {
             setIsLoading(false);
         }
@@ -137,7 +363,19 @@ export default function AuthScreen() {
 
     const handleGoogleSignIn = async () => {
         setIsGoogleLoading(true);
-        //TODO: Implement Google sign in
+        try {
+            const provider = new GoogleAuthProvider();
+            await signInWithPopup(auth, provider);
+            router.push('/explore');
+        } catch (error) {
+            Alert.alert(
+                'Error',
+                'Google sign-in failed. Please try again.',
+                [{ text: 'OK', onPress: () => console.log('OK Pressed') }]
+            );
+        } finally {
+            setIsGoogleLoading(false);
+        }
     };
 
     const switchMode = () => {
@@ -170,6 +408,15 @@ export default function AuthScreen() {
 
     const getErrorMessage = (field: keyof FormData) =>
         errors.find(error => error.field === field)?.message;
+
+    const showCustomAlert = (title: string, message: string, buttons?: any[]) => {
+        setAlertConfig({
+            visible: true,
+            title,
+            message,
+            buttons
+        });
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -319,6 +566,13 @@ export default function AuthScreen() {
                     </Animated.View>
                 </ScrollView>
             </KeyboardAvoidingView>
+            <CustomAlert
+                visible={alertConfig.visible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                buttons={alertConfig.buttons}
+                onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+            />
         </SafeAreaView>
     );
 }
@@ -457,32 +711,5 @@ const styles = StyleSheet.create({
     forgotPasswordText: {
         color: '#3498db',
         fontSize: 14,
-    },
-});
-
-StyleSheet.create({
-    button: {
-        backgroundColor: '#2c3e50',
-        borderRadius: 10,
-        padding: 15,
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'row',
-    },
-    secondaryButton: {
-        backgroundColor: 'white',
-        borderWidth: 1,
-        borderColor: '#2c3e50',
-    },
-    text: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    secondaryText: {
-        color: '#2c3e50',
-    },
-    disabled: {
-        opacity: 0.7,
     },
 });

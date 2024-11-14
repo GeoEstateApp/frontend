@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from "react";
-import { ArrowRight, ChevronDown, Search, BarChart2, Home, Calculator, MapPin, Clock, Shield } from "lucide-react";
-import { Link } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
+import { ArrowRight, ChevronDown, Search, Calculator, MapPin, Facebook, Instagram, Mail, Twitter } from "lucide-react";
+import { Link, useRouter } from "expo-router";
 import {
     Animated,
     View,
@@ -15,12 +15,49 @@ import {
     Pressable,
     SafeAreaView,
     ScrollView,
-    ImageBackground,
 } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import Globe from '../components/globe/Globe';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import { auth } from '@/lib/firebase'
+import { onAuthStateChanged } from 'firebase/auth'
+import { IconUser, IconLogin } from '@tabler/icons-react'
+import Toast from 'react-native-toast-message'
+
+function HeaderNav() {
+    const [isLoggedIn, setIsLoggedIn] = useState(false)
+    const router = useRouter()
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setIsLoggedIn(!!user)
+        })
+        return () => unsubscribe()
+    }, [])
+
+    return (
+        <View style={styles.headerNav}>
+            <Text style={styles.headerLink}>Features</Text>
+            <Text style={styles.headerLink}>About</Text>
+            <TouchableOpacity 
+                style={styles.headerButton}
+                onPress={() => router.push(isLoggedIn ? '/explore' : '/authentication')}
+            >
+                {isLoggedIn ? (
+                    <>
+                        <Text style={styles.headerButtonText}>Explore</Text>
+                        <ArrowRight color="white" size={24} style={{marginLeft: 8}} />
+                    </>
+                ) : (
+                    <>
+                        <IconLogin size={24} stroke="#fff" style={{marginRight: 8}} />
+                        <Text style={styles.headerButtonText}>Sign In</Text>
+                    </>
+                )}
+            </TouchableOpacity>
+        </View>
+    )
+}
 
 export default function Index() {
     const { height } = useWindowDimensions();
@@ -28,6 +65,19 @@ export default function Index() {
     const scrollY = useRef(new Animated.Value(0)).current;
     const heroHeight = Platform.select({ web: 900, default: 700 });
     const scrollViewRef = useRef<ScrollView>(null);
+
+    useEffect(() => {
+        Toast.show({
+            type: 'info',
+            text1: 'Welcome to GeoEstate!',
+            text2: 'Discover your perfect property',
+            visibilityTime: 5000,
+            autoHide: true,
+            topOffset: 20,
+            text1Style: { fontSize: 16, fontWeight: 'bold' },
+            text2Style: { fontSize: 14 },
+        })
+    }, [])
 
     const headerOpacity = scrollY.interpolate({
         inputRange: [0, heroHeight / 3],
@@ -55,15 +105,7 @@ export default function Index() {
                 />
                 <View style={styles.headerContent}>
                     <Text style={styles.headerTitle}>GeoEstate</Text>
-                    <View style={styles.headerNav}>
-                        <Text style={styles.headerLink}>Features</Text>
-                        <Text style={styles.headerLink}>About</Text>
-                        <Link href="/explore" asChild>
-                            <Pressable style={styles.headerButton}>
-                                <Text style={styles.headerButtonText}>Sign Up</Text>
-                            </Pressable>
-                        </Link>
-                    </View>
+                    <HeaderNav />
                 </View>
             </Animated.View>
 
@@ -96,11 +138,12 @@ export default function Index() {
                 <FeaturesSection />
                 <AboutSection />
                 <Footer /> {/* Footer is now part of the scrollable content */}
+
+                <Toast position="top" topOffset={20} />
             </Animated.ScrollView>
         </View>
     );
 }
-
 
 const HeroContent = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -167,7 +210,7 @@ const FeatureCard = ({ feature, index }) => {
             Animated.timing(fadeAnim, {
                 toValue: 1,
                 duration: 800,
-                delay: 200 + index * 100,
+                delay: index * 150,
                 useNativeDriver: true,
                 easing: Easing.out(Easing.cubic),
             }),
@@ -233,6 +276,30 @@ const FeaturesSection = () => {
                 easing: Easing.out(Easing.cubic),
             }),
         ]).start();
+    };
+
+    useEffect(() => {
+        if (!sectionRef.current) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        startAnimation();
+                        observer.unobserve(entry.target);
+                    }
+                });
+            },
+            { threshold: 0.4 }
+        );
+
+        observer.observe(sectionRef.current);
+
+        return () => {
+            if (sectionRef.current) {
+                observer.unobserve(sectionRef.current);
+            }
+        };
     }, []);
 
     const features = [
@@ -326,91 +393,82 @@ const AboutSection = () => {
 
 const Footer = () => (
     <SafeAreaView style={styles.footer}>
-      <View style={styles.footerContent}>
+        <View style={styles.footerContent}>
 
-        <View style={styles.footerColumns}>
-          <View style={styles.leftColumn}>
-            <Text style={styles.startUsingLabel}>Unlock Your{"\n"}Perfect Space☺️</Text>
+            <View style={styles.footerColumns}>
+                <View style={styles.leftColumn}>
+                    <Text style={styles.startUsingLabel}>Unlock Your{"\n"}Perfect Space☺️</Text>
 
-          <Text style={styles.emailLabel}>Subscribe</Text>
-          <View style={styles.emailInputContainer}>
-            <TextInput
-              style={styles.emailInput}
-              placeholder="Enter your email"
-              placeholderTextColor="#A1A1A1"
-            />
-            <TouchableOpacity style={styles.arrowIconContainer}>
-              <Icon name="arrow-right" size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
+                    <Text style={styles.emailLabel}>Subscribe</Text>
+                    <View style={styles.emailInputContainer}>
+                        <TextInput
+                            style={styles.emailInput}
+                            placeholder="Enter your email"
+                            placeholderTextColor="#A1A1A1"
+                        />
+                        <TouchableOpacity style={styles.arrowIconContainer}>
+                            <ArrowRight size={20} color="#fff" />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                <View style={styles.centerColumn}>
+                    <Text style={styles.companyLabel}>Company</Text>
+                    <View style={styles.underline} />
+
+                    <View style={styles.footerLinks}>
+                        <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/about")}>About us</Text></Text>
+                        <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/terms")}>Terms and Privacy</Text></Text>
+                        <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/home")}>Home</Text></Text>
+                        <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/help")}>Help</Text></Text>
+                    </View>
+                </View>
+
+                <View style={styles.resourcesColumn}>
+                    <Text style={styles.companyLabel}>Resources</Text>
+                    <View style={styles.underline} />
+
+                    <View style={styles.footerLinks}>
+                        <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/blog")}>Blog</Text></Text>
+                        <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/support")}>Support</Text></Text>
+                        <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/contact")}>Contact Us</Text></Text>
+                    </View>
+                </View>
+
+                <View style={styles.followUsColumn}>
+                    <Text style={styles.companyLabel}>Follow Us</Text>
+                    <View style={styles.underline} />
+
+                    <View style={styles.iconLinks}>
+                        <Facebook
+                            size={30}
+                            color="white"
+                            style={styles.icon}
+                        />
+                        <Instagram
+                            size={30}
+                            color="white"
+                            style={styles.icon}
+                        />
+                        <Mail
+                            size={30}
+                            color="white"
+                            style={styles.icon}
+                        />
+                        <Twitter
+                            size={30}
+                            color="white"
+                            style={styles.icon}
+                        />
+                    </View>
+                </View>
+            </View>
+
+            <Text style={styles.footerText}>© 2024 GeoEstate. All Rights Reserved.</Text>
         </View>
-  
-          <View style={styles.centerColumn}>
-            <Text style={styles.companyLabel}>Company</Text>
-            <View style={styles.underline} /> 
-  
-            <View style={styles.footerLinks}>
-              <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/about")}>About us</Text></Text>
-              <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/terms")}>Terms and Privacy</Text></Text>
-              <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/home")}>Home</Text></Text>
-              <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/help")}>Help</Text></Text>
-            </View>
-          </View>
-  
-          <View style={styles.resourcesColumn}>
-            <Text style={styles.companyLabel}>Resources</Text>
-            <View style={styles.underline} /> 
-  
-            <View style={styles.footerLinks}>
-              <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/blog")}>Blog</Text></Text>
-              <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/support")}>Support</Text></Text>
-              <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/contact")}>Contact Us</Text></Text>
-            </View>
-          </View>
-  
-          <View style={styles.followUsColumn}>
-            <Text style={styles.companyLabel}>Follow Us</Text>
-            <View style={styles.underline} /> 
-  
-            <View style={styles.iconLinks}>
-              <Icon
-                name="facebook"
-                size={30}
-                color="white"
-                style={styles.icon}
-                onPress={() => Linking.openURL("https://www.facebook.com")}
-              />
-              <Icon
-                name="instagram"
-                size={30}
-                color="white"
-                style={styles.icon}
-                onPress={() => Linking.openURL("https://www.instagram.com")}
-              />
-              <Icon
-                name="envelope"
-                size={30}
-                color="white"
-                style={styles.icon}
-                onPress={() => Linking.openURL("mailto:support@geoestate.com")}
-              />
-              <Icon
-                name="twitter"
-                size={30}
-                color="white"
-                style={styles.icon}
-                onPress={() => Linking.openURL("https://www.twitter.com")}
-              />
-            </View>
-          </View>
-        </View>
-  
-          <Text style={styles.footerText}>© 2024 GeoEstate. All Rights Reserved.</Text>
-      </View>
     </SafeAreaView>
-  );
-  
-  
+);
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -439,23 +497,24 @@ const styles = StyleSheet.create({
     headerNav: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 32,
+        gap: 24
     },
     headerLink: {
         color: '#fff',
-        fontSize: 16,
-        opacity: 0.9,
+        fontSize: 16
     },
     headerButton: {
-        backgroundColor: 'rgba(255,255,255,0.1)',
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#007AFF',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 8
     },
     headerButtonText: {
         color: '#fff',
         fontSize: 16,
-        fontWeight: '500',
+        fontWeight: '600'
     },
     scrollView: {
         flex: 1,
@@ -543,7 +602,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     featuresSectionBackground:  {
-        resizeMode: 'cover', 
+        resizeMode: 'cover',
 
     },
     featuresSection: {
@@ -709,8 +768,8 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     paddingHorizontal: 10,
     borderTopColor: '#d1d7e0',
-    borderTopLeftRadius: 40, 
-    borderTopRightRadius: 40, 
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
     overflow: 'hidden',
   },
   footerContent: {
@@ -722,7 +781,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   leftColumn: {
-    flex: 2, 
+    flex: 2,
     paddingRight: 10,
   },
   emailLabel: {
@@ -742,7 +801,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     marginLeft: 32,
-    width: 280, 
+    width: 280,
   },
   emailInput: {
     flex: 1,
@@ -753,17 +812,17 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
   },
   centerColumn: {
-    flex: 1,  
+    flex: 1,
     paddingHorizontal: 10,
     marginTop: 20,
   },
   resourcesColumn: {
-    flex: 1, 
+    flex: 1,
     paddingLeft: 10,
     marginTop: 20,
   },
   followUsColumn: {
-    flex: 1,  
+    flex: 1,
     paddingLeft: 10,
     marginTop: 20,
   },
@@ -776,7 +835,6 @@ const styles = StyleSheet.create({
     lineHeight: 40,
     marginLeft: 40,
     marginTop: 20,
-    lineHeight: Platform.select({ web: 55, default: 35 }),
   },
   companyLabel: {
     color: 'white',
@@ -809,14 +867,14 @@ const styles = StyleSheet.create({
     marginVertical: 5,
   },
   iconLinks: {
-    flexDirection: 'row', 
+    flexDirection: 'row',
     justifyContent: 'space-around',
     marginTop: 10,
     marginRight: 30,
   },
   icon: {
-    padding: 10,  
-    marginHorizontal: 5,  
+    padding: 10,
+    marginHorizontal: 5,
   },
   footerText: {
     color: 'white',

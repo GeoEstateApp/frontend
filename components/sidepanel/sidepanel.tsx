@@ -5,6 +5,7 @@ import { useSidePanelStore } from '@/states/sidepanel'
 import { getPlaceInsights, PlaceInsight } from '@/api/insights'
 import { UI_FILTERS } from '@/const/filters'
 import { useInsightsStore } from '@/states/insights'
+import Toast from 'react-native-toast-message'
 
 export default function SidePanel() {
   const { insights, setInsights } = useInsightsStore()
@@ -68,6 +69,16 @@ export default function SidePanel() {
     } else {
       setSelectedFilters([...selectedFilters, filter])
       setCallFilterAPI(true)
+      
+      Toast.show({
+        type: 'info',
+        text1: 'Loading insights...',
+        text2: 'Insights will be highlighted on the map',
+        autoHide: true,
+        visibilityTime: 5000,
+        text1Style: { fontSize: 16, fontWeight: 'bold' },
+        text2Style: { fontSize: 14 }
+      })
     }
   }
 
