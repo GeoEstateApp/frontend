@@ -20,7 +20,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Globe from '../components/globe/Globe';
-import Icon from 'react-native-vector-icons/FontAwesome'; // Use FontAwesome or another icon set
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 export default function Index() {
     const { height } = useWindowDimensions();

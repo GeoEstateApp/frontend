@@ -1,6 +1,8 @@
 import { Earth, SearchBox, SidePanel } from '@/components'
 import { APIProvider } from '@vis.gl/react-google-maps'
 import { StyleSheet, Text, View } from 'react-native'
+//import CameraAngle from '@/components/Camera/cameraAngle'
+
 
 const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY
 const GOOGLE_MAP_VERSION = 'alpha'
@@ -21,6 +23,7 @@ export default function index() {
 
         <SearchBox />
         <SidePanel />
+      
       </APIProvider>
     </View>
   )
