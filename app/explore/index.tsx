@@ -73,6 +73,7 @@ export default function index() {
         <Earth />
         <SearchBox />
         <SidePanel />
+      
       </APIProvider>
 
       <Toast position='bottom' bottomOffset={20} />
