@@ -1,11 +1,12 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, Image } from 'react-native'
 import React, { useEffect, useRef, useState } from 'react'
-import { IconFilter } from '@tabler/icons-react'
+import { IconFilter, IconHeart, IconHeartFilled, IconBookmark } from '@tabler/icons-react'
 import { useSidePanelStore } from '@/states/sidepanel'
 import { getPlaceInsights, PlaceInsight } from '@/api/insights'
 import { UI_FILTERS } from '@/const/filters'
 import { useInsightsStore } from '@/states/insights'
 import Toast from 'react-native-toast-message'
+import { addFavorite, favoritesData, removeFavorite } from '@/api/favorites'
 
 export default function SidePanel() {
   const { insights, setInsights } = useInsightsStore()
@@ -15,6 +16,9 @@ export default function SidePanel() {
   const [callFilterAPI, setCallFilterAPI] = useState(false)
 
   const [imageUri, setImageUri] = useState<string | null>(null)
+  const [isFavorite, setIsFavorite] = useState(false)
+  const [favorites, setFavorites] = useState<any[]>([])
+  const [showFavorites, setShowFavorites] = useState(false)
 
   useEffect(() => {
     if (!selectedPlace) return
@@ -50,6 +54,79 @@ export default function SidePanel() {
 
     fetchInsights()
   }, [selectedFilters])
+
+  // Load user's favorites when component mounts
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        const userFavorites = await favoritesData();
+        setFavorites(userFavorites);
+      } catch (error) {
+        console.error('Error loading favorites:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Could not load favorites. Please try again.',
+        });
+      }
+    };
+    loadFavorites();
+  }, []);
+
+  // Check if selected place is favorited
+  useEffect(() => {
+    if (!selectedPlace || !favorites) return;
+    const isFav = favorites.some(fav => fav.place_id === selectedPlace.placeId);
+    setIsFavorite(isFav);
+  }, [selectedPlace, favorites]);
+
+  // Handle favorite toggle
+  const handleFavoriteToggle = async () => {
+    if (!selectedPlace) return;
+    
+    try {
+      // Ensure all required fields are present
+      if (!selectedPlace.placeId) {
+        throw new Error("Place ID is required");
+      }
+      
+      if (isFavorite) {
+        // Remove from favorites
+        await removeFavorite(selectedPlace.placeId);
+      } else {
+        // Add to favorites
+        await addFavorite(
+          selectedPlace.placeId,
+          selectedPlace.name || '',
+          selectedPlace.address || '',
+          selectedPlace.lat || 0,
+          selectedPlace.lng || 0
+        );
+      }
+      
+      // Refresh favorites list
+      const updatedFavorites = await favoritesData();
+      setFavorites(updatedFavorites);
+      
+      // Update UI state
+      setIsFavorite(!isFavorite);
+      
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: isFavorite ? 'Removed from favorites' : 'Added to favorites',
+        visibilityTime: 2000,
+      });
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error instanceof Error ? error.message : 'Could not update favorite. Please try again.',
+        visibilityTime: 3000,
+      });
+    }
+  };
 
   const handleOnFilterPress = async (filter: string) => {
     if (!selectedPlace) return
@@ -91,6 +168,21 @@ export default function SidePanel() {
           showsHorizontalScrollIndicator={false} 
           style={styles.filters}
           contentContainerStyle={{gap: 8}}>
+            <Pressable
+              onPress={() => setShowFavorites(!showFavorites)}
+              style={[{
+                padding: 10,
+                borderRadius: 5,
+                backgroundColor: showFavorites ? '#4CAF50' : 'white',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 5
+              }]}>
+              <IconBookmark size={20} color={showFavorites ? 'white' : 'black'} />
+              <Text style={{ color: showFavorites ? 'white' : 'black' }}>
+                Favorites
+              </Text>
+            </Pressable>
             {UI_FILTERS.map((filter, index) => {
               const filterKey = filter.split(' ').join('_').toLowerCase()
 
@@ -111,15 +203,76 @@ export default function SidePanel() {
             })}
           </ScrollView>
 
-          {
+          {showFavorites ? (
+            <ScrollView style={styles.favoritesList}>
+              {favorites.map((favorite, index) => (
+                <Pressable
+                  key={index}
+                  style={styles.favoriteItem}
+                  onPress={() => {
+                    // TODO: Implement selecting a favorite place
+                    Toast.show({
+                      type: 'info',
+                      text1: 'Selected Favorite',
+                      text2: favorite.name,
+                      visibilityTime: 2000,
+                    });
+                  }}
+                >
+                  <View style={styles.favoriteContent}>
+                    <Text style={styles.favoriteName}>{favorite.name || 'Unnamed Place'}</Text>
+                    <Text style={styles.favoriteAddress}>{favorite.address}</Text>
+                  </View>
+                  <Pressable
+                    style={styles.removeFavoriteButton}
+                    onPress={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        await removeFavorite(favorite.place_id);
+                        const updatedFavorites = await favoritesData();
+                        setFavorites(updatedFavorites);
+                        Toast.show({
+                          type: 'success',
+                          text1: 'Success',
+                          text2: 'Removed from favorites',
+                          visibilityTime: 2000,
+                        });
+                      } catch (error) {
+                        Toast.show({
+                          type: 'error',
+                          text1: 'Error',
+                          text2: 'Could not remove favorite',
+                          visibilityTime: 3000,
+                        });
+                      }
+                    }}
+                  >
+                    <IconHeartFilled size={20} color="#ff4444" />
+                  </Pressable>
+                </Pressable>
+              ))}
+            </ScrollView>
+          ) : (
             selectedPlace && (
               <View style={styles.selectedPlace}>
                 <Image source={{ uri: imageUri || selectedPlace.photosUrl[0] }} style={{ width: 400, height: 300, objectFit: 'cover' }} />
-                <Text style={styles.placeTitle}>{selectedPlace.address}</Text>
-                { selectedPlace.rating !== 0 && <Text>🌟 {selectedPlace.rating}</Text> }
+                <View style={styles.placeHeader}>
+                  <Text style={styles.placeTitle}>{selectedPlace.address}</Text>
+                  <Pressable
+                    style={styles.favoriteButton}
+                    onPress={handleFavoriteToggle}
+                  >
+                    {isFavorite ? (
+                      <IconHeartFilled size={24} color="#ff4444" />
+                    ) : (
+                      <IconHeart size={24} color="#666" />
+                    )}
+                  </Pressable>
+                </View>
+                { selectedPlace.rating !== 0 && <Text> {selectedPlace.rating}</Text> }
               </View>
             )
-          }
+          )}
         </View>
       )}
 
@@ -186,10 +339,67 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingBottom: 10,
   },
+  placeHeader: {
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 10,
+  },
   placeTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
-    padding: 10,
+  },
+  favoriteButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  favoritesList: {
+    flex: 1,
+    padding: 16,
+  },
+  favoriteItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  favoriteContent: {
+    flex: 1,
+    marginRight: 16,
+  },
+  favoriteName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  favoriteAddress: {
+    fontSize: 14,
+    color: '#666',
+  },
+  removeFavoriteButton: {
+    padding: 8,
   },
 })

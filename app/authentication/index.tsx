@@ -280,6 +280,14 @@ export default function AuthScreen() {
                     setIsLoading(false);
                     return;
                 }
+
+                // Get the JWT token and user ID
+                const idToken = await userCredential.user.getIdToken();
+                const uid = userCredential.user.uid;
+                
+                // Store the tokens in AsyncStorage
+                await AsyncStorage.setItem('idToken', idToken);
+                await AsyncStorage.setItem('uid', uid);
                 
                 router.push('/explore');
             } else {

@@ -1,6 +1,3 @@
-
-import TestButtonsCommentContainer from '@/components/testbutton/commentsbutton'
-import TestButtonsContainer from '@/components/testbutton/favsbutton2'
 import { auth } from '@/lib/firebase'
 import {
   IconArrowLeft,
@@ -170,19 +167,6 @@ export default function SettingsScreen() {
         {/* Account Settings */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account Settings</Text>
-          
-          <TouchableOpacity 
-            style={styles.settingItem}
-            onPress={() => setModalType('email')}
-          >
-            <View style={styles.settingLeft}>
-              <IconMail size={24} stroke="#666" />
-            
-              <TestButtonsContainer/>
-              <TestButtonsCommentContainer/>
-              <Text style={styles.settingText}>Change Email</Text>
-            </View>
-          </TouchableOpacity>
 
           <TouchableOpacity 
             style={styles.settingItem}
