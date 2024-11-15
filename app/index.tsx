@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ArrowRight, ChevronDown, Search, Calculator, MapPin, Facebook, Instagram, Mail, Twitter } from "lucide-react";
+import { ArrowRight, ChevronDown, Search, Calculator, MapPin, Facebook, Instagram, Twitter, Mail, Heart, Brain, List } from "lucide-react";
 import { Link, useRouter } from "expo-router";
 import {
     Animated,
@@ -22,6 +22,8 @@ import { auth } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { IconLogin } from '@tabler/icons-react'
 import Toast from 'react-native-toast-message'
+import { Image } from "react-native"; // Ensure you're importing Image from react-native
+
 
 function HeaderNav() {
     const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -133,10 +135,13 @@ export default function Index() {
                     </Animated.View>
                 </View>
 
-                {/* Merged Footer as part of scrollable content */}
                 <FeaturesSection />
+                <WhyUsSection />
+
                 <AboutSection />
-                <Footer /> {/* Footer is now part of the scrollable content */}
+                <ReviewSection />
+
+                <Footer /> 
 
                 <Toast position="top" topOffset={20} />
             </Animated.ScrollView>
@@ -390,6 +395,162 @@ const AboutSection = () => {
     );
 };
 
+const WhyUsSection = () => {
+    const fadeAnim = useRef(new Animated.Value(100)).current;  
+    const translateY = useRef(new Animated.Value(0)).current; 
+
+    useEffect(() => {
+        Animated.parallel([
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 1000,
+                delay: 100,
+                useNativeDriver: true,
+                easing: Easing.out(Easing.cubic),
+            }),
+            Animated.timing(translateY, {
+                toValue: 0,
+                duration: 1000,
+                delay: 100,
+                useNativeDriver: true,
+                easing: Easing.out(Easing.cubic),
+            }),
+        ]).start();
+    }, []);
+
+    return (
+        <SafeAreaView style={{ flex: 1 }}>
+            <View style={[styles.whyUsSection]}>
+                <LinearGradient
+                    colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.9)', '#000']}
+                    style={StyleSheet.absoluteFillObject}
+                />
+                <Animated.View style={[styles.whyUsHeader, {
+                    opacity: fadeAnim,
+                    transform: [{ translateY }]
+                }]}>
+                    <Text style={styles.whyUsSubtitle}>WHY CHOOSE GEOESTATE?</Text>
+                    <Text style={styles.whyUsTitle}>The Future of Real Estate Exploration</Text>
+                    <Text style={styles.whyUsDescription}>
+                        GeoEstate isn't just a real estate platform—it's your personalized, interactive guide to finding the perfect property. Here's why GeoEstate is the best choice for your property journey:
+                    </Text>
+                </Animated.View>
+
+                <View style={styles.whyUsContentWrapper}>
+                    <View style={styles.leftColumn1}>
+                        <View style={styles.whyUsContent}>
+
+                            <View style={styles.whyUsBox}>
+                                <MapPin size={32} color="#007AFF" strokeWidth={1.5} />
+                                <Text style={styles.whyUsItemTitle}>Immersive 3D Maps</Text>
+                                <Text style={styles.whyUsItemDescription}>
+                                    Explore properties like never before with photorealistic 3D maps. Get a virtual tour of the neighborhood, including nearby amenities, schools, and parks.
+                                </Text>
+                            </View>
+                            <View style={styles.connectorLine} />
+
+                            <View style={styles.whyUsBox}>
+                                <Calculator size={32} color="#007AFF" strokeWidth={1.5} />
+                                <Text style={styles.whyUsItemTitle}>Personalized Analytics</Text>
+                                <Text style={styles.whyUsItemDescription}>
+                                    With our Suitability Calculator, make data-driven decisions based on real-time analytics tailored to your energy efficiency, environmental impact, and accessibility needs.
+                                </Text>
+                            </View>
+                            <View style={styles.connectorLine} />
+
+                            <View style={styles.whyUsBox}>
+                                <Facebook size={32} color="#007AFF" strokeWidth={1.5} />
+                                <Text style={styles.whyUsItemTitle}>Neighbourhood Insights</Text>
+                                <Text style={styles.whyUsItemDescription}>
+                                    Share and view comments about the neighborhood by zipcode. Learn from locals and potential buyers to better understand your future home’s surroundings.
+                                </Text>
+                            </View>
+                            <View style={styles.connectorLine} />
+
+                            <View style={styles.whyUsBox}>
+                                <Heart size={32} color="#007AFF" strokeWidth={1.5} />
+                                <Text style={styles.whyUsItemTitle}>Favourite Your Dream Home</Text>
+                                <Text style={styles.whyUsItemDescription}>
+                                    Love a building? Add it to your favorites and revisit it later to compare with other options or share it with your friends.
+                                </Text>
+                            </View>
+                            <View style={styles.connectorLine} />
+
+                            <View style={styles.whyUsBox}>
+                                <Brain size={32} color="#007AFF" strokeWidth={1.5} />
+                                <Text style={styles.whyUsItemTitle}>AI-Powered Insights</Text>
+                                <Text style={styles.whyUsItemDescription}>
+                                    Our AI scans and summarizes comments from the neighborhood based on zip code, helping you make informed decisions with real-time sentiment analysis.
+                                </Text>
+                            </View>
+                            <View style={styles.connectorLine} />
+
+                            
+                        </View>
+                    </View>
+
+                  <View style={styles.rightColumn}>
+                        <Image
+                            source={require('E:/Again/geostate-frontend/assets/images/Globe3.jpg')}
+                            style={styles.whyUsImage}
+                            resizeMode="cover"
+                        />
+                         <LinearGradient
+        colors={['rgba(0, 0, 0, 0.2)', 'rgba(0, 0, 0, 0.5)']} 
+        style={StyleSheet.absoluteFillObject}
+    /> 
+                    </View>
+
+                </View>
+            </View>
+        </SafeAreaView>
+    );
+};
+
+const ReviewSection = () => {
+    return (
+        <View style={styles.mainContainer}>
+            <ScrollView contentContainerStyle={styles.scrollContainer}>
+                <Text style={styles.ReviewSubtitle}>Reviews</Text>
+                <Text style={styles.sectionLabel}>What Our Clients Say</Text>
+
+                <Text style={styles.tagline}>Hear about the experiences of our happy clients!</Text>
+
+                <View style={styles.reviewBoxContainer}>
+                    <View style={styles.reviewBox}>
+
+                        <Image
+                            source={require('E:/Again/geostate-frontend/assets/images/person.jpg')} 
+                            style={styles.personImage}
+                        />
+                        <View style={styles.reviewContent}>
+                            <Text style={styles.reviewText}>
+                                "GeoEstate has completely transformed the way I view real estate. The 3D maps and personalized suggestions really helped me find the perfect property. I highly recommend it!"
+                            </Text>
+                            <Text style={styles.reviewerName}>- Michael Kai</Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.reviewBox}>
+                        <Image
+                            source={require('E:/Again/geostate-frontend/assets/images/person2.jpg')} 
+                            style={styles.personImage}
+                        />
+                        <View style={styles.reviewContent}>
+                            <Text style={styles.reviewText}>
+                                "The experience was outstanding! GeoEstate's user interface is smooth and intuitive. The 3D map feature helped me navigate the market with ease. Definitely worth checking out."
+                            </Text>
+                            <Text style={styles.reviewerName}>- Clara Smith</Text>
+                        </View>
+                    </View>
+                </View>
+
+            </ScrollView>
+        </View>
+    );
+};
+
+
 const Footer = () => (
     <SafeAreaView style={styles.footer}>
         <View style={styles.footerContent}>
@@ -467,6 +628,7 @@ const Footer = () => (
         </View>
     </SafeAreaView>
 );
+
 
 const styles = StyleSheet.create({
     container: {
@@ -759,125 +921,272 @@ const styles = StyleSheet.create({
         opacity: 0.8,
         textAlign: 'center',
     },
+   // Why Us
+    whyUsSection: {
+        flex: 1,
+        justifyContent: 'center',
+        paddingTop: 50,
+        paddingBottom: 20,
+        position: 'relative',
+    },
+    whyUsHeader: {
+        alignItems: 'center',
+        paddingBottom: 20,
+        paddingHorizontal: 15,
+    },
+    whyUsSubtitle: {
+        fontSize: 18,
+        color: '#007AFF',
+        fontWeight: '600',
+        marginBottom: 10,
+        letterSpacing: 1,
+    },
+    whyUsTitle: {
+        fontSize: 28,
+        color: '#fff',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 15,
+    },
+    whyUsDescription: {
+        color: '#ccc',
+        fontSize: 16,
+        textAlign: 'center',
+        marginBottom: 30,
+    },
+    whyUsContentWrapper: {
+        flexDirection: 'row',  
+        justifyContent: 'space-between',
+        paddingHorizontal: 15,
+    },
+    leftColumn1: {
+        flex: 1,
+        paddingRight: 15,
+        paddingLeft: 30,  
+    },
+    rightColumn: {
+        flex: 1,
+    },
+    whyUsContent: {
+        marginTop: 10,
+    },
+    whyUsBox: {
+        backgroundColor: '#1f1f1f',
+        padding: 20,
+        borderRadius: 8,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#444',
+        flexDirection: 'column',
+        alignItems: 'center',
+    },
+    connectorLine: {
+        width: '100%',
+        height: 1,
+        backgroundColor: '#444',
+        marginBottom: 20,
+    },
+    whyUsItemTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#fff',
+        marginTop: 15,
+    },
+    whyUsItemDescription: {
+        fontSize: 16,
+        color: '#ccc',
+        marginTop: 5,
+    },
+    whyUsImage: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 8,
+        resizeMode: 'cover', 
+    },
+    //Review
+    ReviewSubtitle: {
+        fontSize: 18,
+        color: '#007AFF',
+        fontWeight: '600',
+        marginBottom: 5,
+        letterSpacing: 1,
+    },
+    mainContainer: {
 
-   //footer
-   footer: {
-    backgroundColor: '#091015',
-    paddingVertical: 20,
-    paddingHorizontal: 10,
-    borderTopColor: '#d1d7e0',
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    overflow: 'hidden',
-  },
-  footerContent: {
-    alignItems: 'center',
-  },
-  footerColumns: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  leftColumn: {
-    flex: 2,
-    paddingRight: 10,
-  },
-  emailLabel: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 20,
-    marginLeft: 35,
-  },
-  emailInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: '#007AFF',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    marginLeft: 32,
-    width: 280,
-  },
-  emailInput: {
-    flex: 1,
-    color: '#fff',
-    fontSize: 14,
-  },
-  arrowIconContainer: {
-    paddingLeft: 10,
-  },
-  centerColumn: {
-    flex: 1,
-    paddingHorizontal: 10,
-    marginTop: 20,
-  },
-  resourcesColumn: {
-    flex: 1,
-    paddingLeft: 10,
-    marginTop: 20,
-  },
-  followUsColumn: {
-    flex: 1,
-    paddingLeft: 10,
-    marginTop: 20,
-  },
-  startUsingLabel: {
-    fontSize: Platform.select({ web: 40, default: 27 }),
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'left',
-    marginBottom: 10,
-    lineHeight: 40,
-    marginLeft: 40,
-    marginTop: 20,
-  },
-  companyLabel: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  underline: {
-    borderBottomColor: '#007AFF',
-    borderBottomWidth: 1,
-    width: '30%',
-    marginBottom: 10,
-  },
-  bulletPoint: {
-    color: '#007AFF',
-    marginVertical: 5,
-    fontSize: 14,
-  },
-  socialLink: {
-    color: '#007AFF',
-    marginVertical: 5,
-    fontSize: 14,
-  },
-  footerLinks: {
-    flexDirection: 'column',
-    marginTop: 10,
-  },
-  footerLink: {
-    color: 'white',
-    marginVertical: 5,
-  },
-  iconLinks: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 10,
-    marginRight: 30,
-  },
-  icon: {
-    padding: 10,
-    marginHorizontal: 5,
-  },
-  footerText: {
-    color: 'white',
-    fontSize: 14,
-    marginTop: 20,
-    textAlign: 'center',
-  },
-});
+    },
+    scrollContainer: {
+        alignItems: 'center', 
+        paddingBottom: 40, 
+
+    },
+    sectionLabel: {
+        fontSize: 24,
+        color: '#fff',
+        fontWeight: 'bold',
+        marginVertical: 20, 
+        textAlign: 'center',
+    },
+    tagline: {
+        fontSize: 16,
+        color: '#ccc',
+        marginBottom: 30, 
+        textAlign: 'center',
+    },
+    reviewBoxContainer: {
+        width: '80%', 
+        alignItems: 'center',
+    },
+    reviewBox: {
+        width: '100%', 
+        backgroundColor: '#1f1f1f',
+        borderRadius: 20, 
+        padding: 20,
+        flexDirection: 'row', 
+        marginBottom: 20, 
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.8,
+        shadowRadius: 4,
+    },
+    personImage: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        marginRight: 20,
+    },
+    reviewContent: {
+        flex: 1,
+    },
+    reviewText: {
+        fontSize: 16,
+        color: '#fff',
+        fontStyle: 'italic',
+        marginBottom: 10,
+    },
+    reviewerName: {
+        fontSize: 14,
+        color: '#ccc',
+        textAlign: 'right',
+    },
+    //footer
+    footer: {
+        backgroundColor: '#091015',
+        paddingVertical: 20,
+        paddingHorizontal: 10,
+        borderTopColor: '#d1d7e0',
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
+        overflow: 'hidden',
+    },
+    footerContent: {
+        alignItems: 'center',
+    },
+    footerColumns: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+    },
+    leftColumn: {
+        flex: 2,
+        paddingRight: 10,
+    },
+    emailLabel: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginTop: 20,
+        marginLeft: 35,
+    },
+    emailInputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 10,
+        borderWidth: 1,
+        borderColor: '#007AFF',
+        borderRadius: 20,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        marginLeft: 32,
+        width: 280,
+    },
+    emailInput: {
+        flex: 1,
+        color: '#fff',
+        fontSize: 14,
+    },
+    arrowIconContainer: {
+        paddingLeft: 10,
+    },
+    centerColumn: {
+        flex: 1,
+        paddingHorizontal: 10,
+        marginTop: 20,
+    },
+    resourcesColumn: {
+        flex: 1,
+        paddingLeft: 10,
+        marginTop: 20,
+    },
+    followUsColumn: {
+        flex: 1,
+        paddingLeft: 10,
+        marginTop: 20,
+    },
+    startUsingLabel: {
+        fontSize: Platform.select({ web: 40, default: 27 }),
+        fontWeight: 'bold',
+        color: '#fff',
+        textAlign: 'left',
+        marginBottom: 10,
+        lineHeight: 40,
+        marginLeft: 40,
+        marginTop: 20,
+    },
+    companyLabel: {
+        color: 'white',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    underline: {
+        borderBottomColor: '#007AFF',
+        borderBottomWidth: 1,
+        width: '30%',
+        marginBottom: 10,
+    },
+    bulletPoint: {
+        color: '#007AFF',
+        marginVertical: 5,
+        fontSize: 14,
+    },
+    socialLink: {
+        color: '#007AFF',
+        marginVertical: 5,
+        fontSize: 14,
+    },
+    footerLinks: {
+        flexDirection: 'column',
+        marginTop: 10,
+    },
+    footerLink: {
+        color: 'white',
+        marginVertical: 5,
+    },
+    iconLinks: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginTop: 10,
+        marginRight: 30,
+    },
+    icon: {
+        padding: 10,
+        marginHorizontal: 5,
+    },
+    footerText: {
+        color: 'white',
+        fontSize: 14,
+        marginTop: 20,
+        textAlign: 'center',
+    },
+    });
