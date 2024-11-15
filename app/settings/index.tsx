@@ -1,18 +1,20 @@
-import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, Modal, Alert } from 'react-native'
-import { useRouter } from 'expo-router'
+
+import TestButtonsCommentContainer from '@/components/testbutton/commentsbutton'
+import TestButtonsContainer from '@/components/testbutton/favsbutton2'
 import { auth } from '@/lib/firebase'
-import { signOut, updatePassword, updateEmail, EmailAuthProvider, reauthenticateWithCredential, verifyBeforeUpdateEmail } from 'firebase/auth'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import * as ImagePicker from 'expo-image-picker'
-import { 
-  IconArrowLeft, 
-  IconLogout,
-  IconLock,
+import {
+  IconArrowLeft,
   IconCamera,
+  IconLock,
+  IconLogout,
   IconMail
 } from '@tabler/icons-react'
-
+import * as ImagePicker from 'expo-image-picker'
+import { useRouter } from 'expo-router'
+import { EmailAuthProvider, reauthenticateWithCredential, signOut, updatePassword, verifyBeforeUpdateEmail } from 'firebase/auth'
+import { useEffect, useState } from 'react'
+import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 type ModalType = 'password' | 'email' | null
 
 export default function SettingsScreen() {
@@ -175,6 +177,9 @@ export default function SettingsScreen() {
           >
             <View style={styles.settingLeft}>
               <IconMail size={24} stroke="#666" />
+            
+              <TestButtonsContainer/>
+              <TestButtonsCommentContainer/>
               <Text style={styles.settingText}>Change Email</Text>
             </View>
           </TouchableOpacity>
