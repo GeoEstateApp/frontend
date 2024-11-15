@@ -3,7 +3,7 @@ import { Map3D, Map3DCameraProps } from './map-3d';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMapStore } from '@/states/map';
 import { fetchPolygonCoordinates } from '@/api/osm';
-
+import { favoritesData } from '@/api/favorites';  // Import your API function
 const INITIAL_VIEW_PROPS: Map3DCameraProps = {
   center: { lat: 40.7212803, lng: -74.0004602, altitude: 2500 },
   range: 0,
@@ -20,7 +20,7 @@ export default function Earth() {
   const [viewProps, setViewProps] = useState(INITIAL_VIEW_PROPS);
   const [isHovering, setIsHovering] = useState(false);
   const hoverAnimationRef = useRef<number | null>(null);
-
+  
     // Smooth camera transition
   const smoothTransportToLocation = (newProps: Map3DCameraProps) => {
     const startProps = { ...viewProps };
