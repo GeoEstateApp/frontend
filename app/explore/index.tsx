@@ -1,10 +1,10 @@
-import { Earth, SearchBox, SidePanel, ZipPanel } from '@/components'
+import { AIChat, Earth, SearchBox, SidePanel, ZipPanel } from '@/components'
 import { APIProvider } from '@vis.gl/react-google-maps'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useEffect, useState } from 'react'
 import { TouchableOpacity } from 'react-native'
 import { useRouter } from 'expo-router'
-import { IconUser, IconLogin, IconFilter, IconZip } from '@tabler/icons-react'
+import { IconUser, IconLogin, IconFilter, IconZip, IconSparkles } from '@tabler/icons-react'
 import { auth } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import Toast from 'react-native-toast-message'
@@ -48,6 +48,8 @@ function HeaderButton() {
 
 export default function index() {
   const [isZipcodePanelOpen, setIsZipcodePanelOpen] = useState(false)
+  const [showAIChat, setShowAIChat] = useState(false)
+
   const { setShowPanel, showPanel } = useSidePanelStore()
 
   if (!API_KEY) {
@@ -78,20 +80,31 @@ export default function index() {
         <SearchBox />
         { showPanel && <SidePanel /> }
         { isZipcodePanelOpen && <ZipPanel isZipcodePanelOpen /> }
+        { showAIChat && <AIChat /> }
 
-        <View style={{...styles.toggleButtonGroup, left: showPanel || isZipcodePanelOpen ? 420 : 20}}>
-          <Pressable style={{...styles.toggleButton, backgroundColor: showPanel ? 'white' : '#80808080'}} onPress={() => {
-            setShowPanel(!showPanel)
+        <View style={{...styles.toggleButtonGroup, left: showPanel || isZipcodePanelOpen || showAIChat ? 420 : 20}}>
+          <Pressable style={{...styles.toggleButton, backgroundColor: showPanel ? 'limegreen' : 'white'}} onPress={() => {
             setIsZipcodePanelOpen(false)
+            setShowAIChat(false)
+            setShowPanel(!showPanel)
           }}>
             <IconFilter size={20} strokeWidth={2} />
           </Pressable>
 
-          <Pressable style={{...styles.toggleButton, backgroundColor: isZipcodePanelOpen ? 'white' : '#80808080'}} onPress={() => {
+          <Pressable style={{...styles.toggleButton, backgroundColor: isZipcodePanelOpen ? 'limegreen' : 'white'}} onPress={() => {
+            setShowPanel(false)
+            setShowAIChat(false)
               setIsZipcodePanelOpen(!isZipcodePanelOpen)
-              setShowPanel(false)
             }}>
             <IconZip size={20} strokeWidth={2} />
+          </Pressable>
+
+          <Pressable style={{...styles.toggleButton, backgroundColor: 'white'}} onPress={() => {
+            setIsZipcodePanelOpen(false)
+            setShowPanel(false)
+            setShowAIChat(!showAIChat)
+            }}>
+            <IconSparkles size={20} strokeWidth={2} />
           </Pressable>
         </View>
       </APIProvider>

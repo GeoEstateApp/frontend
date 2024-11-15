@@ -173,8 +173,6 @@ export default function ZipPanel({ isZipcodePanelOpen }: ZipPanelProps) {
 
   return (
     <View style={styles.container}>
-      {
-        isZipcodePanelOpen && (
           <View style={styles.panel}>
             <TextInput 
               style={styles.input} 
@@ -210,8 +208,6 @@ export default function ZipPanel({ isZipcodePanelOpen }: ZipPanelProps) {
               }
             </ScrollView>
           </View>
-        )
-      }
     </View>
   )
 }

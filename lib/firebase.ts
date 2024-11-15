@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+import { getVertexAI, getGenerativeModel } from "firebase/vertexai";
 
 const firebaseConfig = {
     apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -13,4 +14,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 const auth = getAuth();
 
-export { app, auth };
+const vertexAI = getVertexAI(app);
+
+const instructions = "The following are comments about a zip code on a website that hosts user reviews of zip codes. Glean insights from these comments to display to the users looking to find a new zip code to move to."
+const model = getGenerativeModel(vertexAI, { model: "gemini-1.5-flash", systemInstruction: instructions });
+
+export { app, auth, model };
