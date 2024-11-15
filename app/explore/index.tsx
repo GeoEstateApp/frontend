@@ -1,13 +1,14 @@
-import { Earth, SearchBox, SidePanel } from '@/components'
+import { Earth, SearchBox, SidePanel, ZipPanel } from '@/components'
 import { APIProvider } from '@vis.gl/react-google-maps'
-import { StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useEffect, useState } from 'react'
 import { TouchableOpacity } from 'react-native'
 import { useRouter } from 'expo-router'
-import { IconUser, IconLogin } from '@tabler/icons-react'
+import { IconUser, IconLogin, IconFilter, IconZip } from '@tabler/icons-react'
 import { auth } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import Toast from 'react-native-toast-message'
+import { useSidePanelStore } from '@/states/sidepanel'
 
 const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY
 const GOOGLE_MAP_VERSION = 'alpha'
@@ -46,6 +47,9 @@ function HeaderButton() {
 }
 
 export default function index() {
+  const [isZipcodePanelOpen, setIsZipcodePanelOpen] = useState(false)
+  const { setShowPanel, showPanel } = useSidePanelStore()
+
   if (!API_KEY) {
     return (
       <View style={styles.container}>
@@ -72,8 +76,24 @@ export default function index() {
       <APIProvider apiKey={API_KEY} version={GOOGLE_MAP_VERSION}>
         <Earth />
         <SearchBox />
-        <SidePanel />
-      
+        { showPanel && <SidePanel /> }
+        { isZipcodePanelOpen && <ZipPanel isZipcodePanelOpen /> }
+
+        <View style={{...styles.toggleButtonGroup, left: showPanel || isZipcodePanelOpen ? 420 : 20}}>
+          <Pressable style={styles.toggleButton} onPress={() => {
+            setShowPanel(!showPanel)
+            setIsZipcodePanelOpen(false)
+          }}>
+            <IconFilter size={20} stroke="#000" strokeWidth={2} />
+          </Pressable>
+
+          <Pressable style={styles.toggleButton} onPress={() => {
+              setIsZipcodePanelOpen(!isZipcodePanelOpen)
+              setShowPanel(false)
+            }}>
+            <IconZip size={20} stroke="#000" strokeWidth={2} />
+          </Pressable>
+        </View>
       </APIProvider>
 
       <Toast position='bottom' bottomOffset={20} />
@@ -103,5 +123,22 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5
+  },
+  toggleButtonGroup: {
+    position: 'absolute',
+    top: 10,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10
+  },
+  toggleButton: {
+    backgroundColor: 'white',
+    padding: 10,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   }
 })

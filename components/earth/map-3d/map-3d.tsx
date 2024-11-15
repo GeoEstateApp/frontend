@@ -48,7 +48,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
   const { selectedPlacePolygonCoordinates, setSelectedPlacePolygonCoordinates } = useMapStore()
   const { setSidePanelPlace, setShowPanel } = useSidePanelStore()
   const { insights } = useInsightsStore()
-  const { zipcode, polygon, setPolygon } = useZipcodeInsights()
+  const { polygon } = useZipcodeInsights()
 
   const [markers, setMarkers] = useState<Array<{id: string, position: LatLngLiteralWithAltitude, pin?: any}>>([])
 
@@ -65,17 +65,18 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
     if (!props.onCameraChange) return
 
     props.onCameraChange(p)
-
-    setPolygon(zipcodeCoordinates)
   });
 
   useEffect(() => {
     if (!map3DElement) return
-    if (!polygon) return
+    if (!polygon) {
+      (zipcodePolygonRef.current as any).outerCoordinates = []
+      return
+    }
     if (!zipcodePolygonRef.current) return
 
     customElements.whenDefined((zipcodePolygonRef.current as any).localName).then(() => {
-      (zipcodePolygonRef.current as any).outerCoordinates = convexHull(zipcodeCoordinates);
+      (zipcodePolygonRef.current as any).outerCoordinates = convexHull(polygon);
 
       (zipcodePolygonRef.current as any).addEventListener('click', (event: any) => {
         console.log("Polygon Clicked", event)
@@ -270,39 +271,3 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
     </gmp-map-3d>
   )
 })
-
-const zipcodeAltitudeValue = 100
-const zipcodeCoordinates = [
-  { "altitude": zipcodeAltitudeValue, "lat": 40.743568340946261, "lng": -73.992318886166558 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.741030960243258, "lng": -73.994164916527083 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.739673401389197, "lng": -73.990945214511953 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.731408854252287, "lng": -73.996974348167711 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.730715240556655, "lng": -73.995562446131657 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.729552248526417, "lng": -73.996572149745887 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.731706121723342, "lng": -74.000954413025354 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.734134852685671, "lng": -73.999187793333434 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.734069744697962, "lng": -73.999653095276756 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.739396052141906, "lng": -74.002789343814612 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.739752663660255, "lng": -74.002523815526416 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.742378003497791, "lng": -74.00880950909432 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.742674373115257, "lng": -74.008748081052858 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.742951557677706, "lng": -74.009634063336563 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.743972534922626, "lng": -74.009452551384712 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.743920479055546, "lng": -74.008902227012982 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.744929441743977, "lng": -74.008727363268548 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.745055351967032, "lng": -74.00956057606966 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.748414065928408, "lng": -74.008946405061423 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.748533487820332, "lng": -74.010086402442397 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.75005116701184, "lng": -74.009541640440617 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.749966841515423, "lng": -74.009213701338354 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.752587143684494, "lng": -74.008270177111342 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.752444033485908, "lng": -74.007712620872738 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.750356904723162, "lng": -74.008486397211598 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.747146795510531, "lng": -74.000848265910392 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.747767914957706, "lng": -74.000398506655785 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.746669602135519, "lng": -73.997760217808292 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.746580923224279, "lng": -73.997551645501957 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.745951324030827, "lng": -73.998008212784072 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.743568340946261, "lng": -73.992318886166558 }
-]
-

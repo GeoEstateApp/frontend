@@ -3,14 +3,14 @@ import React, { useEffect, useRef, useState } from 'react'
 import { IconFilter } from '@tabler/icons-react'
 import { useSidePanelStore } from '@/states/sidepanel'
 import { getPlaceInsights, PlaceInsight } from '@/api/insights'
-import { UI_FILTERS } from '@/const/filters'
+import { SUPPORTED_FILTERS_MAP, UI_FILTERS } from '@/const/filters'
 import { useInsightsStore } from '@/states/insights'
 import Toast from 'react-native-toast-message'
 
 export default function SidePanel() {
   const { insights, setInsights } = useInsightsStore()
  
-  const { togglePanel, showPanel, selectedPlace } = useSidePanelStore()
+  const { showPanel, selectedPlace } = useSidePanelStore()
   const [selectedFilters, setSelectedFilters] = useState<string[]>([])
   const [callFilterAPI, setCallFilterAPI] = useState(false)
 
@@ -32,7 +32,7 @@ export default function SidePanel() {
     }, 5000)
 
     return () => clearInterval(interval)
-  }, [selectedPlace])
+  }, [selectedPlace, selectedPlace?.photosUrl])
 
   useEffect(() => {
     if (!callFilterAPI) return
@@ -52,7 +52,18 @@ export default function SidePanel() {
   }, [selectedFilters])
 
   const handleOnFilterPress = async (filter: string) => {
-    if (!selectedPlace) return
+    if (!selectedPlace) {
+      Toast.show({
+        type: 'error',
+        text1: 'No place selected',
+        text2: 'Please select a place to see insights',
+        autoHide: true,
+        visibilityTime: 5000,
+        text1Style: { fontSize: 16, fontWeight: 'bold' },
+        text2Style: { fontSize: 14 },
+      })
+      return
+    }
 
     if (selectedFilters.includes(filter)) {
       const map3dElement = document.getElementsByTagName('gmp-map-3d')[0]
@@ -84,7 +95,6 @@ export default function SidePanel() {
 
   return (
     <View style={styles.container}>
-      {showPanel && (
         <View style={styles.panel}>
           <ScrollView 
           horizontal 
@@ -101,9 +111,9 @@ export default function SidePanel() {
                   style={[{
                     padding: 10,
                     borderRadius: 5,
-                    backgroundColor: selectedFilters.includes(filterKey) ? '#4CAF50' : 'white',
+                    backgroundColor: selectedFilters.includes(filterKey) ? `${SUPPORTED_FILTERS_MAP[filterKey as keyof typeof SUPPORTED_FILTERS_MAP]?.fill.substring(0, 7) || 'grey'}` : 'grey',
                   }]}>
-                    <Text style={{ color: selectedFilters.includes(filterKey) ? 'white' : 'black' }}>
+                    <Text style={{ color: selectedFilters.includes(filterKey) ? 'white' : 'white' }}>
                       {filter}
                     </Text>
                 </Pressable>
@@ -121,11 +131,6 @@ export default function SidePanel() {
             )
           }
         </View>
-      )}
-
-      <Pressable style={styles.toggleButton} onPress={() => togglePanel()}>
-        <IconFilter size={20} stroke="#000" strokeWidth={2} />
-      </Pressable>
     </View>
   )
 }
@@ -153,7 +158,7 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'column',
     gap: 10,
-    backgroundColor: '#ffffff90',
+    backgroundColor: '#ffffff99',
     width: 400,
     height: '100%',
     padding: 20,
@@ -164,16 +169,6 @@ const styles = StyleSheet.create({
     gap: 8,
     flexGrow: 0,
     flexWrap: 'nowrap',
-  },
-  filterButton: {
-    padding: 10,
-    borderRadius: 5,
-  },
-  filterButtonSelected: {
-    padding: 10,
-    borderRadius: 5,
-    backgroundColor: '#4CAF50',
-    color: 'white',
   },
   selectedPlace: {
     display: 'flex',
