@@ -90,7 +90,16 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
         const types = place.types || []
         const url = place.url || ""
 
-        setSidePanelPlace({ address, photosUrl, rating, types, lat, lng })
+        setSidePanelPlace({ 
+          placeId: place.place_id,
+          name: place.name,
+          address, 
+          photosUrl, 
+          rating, 
+          types, 
+          lat, 
+          lng 
+        })
         setShowPanel(true)
       })
     });

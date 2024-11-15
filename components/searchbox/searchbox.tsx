@@ -58,7 +58,16 @@ export default function SearchBox() {
       setSelectedPlace(place)
       setPredictions([])
 
-      setSidePanelPlace({ address, photosUrl, rating, types, lat, lng })
+      setSidePanelPlace({ 
+        placeId: place.place_id,
+        name: place.name,
+        address, 
+        photosUrl, 
+        rating, 
+        types, 
+        lat, 
+        lng 
+      })
       setShowPanel(true)
     })
   }
