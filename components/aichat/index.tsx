@@ -1,4 +1,4 @@
-import { ActivityIndicator, Button, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { model } from '@/lib/firebase'
 import AsyncStorage from '@react-native-async-storage/async-storage'

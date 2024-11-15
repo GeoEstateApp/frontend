@@ -73,9 +73,9 @@ export default function Earth() {
 
       const newProps: Map3DCameraProps = {
         center: { lat, lng, altitude: TARGET_ALTITUDE },
-        range: 0,
-        heading: 0,
-        tilt: 60,
+        range: 300,
+        heading: 300,
+        tilt: 50,
         roll: 0
       };
 

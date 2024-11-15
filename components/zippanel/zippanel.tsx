@@ -65,6 +65,7 @@ export default function ZipPanel({ isZipcodePanelOpen }: ZipPanelProps) {
       console.log("No auth tokens found.")
       return
     }
+    console.log(idToken)
 
     try {
       const response = await fetch(`https://photo-gateway-7fw1yavc.ue.gateway.dev/api/locations`, {
