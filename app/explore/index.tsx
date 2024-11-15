@@ -80,18 +80,18 @@ export default function index() {
         { isZipcodePanelOpen && <ZipPanel isZipcodePanelOpen /> }
 
         <View style={{...styles.toggleButtonGroup, left: showPanel || isZipcodePanelOpen ? 420 : 20}}>
-          <Pressable style={styles.toggleButton} onPress={() => {
+          <Pressable style={{...styles.toggleButton, backgroundColor: showPanel ? 'white' : '#80808080'}} onPress={() => {
             setShowPanel(!showPanel)
             setIsZipcodePanelOpen(false)
           }}>
-            <IconFilter size={20} stroke="#000" strokeWidth={2} />
+            <IconFilter size={20} strokeWidth={2} />
           </Pressable>
 
-          <Pressable style={styles.toggleButton} onPress={() => {
+          <Pressable style={{...styles.toggleButton, backgroundColor: isZipcodePanelOpen ? 'white' : '#80808080'}} onPress={() => {
               setIsZipcodePanelOpen(!isZipcodePanelOpen)
               setShowPanel(false)
             }}>
-            <IconZip size={20} stroke="#000" strokeWidth={2} />
+            <IconZip size={20} strokeWidth={2} />
           </Pressable>
         </View>
       </APIProvider>
@@ -132,7 +132,6 @@ const styles = StyleSheet.create({
     gap: 10
   },
   toggleButton: {
-    backgroundColor: 'white',
     padding: 10,
     borderRadius: 8,
     shadowColor: '#000',

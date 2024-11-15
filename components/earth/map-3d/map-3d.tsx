@@ -48,7 +48,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
   const { selectedPlacePolygonCoordinates, setSelectedPlacePolygonCoordinates } = useMapStore()
   const { setSidePanelPlace, setShowPanel } = useSidePanelStore()
   const { insights } = useInsightsStore()
-  const { polygon } = useZipcodeInsights()
+  const { polygon, polygons } = useZipcodeInsights()
 
   const [markers, setMarkers] = useState<Array<{id: string, position: LatLngLiteralWithAltitude, pin?: any}>>([])
 
@@ -83,6 +83,29 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
       })
     })
   }, [zipcodePolygonRef.current, polygon, map3DElement])
+
+  // useEffect(() => {
+  //   if (!map3DElement) return
+  //   if (!polygons) return
+
+  //   const zipcodePolygons = polygons.map((polygon, idx) => {
+  //     const zipcodePolygon = document.createElement('gmp-polygon-3d') as any
+
+  //     customElements.whenDefined(zipcodePolygon.localName).then(() => {
+  //       const { fill, stroke } = SUPPORTED_FILTERS_MAP.manual
+  //       zipcodePolygon.setAttribute('altitude-mode', 'relative-to-ground')
+  //       zipcodePolygon.setAttribute('fill-color', fill)
+  //       zipcodePolygon.setAttribute('stroke-color', stroke)
+  //       zipcodePolygon.setAttribute('stroke-width', '3')
+  //       zipcodePolygon.setAttribute('extruded', '')
+  //       zipcodePolygon.setAttribute('id', `zipcode-${idx}`)
+
+  //       zipcodePolygon.outerCoordinates = convexHull(polygon) || []
+
+  //       map3DElement.appendChild(zipcodePolygon)
+  //     })
+  //   })
+  // }, [polygons])
 
   useEffect(() => {
     if (!map3DElement) return;

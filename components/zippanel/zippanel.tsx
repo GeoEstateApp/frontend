@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react'
 import { useDebouncedEffect } from '@/hooks/utility-hooks'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useZipcodeInsights } from '@/states/zipcode_insights'
+import { convexHull, PolygonCoordinates } from '@/api/osm'
+import Toast from 'react-native-toast-message'
 
 interface ZipPanelProps {
   isZipcodePanelOpen: boolean
@@ -13,26 +15,12 @@ interface ZipcodeData {
   name: string
 }
 
-const zipcodes = [
-  {
-    zipcode: '00083',
-    name: 'New York',
-  },
-  {
-    zipcode: '11372',
-    name: 'New York'
-  },
-  {
-    zipcode: '11040',
-    name: 'New York'
-  }
-]
-
 export default function ZipPanel({ isZipcodePanelOpen }: ZipPanelProps) {
+  const [zipcodes, setZipcodes] = useState<ZipcodeData[]>([])
   const [searchingZipcodeText, setSearchingZipcodeText] = useState<string>("")
   const [zipcodeList, setZipcodeList] = useState<ZipcodeData[]>(zipcodes)
 
-  const { zipcode, setPolygon, setZipcode } = useZipcodeInsights()
+  const { zipcode, setPolygon, setZipcode, zipcodeInsights, setPolygons } = useZipcodeInsights()
 
   const handleZipcodeFilter = (text: string) => {
     const filteredZipcodes = zipcodes.filter((zipcodeData) => zipcodeData.zipcode.includes(text) || zipcodeData.name.includes(text))
@@ -48,15 +36,89 @@ export default function ZipPanel({ isZipcodePanelOpen }: ZipPanelProps) {
     handleZipcodeFilter(searchingZipcodeText)
   }, 300, [searchingZipcodeText])
 
-  // useEffect(() => {
-  //   setPolygon(dummyZipcodePolygon)
-  // }, [])
-
   useEffect(() => {
     if (zipcode === '') return
 
     handleZipcodeChange()
   }, [zipcode])
+
+  useEffect(() => {
+    if (zipcodes.length === 0) getAllZipcodes()
+
+    // renderMultipleZipcodes()
+  }, [])
+
+  const getAllZipcodes = async () => {
+    Toast.show({
+      type: 'info',
+      text1: 'Fetching zipcodes!',
+      text2: 'Please wait zipcodes are loading...',
+      visibilityTime: 5000,
+      autoHide: true,
+      topOffset: 20,
+      text1Style: { fontSize: 16, fontWeight: 'bold' },
+      text2Style: { fontSize: 14 },
+    })
+
+    const { idToken, uid } = await getAuthTokens()
+    if (!idToken || !uid) {
+      console.log("No auth tokens found.")
+      return
+    }
+
+    try {
+      const response = await fetch(`https://photo-gateway-7fw1yavc.ue.gateway.dev/api/locations`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${idToken}`
+        }
+      })
+
+      if (!response.ok) throw new Error("Failed to fetch zipcode data.")
+
+      const data = await response.json()
+
+      setZipcodes(data.map((item: any) => ({ zipcode: item.zipcode, name: item.name })))
+      setZipcodeList(data.map((item: any) => ({ zipcode: item.zipcode, name: item.name })))
+
+      Toast.hide()
+    } catch (error) {
+      console.error("Error fetching data:", error)
+    }
+  }
+
+  // const renderMultipleZipcodes = async () => {
+  //   const { idToken, uid } = await getAuthTokens()
+  //   if (!idToken || !uid) {
+  //     console.log("No auth tokens found.")
+  //     return
+  //   }
+
+  //   const polygons: PolygonCoordinates[] = []
+  //   const promises = zipcodes.map(async (zipcodeData) => {
+  //     try {
+  //       const response = await fetch(`https://photo-gateway-7fw1yavc.ue.gateway.dev/api/locations/${zipcodeData.zipcode}`, {
+  //         method: 'GET',
+  //         credentials: 'include',
+  //         headers: {
+  //           Authorization: `Bearer ${idToken}`
+  //         }
+  //       })
+
+  //       if (!response.ok) throw new Error("Failed to fetch zipcode data.")
+
+  //       const data = await response.json()
+  //       const coordinates = data[0].geometry.coordinates[0].map((coordinate: number[]) => ({ lat: coordinate[1], lng: coordinate[0], altitude: 150 }))
+  //       polygons.push((convexHull(coordinates) as any))
+  //     } catch (error) {
+  //   	  console.error("Error fetching data:", error)
+  //       return null
+  //     }
+  //   })
+
+  //   await Promise.all(promises)
+  //   setPolygons((polygons as any))
+  // }
 
   const handleZipcodeChange = async () => {
     const { idToken, uid } = await getAuthTokens()
@@ -66,14 +128,33 @@ export default function ZipPanel({ isZipcodePanelOpen }: ZipPanelProps) {
     }
 
     try {
-      const response = await fetch(`https://photo-gateway-7fwlyavc.ue.gateway.dev/api/locations/${zipcode}`, {
+      Toast.show({
+        type: 'info',
+        text1: 'Fetching zipcode!',
+        text2: 'Please wait zipcode is loading...',
+        visibilityTime: 5000,
+        autoHide: true,
+        topOffset: 20,
+        text1Style: { fontSize: 16, fontWeight: 'bold' },
+        text2Style: { fontSize: 14 },
+      })
+
+      const response = await fetch(`https://photo-gateway-7fw1yavc.ue.gateway.dev/api/locations/${zipcode}`, {
         method: 'GET',
+        credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${idToken}`,
         },
-        credentials: 'include',
       })
+
+      if (!response.ok) throw new Error("Failed to fetch zipcode data.") 
+
+      const data = await response.json()
+
+      const coordinates = data[0].geometry.coordinates[0].map((coordinate: number[]) => ({ lat: coordinate[1], lng: coordinate[0], altitude: 150 }))
+      setPolygon(convexHull(coordinates))
+
+      Toast.hide()
     } catch (error) {
       console.error("Error fetching data:", error)
     }
@@ -101,15 +182,28 @@ export default function ZipPanel({ isZipcodePanelOpen }: ZipPanelProps) {
               placeholder="Enter zipcode to search"
               onChangeText={(text) => setSearchingZipcodeText(text)} />
 
-            <ScrollView contentContainerStyle={{ gap: 10 }}>
+            <ScrollView contentContainerStyle={{ gap: 10 }} showsVerticalScrollIndicator={false}>
               {
                 zipcodeList.map((zip, idx) => {
                   return (
-                    <Pressable key={idx} style={{...styles.zipcodeButton, backgroundColor: zip.zipcode === zipcode ? '#e0e0e0' : '#fff'}} onPress={() => setZipcode(zip.zipcode)}>
+                    <Pressable key={idx} style={{...styles.zipcodeButton, backgroundColor: zip.zipcode === zipcode ? '#e0e0e0' : '#fff', gap: 20 }} onPress={() => setZipcode(zip.zipcode)}>
                       <View>
                         <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{zip.zipcode}</Text>
                         <Text>{zip.name}</Text>
                       </View>
+
+                      {
+                        zip.zipcode === zipcode && (
+                          <View style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Zipcode Insights:</Text>
+                            <Text>Population: {zipcodeInsights.population}</Text>
+                            <Text>Median Age: {zipcodeInsights.medianAge}</Text>
+                            <Text>Vacancies [Rent]: {zipcodeInsights.vacanciesForRentPercent}</Text>
+                            <Text>Vacancies [Sale]: {zipcodeInsights.vacanciesForSalePercent}</Text>
+                            <Text>Home Forecast: {zipcodeInsights.homeValueForecast}</Text>
+                          </View>
+                        )
+                      }
                     </Pressable>
                   )
                 })
@@ -151,7 +245,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 10,
     borderRadius: 5,
-  }
+  },
 })
 
 const zipcodeAltitudeValue = 150
