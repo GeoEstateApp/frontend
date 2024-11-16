@@ -631,29 +631,6 @@ const styles = StyleSheet.create({
         color: '#fff',
         textAlign: 'center',
     },
-    centerLogo: {
-        position: 'absolute',
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: '#86c8a3',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1,
-    },
-    logoText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-    profileContainer: {
-        position: 'absolute',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    profileImage: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        marginBottom: 4,
-    },
-    profileName: { color: '#fff', fontSize: 12, textAlign: 'center' },
     //team section styles end
     
     container: {

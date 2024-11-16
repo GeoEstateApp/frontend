@@ -1,19 +1,14 @@
 import { Video, ResizeMode } from 'expo-av';  
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 
 const VIDEO_URL = require('../../assets/videos/dummy-demo.mp4');
 
 export default function VideoSection() {
     const videoRef = useRef<Video>(null); 
-    const [isPlaying, setIsPlaying] = useState(true);
-
-    useEffect(() => { //play on loading
-        if (videoRef.current) {
-            videoRef.current.playAsync();
-        }
-    }, []);
+    const [isPlaying, setIsPlaying] = useState(false); 
+    const [isMuted, setIsMuted] = useState(false); 
 
     const togglePlayPause = async () => {
         if (videoRef.current) {
@@ -29,8 +24,8 @@ export default function VideoSection() {
     const handlePlaybackStatusUpdate = (status: any) => {
         if (status.didJustFinish) {
             if (videoRef.current) {
-                videoRef.current.setPositionAsync(0); // restart video from beginning
-                videoRef.current.playAsync(); // replay 
+                videoRef.current.setPositionAsync(0); 
+                setIsPlaying(false); 
             }
         }
     };
@@ -39,7 +34,9 @@ export default function VideoSection() {
         <View style={styles.container}>
             <View style={styles.textContainer}>
                 <Text style={styles.title}>Step into GeoEstate</Text>
-                <Text style={styles.subtitle}>Discover the future of property exploration with GeoEstate — your gateway to smarter real estate.</Text>
+                <Text style={styles.subtitle}>
+                    Discover the future of property exploration with GeoEstate — your gateway to smarter real estate.
+                </Text>
             </View>
 
             <Video
@@ -48,8 +45,8 @@ export default function VideoSection() {
                 style={styles.video}
                 useNativeControls={false} 
                 resizeMode={ResizeMode.COVER} 
-                onLoad={() => console.log("Video loaded")}
-                onPlaybackStatusUpdate={handlePlaybackStatusUpdate} 
+                isMuted={isMuted} 
+                onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
             />
 
             <TouchableOpacity
