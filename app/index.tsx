@@ -476,7 +476,7 @@ const WhyUsSection = () => {
 
                   <View style={styles.rightColumn}>
                         <Image
-                            source={require('E:/Again/geostate-frontend/assets/images/Globe3.jpg')}
+                            source={require('../assets/images/Globe3.jpg')}
                             style={styles.whyUsImage}
                             resizeMode="cover"
                         />
@@ -505,7 +505,7 @@ const ReviewSection = () => {
                     <View style={styles.reviewBox}>
 
                         <Image
-                            source={require('E:/Again/geostate-frontend/assets/images/person.jpg')} 
+                            source={require('../assets/images/person.jpg')} 
                             style={styles.personImage}
                         />
                         <View style={styles.reviewContent}>
@@ -518,7 +518,7 @@ const ReviewSection = () => {
 
                     <View style={styles.reviewBox}>
                         <Image
-                            source={require('E:/Again/geostate-frontend/assets/images/person2.jpg')} 
+                            source={require('../assets/images/person2.jpg')} 
                             style={styles.personImage}
                         />
                         <View style={styles.reviewContent}>
@@ -899,10 +899,154 @@ const styles = StyleSheet.create({
         color: '#fff',
         opacity: 0.7,
     },
-
-
-   //footer styles start
-   footer: {
+  // Why Us
+  whyUsSection: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingTop: 50,
+    paddingBottom: 20,
+    position: 'relative',
+},
+whyUsHeader: {
+    alignItems: 'center',
+    paddingBottom: 20,
+    paddingHorizontal: 15,
+},
+whyUsSubtitle: {
+    fontSize: 18,
+    color: '#007AFF',
+    fontWeight: '600',
+    marginBottom: 10,
+    letterSpacing: 1,
+},
+whyUsTitle: {
+    fontSize: 28,
+    color: '#fff',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 15,
+},
+whyUsDescription: {
+    color: '#ccc',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 30,
+},
+whyUsContentWrapper: {
+    flexDirection: 'row',  
+    justifyContent: 'space-between',
+    paddingHorizontal: 15,
+},
+leftColumn1: {
+    flex: 1,
+    paddingRight: 15,
+    paddingLeft: 30,  
+},
+rightColumn: {
+    flex: 1,
+},
+whyUsContent: {
+    marginTop: 10,
+},
+whyUsBox: {
+    backgroundColor: '#1f1f1f',
+    padding: 20,
+    borderRadius: 8,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#444',
+    flexDirection: 'column',
+    alignItems: 'center',
+},
+connectorLine: {
+    width: '100%',
+    height: 1,
+    backgroundColor: '#444',
+    marginBottom: 20,
+},
+whyUsItemTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginTop: 15,
+},
+whyUsItemDescription: {
+    fontSize: 16,
+    color: '#ccc',
+    marginTop: 5,
+},
+whyUsImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+    resizeMode: 'cover', 
+},
+//Review
+ReviewSubtitle: {
+    fontSize: 18,
+    color: '#007AFF',
+    fontWeight: '600',
+    marginBottom: 5,
+    letterSpacing: 1,
+},
+mainContainer: {
+},
+scrollContainer: {
+    alignItems: 'center', 
+    paddingBottom: 40, 
+},
+sectionLabel: {
+    fontSize: 24,
+    color: '#fff',
+    fontWeight: 'bold',
+    marginVertical: 20, 
+    textAlign: 'center',
+},
+tagline: {
+    fontSize: 16,
+    color: '#ccc',
+    marginBottom: 30, 
+    textAlign: 'center',
+},
+reviewBoxContainer: {
+    width: '80%', 
+    alignItems: 'center',
+},
+reviewBox: {
+    width: '100%', 
+    backgroundColor: '#1f1f1f',
+    borderRadius: 20, 
+    padding: 20,
+    flexDirection: 'row', 
+    marginBottom: 20, 
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+},
+personImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 20,
+},
+reviewContent: {
+    flex: 1,
+},
+reviewText: {
+    fontSize: 16,
+    color: '#fff',
+    fontStyle: 'italic',
+    marginBottom: 10,
+},
+reviewerName: {
+    fontSize: 14,
+    color: '#ccc',
+    textAlign: 'right',
+},
+//footer
+footer: {
     backgroundColor: '#091015',
     paddingVertical: 20,
     paddingHorizontal: 10,
@@ -910,27 +1054,27 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     overflow: 'hidden',
-  },
-  footerContent: {
+},
+footerContent: {
     alignItems: 'center',
-  },
-  footerColumns: {
+},
+footerColumns: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-  },
-  leftColumn: {
+},
+leftColumn: {
     flex: 2,
     paddingRight: 10,
-  },
-  emailLabel: {
+},
+emailLabel: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
     marginTop: 20,
     marginLeft: 35,
-  },
-  emailInputContainer: {
+},
+emailInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 10,
@@ -941,31 +1085,31 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     marginLeft: 32,
     width: 280,
-  },
-  emailInput: {
+},
+emailInput: {
     flex: 1,
     color: '#fff',
     fontSize: 14,
-  },
-  arrowIconContainer: {
+},
+arrowIconContainer: {
     paddingLeft: 10,
-  },
-  centerColumn: {
+},
+centerColumn: {
     flex: 1,
     paddingHorizontal: 10,
     marginTop: 20,
-  },
-  resourcesColumn: {
+},
+resourcesColumn: {
     flex: 1,
     paddingLeft: 10,
     marginTop: 20,
-  },
-  followUsColumn: {
+},
+followUsColumn: {
     flex: 1,
     paddingLeft: 10,
     marginTop: 20,
-  },
-  startUsingLabel: {
+},
+startUsingLabel: {
     fontSize: Platform.select({ web: 40, default: 27 }),
     fontWeight: 'bold',
     color: '#fff',
@@ -974,52 +1118,51 @@ const styles = StyleSheet.create({
     lineHeight: 40,
     marginLeft: 40,
     marginTop: 20,
-  },
-  companyLabel: {
+},
+companyLabel: {
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
-  },
-  underline: {
+},
+underline: {
     borderBottomColor: '#007AFF',
     borderBottomWidth: 1,
     width: '30%',
     marginBottom: 10,
-  },
-  bulletPoint: {
+},
+bulletPoint: {
     color: '#007AFF',
     marginVertical: 5,
     fontSize: 14,
-  },
-  socialLink: {
+},
+socialLink: {
     color: '#007AFF',
     marginVertical: 5,
     fontSize: 14,
-  },
-  footerLinks: {
+},
+footerLinks: {
     flexDirection: 'column',
     marginTop: 10,
-  },
-  footerLink: {
+},
+footerLink: {
     color: 'white',
     marginVertical: 5,
-  },
-  iconLinks: {
+},
+iconLinks: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginTop: 10,
     marginRight: 30,
-  },
-  icon: {
+},
+icon: {
     padding: 10,
     marginHorizontal: 5,
-  },
-  footerText: {
+},
+footerText: {
     color: 'white',
     fontSize: 14,
     marginTop: 20,
     textAlign: 'center',
-  },
-  //footer styles end
+},
 });
