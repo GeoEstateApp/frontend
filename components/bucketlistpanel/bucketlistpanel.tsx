@@ -22,7 +22,7 @@ export default function BucketListPanel() {
         const storedUsername = await AsyncStorage.getItem('username');
         setUserid(storedUserid);
         setUsername(storedUsername);
-        if (storedUsername) {
+        if (storedUsername && viewMode === 'own') {
           fetchBucketList(storedUsername);
         }
       } catch (error) {
@@ -30,7 +30,7 @@ export default function BucketListPanel() {
       }
     };
     loadUserData();
-  }, []);
+  }, [viewMode]);
 
   const fetchBucketList = async (targetUsername: string) => {
     setLoading(true);
@@ -97,11 +97,17 @@ export default function BucketListPanel() {
   };
 
   const handleViewOwnList = () => {
+    setViewMode('own');
+    setSearchUsername('');
     if (username) {
-      setViewMode('own');
-      setSearchUsername('');
       fetchBucketList(username);
     }
+  };
+
+  const handleViewSearch = () => {
+    setViewMode('search');
+    setBucketList([]); // Clear the bucket list when switching to search
+    setSearchUsername('');
   };
 
   if (!showPanel) return null;
@@ -120,7 +126,7 @@ export default function BucketListPanel() {
         </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.tab, viewMode === 'search' && styles.activeTab]}
-          onPress={() => setViewMode('search')}
+          onPress={handleViewSearch}
         >
           <IconUsers size={20} color={viewMode === 'search' ? '#fff' : '#000'} />
           <Text style={[styles.tabText, viewMode === 'search' && styles.activeTabText]}>Search Users</Text>
@@ -203,16 +209,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     top: 0,
+    bottom: 0,
     width: 400,
-    height: '100%',
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 2, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
     zIndex: 1000,
+    borderRightWidth: 1,
+    borderColor: 'rgba(221, 221, 221, 0.5)',
   },
   title: {
     fontSize: 24,

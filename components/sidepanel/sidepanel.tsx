@@ -1,15 +1,15 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, Image } from 'react-native'
-import React, { useEffect, useRef, useState } from 'react'
-import { IconFilter, IconHeart, IconHeartFilled, IconBookmark, IconBookmarkFilled } from '@tabler/icons-react'
-import { useSidePanelStore } from '@/states/sidepanel'
-import { useFavoritesPanelStore } from '@/states/favoritespanel'
-import { useBucketListPanelStore } from '@/states/bucketlistpanel'
-import { getPlaceInsights, PlaceInsight } from '@/api/insights'
-import { UI_FILTERS } from '@/const/filters'
-import { useInsightsStore } from '@/states/insights'
-import Toast from 'react-native-toast-message'
-import { addFavorite, favoritesData, removeFavorite } from '@/api/favorites'
-import { addToBucketList, removeFromBucketList, getBucketList } from '@/api/bucketlist'
+import { View, Text, StyleSheet, Pressable, ScrollView, Image } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { IconFilter, IconHeart, IconHeartFilled, IconBookmark, IconBookmarkFilled } from '@tabler/icons-react';
+import { useSidePanelStore } from '@/states/sidepanel';
+import { useFavoritesPanelStore } from '@/states/favoritespanel';
+import { useBucketListPanelStore } from '@/states/bucketlistpanel';
+import { getPlaceInsights, PlaceInsight } from '@/api/insights';
+import { UI_FILTERS } from '@/const/filters';
+import { useInsightsStore } from '@/states/insights';
+import Toast from 'react-native-toast-message';
+import { addFavorite, getFavorites, removeFavorite, FavoriteItem } from '@/api/favorites';
+import { addToBucketList, removeFromBucketList, getBucketList } from '@/api/bucketlist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Animated } from 'react-native';
 
@@ -112,7 +112,7 @@ export default function SidePanel() {
     const loadFavorites = async () => {
       if (!showFavoritesPanel) return;
       try {
-        const userFavorites = await favoritesData();
+        const userFavorites = await getFavorites();
         setFavorites(userFavorites);
       } catch (error) {
         console.error('Error loading favorites:', error);
@@ -134,10 +134,15 @@ export default function SidePanel() {
   }, [selectedPlace, favorites]);
 
   const handleFavoriteToggle = async () => {
-    if (!selectedPlace) return;
-    
     try {
-      // Ensure all required fields are present
+      if (!selectedPlace) {
+        Toast.show({
+          type: 'error',
+          text1: 'No place selected',
+        });
+        return;
+      }
+
       if (!selectedPlace.placeId) {
         throw new Error("Place ID is required");
       }
@@ -147,17 +152,17 @@ export default function SidePanel() {
         await removeFavorite(selectedPlace.placeId);
       } else {
         // Add to favorites
-        await addFavorite(
-          selectedPlace.placeId,
-          selectedPlace.name || '',
-          selectedPlace.address || '',
-          selectedPlace.lat || 0,
-          selectedPlace.lng || 0
-        );
+        await addFavorite({
+          place_id: selectedPlace.placeId,
+          name: selectedPlace.name || '',
+          address: selectedPlace.address || '',
+          latitude: selectedPlace.lat || 0,
+          longitude: selectedPlace.lng || 0,
+        });
       }
       
       // Refresh favorites list
-      const updatedFavorites = await favoritesData();
+      const updatedFavorites = await getFavorites();
       setFavorites(updatedFavorites);
       
       // Update UI state
@@ -207,13 +212,12 @@ export default function SidePanel() {
           text1: 'Removed from bucket list',
         });
       } else {
-        console.log('Selected place:', selectedPlace); // Debug log
         await addToBucketList({
           place_id: selectedPlace.placeId,
-          name: selectedPlace.name,
-          address: selectedPlace.address,
-          latitude: selectedPlace.lat,
-          longitude: selectedPlace.lng,
+          name: selectedPlace.name || '',
+          address: selectedPlace.address || '',
+          latitude: selectedPlace.lat || 0,
+          longitude: selectedPlace.lng || 0,
         });
         setIsInBucketList(true);
         Toast.show({
@@ -221,12 +225,22 @@ export default function SidePanel() {
           text1: 'Added to bucket list',
         });
       }
+
+      // Refresh bucket list if panel is open
+      if (showBucketListPanel) {
+        const username = await AsyncStorage.getItem('username');
+        if (username) {
+          const updatedBucketList = await getBucketList(username);
+          setBucketList(updatedBucketList);
+        }
+      }
     } catch (error) {
       console.error('Error updating bucket list:', error);
       Toast.show({
         type: 'error',
-        text1: 'Error updating bucket list',
-        text2: error instanceof Error ? error.message : 'Unknown error',
+        text1: 'Error',
+        text2: error instanceof Error ? error.message : 'Could not update bucket list. Please try again.',
+        visibilityTime: 3000,
       });
     }
   };
