@@ -1,17 +1,22 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, Image } from 'react-native'
 import React, { useEffect, useRef, useState } from 'react'
-import { IconFilter, IconHeart, IconHeartFilled, IconBookmark } from '@tabler/icons-react'
+import { IconFilter, IconHeart, IconHeartFilled, IconBookmark, IconBookmarkFilled } from '@tabler/icons-react'
 import { useSidePanelStore } from '@/states/sidepanel'
 import { useFavoritesPanelStore } from '@/states/favoritespanel'
+import { useBucketListPanelStore } from '@/states/bucketlistpanel'
 import { getPlaceInsights, PlaceInsight } from '@/api/insights'
 import { UI_FILTERS } from '@/const/filters'
 import { useInsightsStore } from '@/states/insights'
 import Toast from 'react-native-toast-message'
 import { addFavorite, favoritesData, removeFavorite } from '@/api/favorites'
+import { addToBucketList, removeFromBucketList, getBucketList } from '@/api/bucketlist'
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Animated } from 'react-native';
 
 export default function SidePanel() {
   const { togglePanel, showPanel, selectedPlace, setShowPanel } = useSidePanelStore()
   const { togglePanel: toggleFavoritesPanel, showPanel: showFavoritesPanel, setShowPanel: setShowFavoritesPanel } = useFavoritesPanelStore()
+  const { togglePanel: toggleBucketListPanel, showPanel: showBucketListPanel, setShowPanel: setShowBucketListPanel } = useBucketListPanelStore()
  
   const { insights, setInsights } = useInsightsStore()
  
@@ -20,8 +25,11 @@ export default function SidePanel() {
 
   const [imageUri, setImageUri] = useState<string | null>(null)
   const [isFavorite, setIsFavorite] = useState(false)
+  const [isInBucketList, setIsInBucketList] = useState(false)
   const [favorites, setFavorites] = useState<any[]>([])
-  const [showFavorites, setShowFavorites] = useState(false)
+  const [bucketList, setBucketList] = useState<any[]>([])
+  const [username, setUsername] = useState<string>('');
+  const [userid, setUserid] = useState<string | null>(null);
 
   useEffect(() => {
     if (!selectedPlace) return
@@ -58,9 +66,51 @@ export default function SidePanel() {
     fetchInsights()
   }, [selectedFilters])
 
-  // Load user's favorites when component mounts
+  useEffect(() => {
+    const loadUsername = async () => {
+      const storedUsername = await AsyncStorage.getItem('username');
+      if (storedUsername) {
+        setUsername(storedUsername);
+      }
+    };
+    loadUsername();
+  }, []);
+
+  useEffect(() => {
+    const loadUserid = async () => {
+      try {
+        const storedUserid = await AsyncStorage.getItem('uid');
+        if (storedUserid) {
+          setUserid(storedUserid);
+        }
+      } catch (error) {
+        console.error('Error loading userid:', error);
+      }
+    };
+    loadUserid();
+  }, []);
+
+  // Only load bucket list when bucket list panel is shown
+  useEffect(() => {
+    const loadBucketList = async () => {
+      if (!showBucketListPanel) return;
+      try {
+        const userBucketList = await getBucketList();
+        setBucketList(userBucketList);
+        if (selectedPlace) {
+          setIsInBucketList(userBucketList.some((item: any) => item.place_id === selectedPlace.placeId));
+        }
+      } catch (error) {
+        console.error('Error loading bucket list:', error);
+      }
+    };
+    loadBucketList();
+  }, [showBucketListPanel, selectedPlace]);
+
+  // Only load favorites when favorites panel is shown
   useEffect(() => {
     const loadFavorites = async () => {
+      if (!showFavoritesPanel) return;
       try {
         const userFavorites = await favoritesData();
         setFavorites(userFavorites);
@@ -74,7 +124,7 @@ export default function SidePanel() {
       }
     };
     loadFavorites();
-  }, []);
+  }, [showFavoritesPanel]);
 
   // Check if selected place is favorited
   useEffect(() => {
@@ -83,7 +133,6 @@ export default function SidePanel() {
     setIsFavorite(isFav);
   }, [selectedPlace, favorites]);
 
-  // Handle favorite toggle
   const handleFavoriteToggle = async () => {
     if (!selectedPlace) return;
     
@@ -131,6 +180,57 @@ export default function SidePanel() {
     }
   };
 
+  const handleBucketList = async () => {
+    if (!selectedPlace) {
+      Toast.show({
+        type: 'error',
+        text1: 'No place selected',
+      });
+      return;
+    }
+
+    if (!userid) {
+      Toast.show({
+        type: 'error',
+        text1: 'Authentication required',
+        text2: 'Please log in to use the bucket list feature',
+      });
+      return;
+    }
+
+    try {
+      if (isInBucketList) {
+        await removeFromBucketList(selectedPlace.placeId);
+        setIsInBucketList(false);
+        Toast.show({
+          type: 'success',
+          text1: 'Removed from bucket list',
+        });
+      } else {
+        console.log('Selected place:', selectedPlace); // Debug log
+        await addToBucketList({
+          place_id: selectedPlace.placeId,
+          name: selectedPlace.name,
+          address: selectedPlace.address,
+          latitude: selectedPlace.lat,
+          longitude: selectedPlace.lng,
+        });
+        setIsInBucketList(true);
+        Toast.show({
+          type: 'success',
+          text1: 'Added to bucket list',
+        });
+      }
+    } catch (error) {
+      console.error('Error updating bucket list:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error updating bucket list',
+        text2: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  };
+
   const handleOnFilterPress = async (filter: string) => {
     if (!selectedPlace) return
 
@@ -166,6 +266,9 @@ export default function SidePanel() {
     if (showFavoritesPanel) {
       setShowFavoritesPanel(false)
     }
+    if (showBucketListPanel) {
+      setShowBucketListPanel(false)
+    }
     togglePanel()
   }
 
@@ -173,7 +276,20 @@ export default function SidePanel() {
     if (showPanel) {
       setShowPanel(false)
     }
+    if (showBucketListPanel) {
+      setShowBucketListPanel(false)
+    }
     toggleFavoritesPanel()
+  }
+
+  const handleBucketListClick = () => {
+    if (showBucketListPanel) {
+      setShowBucketListPanel(false)
+    } else {
+      setShowPanel(false)
+      setShowFavoritesPanel(false)
+      setShowBucketListPanel(true)
+    }
   }
 
   return (
@@ -211,16 +327,22 @@ export default function SidePanel() {
               <Image source={{ uri: imageUri || selectedPlace.photosUrl[0] }} style={{ width: 400, height: 300, objectFit: 'cover' }} />
               <View style={styles.placeHeader}>
                 <Text style={styles.placeTitle}>{selectedPlace.address}</Text>
-                <Pressable
-                  style={styles.favoriteButton}
-                  onPress={handleFavoriteToggle}
-                >
-                  {isFavorite ? (
-                    <IconHeartFilled size={24} color="#ff4444" />
-                  ) : (
-                    <IconHeart size={24} color="#666" />
-                  )}
-                </Pressable>
+                <View style={styles.actionButtons}>
+                  <Pressable onPress={handleFavoriteToggle}>
+                    {isFavorite ? (
+                      <IconHeartFilled size={24} color="#ff4444" />
+                    ) : (
+                      <IconHeart size={24} color="#000" />
+                    )}
+                  </Pressable>
+                  <Pressable onPress={handleBucketList} style={{ marginLeft: 10 }}>
+                    {isInBucketList ? (
+                      <IconBookmarkFilled size={24} color="#4444ff" />
+                    ) : (
+                      <IconBookmark size={24} color="#000" />
+                    )}
+                  </Pressable>
+                </View>
               </View>
               { selectedPlace.rating !== 0 && <Text> {selectedPlace.rating}</Text> }
             </View>
@@ -228,7 +350,7 @@ export default function SidePanel() {
         </View>
       )}
 
-      <View style={[styles.buttonContainer, (showPanel || showFavoritesPanel) && styles.buttonContainerMoved]}>
+      <View style={[styles.buttonContainer, (showPanel || showFavoritesPanel || showBucketListPanel) && styles.buttonContainerMoved]}>
         <Pressable 
           style={[styles.toggleButton, showPanel && styles.toggleButtonActive]} 
           onPress={handleFilterClick}
@@ -243,6 +365,16 @@ export default function SidePanel() {
             size={20} 
             stroke={showFavoritesPanel ? "#fff" : "#000"} 
             fill={showFavoritesPanel ? "#ff4444" : "none"} 
+          />
+        </Pressable>
+        <Pressable 
+          style={[styles.toggleButton, showBucketListPanel && styles.toggleButtonActive]} 
+          onPress={handleBucketListClick}
+        >
+          <IconBookmark 
+            size={20} 
+            stroke={showBucketListPanel ? "#fff" : "#000"} 
+            fill={showBucketListPanel ? "#4444ff" : "none"} 
           />
         </Pressable>
       </View>
@@ -265,7 +397,6 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     gap: 10,
     zIndex: 1000,
-    transition: 'left 0.3s ease-in-out',
   },
   buttonContainerMoved: {
     left: 410,
@@ -322,6 +453,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  actionButtons: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
   },
   favoriteButton: {
     padding: 8,
