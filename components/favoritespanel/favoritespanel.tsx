@@ -41,7 +41,6 @@ export default function FavoritesPanel() {
               key={index}
               style={styles.favoriteItem}
               onPress={() => {
-                // TODO: Implement selecting a favorite place
                 Toast.show({
                   type: 'info',
                   text1: 'Selected Place',
