@@ -1,27 +1,32 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ArrowRight, ChevronDown, Search, Calculator, MapPin, Facebook, Instagram, Mail, Twitter } from "lucide-react";
 import { Link, useRouter } from "expo-router";
-import {
-    Animated,
-    View,
-    Text,
-    StyleSheet,
-    Platform,
-    TextInput,
-    TouchableOpacity,
-    Linking,
-    useWindowDimensions,
-    Easing,
-    Pressable,
-    ScrollView,
-} from "react-native";
+import {Animated, View,Text, StyleSheet, Platform, TextInput,TouchableOpacity,Linking,useWindowDimensions,Easing,Pressable,ScrollView,} from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import Globe from '../components/globe/Globe';
 import { auth } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { IconUser, IconLogin } from '@tabler/icons-react'
+import { Image } from "react-native";
 import Toast from 'react-native-toast-message'
+import TeamDetail from "./landing-team-details/TeamDetail";
+import DemoVideo from './landing-demo-video/DemoVideo';
+
+const teamMembers = [
+    { name: "Ayesha Virk", role: "Founder, Full Stack Developer", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
+    { name: "Robert Bui", role: "CEO, Backend Lead", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
+    { name: "Humera", role: "Backend Developer, DB Developer", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
+    { name: "Yaseen (Ace)", role: "Backend Developer", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
+    { name: "John", role: "AI Engineer", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
+    { name: "Aditya Sengupta", role: "Frontend Lead, Full Stack Developer", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
+    { name: "Dip", role: "Backend, Full Stack Developer", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
+    { name: "Zainab Rashid", role: "Frontend Developer, UI/UX Lead", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
+    { name: "Shelian Gladis", role: "Frontend Developer, Designer", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
+    { name: "Vikramaditya Dhumal", role: "Frontend Developer", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
+];
+
+
 
 function HeaderNav() {
     const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -103,11 +108,16 @@ export default function Index() {
                     style={StyleSheet.absoluteFill}
                 />
                 <View style={styles.headerContent}>
-                    <Text style={styles.headerTitle}>GeoEstate</Text>
+                    <View style={styles.logoContainer}>
+                        <Image
+                            source={require('../assets/images/favicon.png')} 
+                            style={styles.logo}
+                        />
+                        <Text style={styles.headerTitle}>GeoEstate</Text>
+                    </View>
                     <HeaderNav />
                 </View>
             </Animated.View>
-
             <Animated.ScrollView
                 ref={scrollViewRef}
                 style={styles.scrollView}
@@ -132,12 +142,17 @@ export default function Index() {
                         <ChevronDown color="white" size={24} />
                     </Animated.View>
                 </View>
-
-                {/* Merged Footer as part of scrollable content */}
+                {/* Features Section  */}
                 <FeaturesSection />
-                <AboutSection />
-                <Footer /> {/* Footer is now part of the scrollable content */}
-
+                 {/* Video Demo Section */}
+                 <DemoVideo />
+                {/* Team Section */}
+                <View style={styles.teamSection}>
+                    <Text style={styles.teamsectionTitle}>Our Team</Text>
+                    <TeamDetail teamMembers={teamMembers} />
+                </View>
+                {/* Footer Section */}
+                <Footer /> 
                 <Toast position="top" topOffset={20} />
             </Animated.ScrollView>
         </View>
@@ -388,36 +403,6 @@ const FeaturesSection = () => {
     );
 };
 
-const AboutSection = () => {
-    const team = [
-        {
-            name: "John Doe",
-            role: "Frontend",
-            bio: "Student @ xyz",
-            image: "/api/placeholder/"
-        }
-    ];
-
-    return (
-        <View style={styles.aboutSection} id="about">
-            <Text style={styles.sectionTitle}>Our Team</Text>
-            <Text style={styles.aboutDescription}>
-                Meet the hard-working team behind GeoEstate who are revolutionizing the real estate industry.
-            </Text>
-            <View style={styles.teamGrid}>
-                {team.map((member, index) => (
-                    <View key={index} style={styles.teamMember}>
-                        <img src={member.image} alt={member.name} style={styles.teamMemberImage} />
-                        <Text style={styles.teamMemberName}>{member.name}</Text>
-                        <Text style={styles.teamMemberRole}>{member.role}</Text>
-                        <Text style={styles.teamMemberBio}>{member.bio}</Text>
-                    </View>
-                ))}
-            </View>
-        </View>
-    );
-};
-
 const Footer = () => (
     <SafeAreaView style={styles.footer}>
         <View style={styles.footerContent}>
@@ -497,6 +482,46 @@ const Footer = () => (
 );
 
 const styles = StyleSheet.create({
+    //team section styles start
+    teamSection: { alignItems: 'center', paddingVertical: 40 },
+    teamContainer: {
+        position: 'relative',
+        width: 300,
+        height: 300,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    teamsectionTitle: {
+        fontSize: 48,
+        fontWeight: 'bold',
+        color: '#fff',
+        textAlign: 'center',
+    },
+    centerLogo: {
+        position: 'absolute',
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#86c8a3',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1,
+    },
+    logoText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+    profileContainer: {
+        position: 'absolute',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    profileImage: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        marginBottom: 4,
+    },
+    profileName: { color: '#fff', fontSize: 12, textAlign: 'center' },
+    //team section styles end
+    
     container: {
         flex: 1,
         backgroundColor: '#000',
@@ -542,6 +567,16 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600'
     },
+    logoContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    logo: {
+        width: 40,
+        height: 40,
+        marginRight: 8,
+    },
+
     scrollView: {
         flex: 1,
     },
@@ -730,65 +765,9 @@ const styles = StyleSheet.create({
         color: '#fff',
         opacity: 0.7,
     },
-    sectionTitle: {
-        fontSize: 48,
-        fontWeight: 'bold',
-        color: '#fff',
-        textAlign: 'center',
-        marginBottom: 48,
-    },
-    aboutSection: {
-        padding: 80,
-        backgroundColor: '#000',
-    },
-    aboutDescription: {
-        fontSize: 20,
-        color: '#fff',
-        opacity: 0.8,
-        textAlign: 'center',
-        maxWidth: 800,
-        marginBottom: 64,
-        alignSelf: 'center',
-    },
-    teamGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
-        gap: 48,
-        maxWidth: 1200,
-        alignSelf: 'center',
-    },
-    teamMember: {
-        alignItems: 'center',
-        width: Platform.select({ web: 250, default: 100 }),
-    },
-    teamMemberImage: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        marginBottom: 16,
-    },
-    teamMemberName: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#fff',
-        marginBottom: 8,
-        textAlign: 'center',
-    },
-    teamMemberRole: {
-        fontSize: 16,
-        color: '#007AFF',
-        marginBottom: 8,
-        textAlign: 'center',
-    },
-    teamMemberBio: {
-        fontSize: 14,
-        color: '#fff',
-        opacity: 0.8,
-        textAlign: 'center',
-    },
 
-   //footer
+
+   //footer styles start
    footer: {
     backgroundColor: '#091015',
     paddingVertical: 20,
@@ -908,4 +887,5 @@ const styles = StyleSheet.create({
     marginTop: 20,
     textAlign: 'center',
   },
+  //footer styles end
 });
