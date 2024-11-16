@@ -15,7 +15,7 @@ export default function SearchBox() {
   const places = useMapsLibrary('places')
 
   const { setSelectedPlace } = useMapStore()
-  const { setShowPanel, setSidePanelPlace } = useSidePanelStore()
+  const { setShowPanel, setSelectedPlace: setSidePanelSelectedPlace } = useSidePanelStore()
 
   useEffect(() => {
     if (!places) return
@@ -58,7 +58,16 @@ export default function SearchBox() {
       setSelectedPlace(place)
       setPredictions([])
 
-      setSidePanelPlace({ address, photosUrl, rating, types, lat, lng })
+      setSidePanelSelectedPlace({ 
+        placeId: place.place_id,
+        name: place.name,
+        address, 
+        photosUrl, 
+        rating, 
+        types, 
+        lat, 
+        lng 
+      })
       setShowPanel(true)
     })
   }

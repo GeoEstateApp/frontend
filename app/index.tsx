@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ArrowRight, ChevronDown, Search, Calculator, MapPin, Facebook, Instagram, Mail, Twitter } from "lucide-react";
+import { ArrowRight, ChevronDown, Search, Calculator, MapPin, Facebook, Instagram, Twitter, Mail, Heart, Brain, List } from "lucide-react";
 import { Link, useRouter } from "expo-router";
 import {Animated, View,Text, StyleSheet, Platform, TextInput,TouchableOpacity,Linking,useWindowDimensions,Easing,Pressable,ScrollView,} from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
@@ -144,13 +144,16 @@ export default function Index() {
                 </View>
                 {/* Features Section  */}
                 <FeaturesSection />
+                
                  {/* Video Demo Section */}
                  <DemoVideo />
+                 <WhyUsSection />
                 {/* Team Section */}
                 <View style={styles.teamSection}>
                     <Text style={styles.teamsectionTitle}>Our Team</Text>
                     <TeamDetail teamMembers={teamMembers} />
                 </View>
+                <ReviewSection />
                 {/* Footer Section */}
                 <Footer /> 
                 <Toast position="top" topOffset={20} />
@@ -215,12 +218,11 @@ const HeroContent = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
     );
 };
 
-const FeatureCard = ({ feature, index }: { feature: any; index: number }) => {
+const FeatureCard = ({ feature, index }: any) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
-    const translateY = useRef(new Animated.Value(30)).current;
-    const cardRef = useRef(null);
+    const translateY = useRef(new Animated.Value(50)).current;
 
-    const startAnimation = () => {
+    useEffect(() => {
         Animated.parallel([
             Animated.timing(fadeAnim, {
                 toValue: 1,
@@ -232,54 +234,28 @@ const FeatureCard = ({ feature, index }: { feature: any; index: number }) => {
             Animated.timing(translateY, {
                 toValue: 0,
                 duration: 800,
-                delay: index * 150,
+                delay: 200 + index * 100,
                 useNativeDriver: true,
                 easing: Easing.out(Easing.cubic),
             }),
         ]).start();
-    };
-
-    useEffect(() => {
-        if (!cardRef.current) return;
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        startAnimation();
-                        observer.unobserve(entry.target);
-                    }
-                });
-            },
-            { threshold: 0.3 }
-        );
-
-        observer.observe(cardRef.current);
-
-        return () => {
-            if (cardRef.current) {
-                observer.unobserve(cardRef.current);
-            }
-        };
     }, []);
 
     return (
-        <Animated.View
-            ref={cardRef}
-            style={[
-                styles.featureCard,
-                {
-                    opacity: fadeAnim,
-                    transform: [{ translateY }],
-                }
-            ]}>
+        <Animated.View style={[
+            styles.featureCard,
+            {
+                opacity: fadeAnim,
+                transform: [{ translateY }],
+            }
+        ]}>
             <View style={styles.featureIconContainer}>
                 <feature.icon size={32} color="#007AFF" strokeWidth={1.5} />
             </View>
             <Text style={styles.featureTitle}>{feature.title}</Text>
             <Text style={styles.featureDescription}>{feature.description}</Text>
             <View style={styles.featureDetails}>
-                {feature.details.map((detail: string, idx: number) => (
+                {feature.details.map((detail: any, idx: number) => (
                     <View key={idx} style={styles.detailItem}>
                         <View style={styles.detailDot} />
                         <Text style={styles.detailText}>{detail}</Text>
@@ -299,9 +275,9 @@ const FeatureCard = ({ feature, index }: { feature: any; index: number }) => {
 const FeaturesSection = () => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const translateY = useRef(new Animated.Value(30)).current;
-    const sectionRef = useRef(null);
+    const sectionRef = useRef()
 
-    const startAnimation = () => {
+    useEffect(() => {
         Animated.parallel([
             Animated.timing(fadeAnim, {
                 toValue: 1,
@@ -318,7 +294,7 @@ const FeaturesSection = () => {
                 easing: Easing.out(Easing.cubic),
             }),
         ]).start();
-    };
+    });
 
     useEffect(() => {
         if (!sectionRef.current) return;
@@ -327,7 +303,6 @@ const FeaturesSection = () => {
             (entries) => {
                 entries.forEach((entry) => {
                     if (entry.isIntersecting) {
-                        startAnimation();
                         observer.unobserve(entry.target);
                     }
                 });
@@ -402,6 +377,164 @@ const FeaturesSection = () => {
         </View>
     );
 };
+
+
+
+const WhyUsSection = () => {
+    const fadeAnim = useRef(new Animated.Value(100)).current;  
+    const translateY = useRef(new Animated.Value(0)).current; 
+
+    useEffect(() => {
+        Animated.parallel([
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 1000,
+                delay: 100,
+                useNativeDriver: true,
+                easing: Easing.out(Easing.cubic),
+            }),
+            Animated.timing(translateY, {
+                toValue: 0,
+                duration: 1000,
+                delay: 100,
+                useNativeDriver: true,
+                easing: Easing.out(Easing.cubic),
+            }),
+        ]).start();
+    }, []);
+
+    return (
+        <SafeAreaView style={{ flex: 1 }}>
+            <View style={[styles.whyUsSection]}>
+                <LinearGradient
+                    colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.9)', '#000']}
+                    style={StyleSheet.absoluteFillObject}
+                />
+                <Animated.View style={[styles.whyUsHeader, {
+                    opacity: fadeAnim,
+                    transform: [{ translateY }]
+                }]}>
+                    <Text style={styles.whyUsSubtitle}>WHY CHOOSE GEOESTATE?</Text>
+                    <Text style={styles.whyUsTitle}>The Future of Real Estate Exploration</Text>
+                    <Text style={styles.whyUsDescription}>
+                        GeoEstate isn't just a real estate platform—it's your personalized, interactive guide to finding the perfect property. Here's why GeoEstate is the best choice for your property journey:
+                    </Text>
+                </Animated.View>
+
+                <View style={styles.whyUsContentWrapper}>
+                    <View style={styles.leftColumn1}>
+                        <View style={styles.whyUsContent}>
+
+                            <View style={styles.whyUsBox}>
+                                <MapPin size={32} color="#007AFF" strokeWidth={1.5} />
+                                <Text style={styles.whyUsItemTitle}>Immersive 3D Maps</Text>
+                                <Text style={styles.whyUsItemDescription}>
+                                    Explore properties like never before with photorealistic 3D maps. Get a virtual tour of the neighborhood, including nearby amenities, schools, and parks.
+                                </Text>
+                            </View>
+                            <View style={styles.connectorLine} />
+
+                            <View style={styles.whyUsBox}>
+                                <Calculator size={32} color="#007AFF" strokeWidth={1.5} />
+                                <Text style={styles.whyUsItemTitle}>Personalized Analytics</Text>
+                                <Text style={styles.whyUsItemDescription}>
+                                    With our Suitability Calculator, make data-driven decisions based on real-time analytics tailored to your energy efficiency, environmental impact, and accessibility needs.
+                                </Text>
+                            </View>
+                            <View style={styles.connectorLine} />
+
+                            <View style={styles.whyUsBox}>
+                                <Facebook size={32} color="#007AFF" strokeWidth={1.5} />
+                                <Text style={styles.whyUsItemTitle}>Neighbourhood Insights</Text>
+                                <Text style={styles.whyUsItemDescription}>
+                                    Share and view comments about the neighborhood by zipcode. Learn from locals and potential buyers to better understand your future home’s surroundings.
+                                </Text>
+                            </View>
+                            <View style={styles.connectorLine} />
+
+                            <View style={styles.whyUsBox}>
+                                <Heart size={32} color="#007AFF" strokeWidth={1.5} />
+                                <Text style={styles.whyUsItemTitle}>Favourite Your Dream Home</Text>
+                                <Text style={styles.whyUsItemDescription}>
+                                    Love a building? Add it to your favorites and revisit it later to compare with other options or share it with your friends.
+                                </Text>
+                            </View>
+                            <View style={styles.connectorLine} />
+
+                            <View style={styles.whyUsBox}>
+                                <Brain size={32} color="#007AFF" strokeWidth={1.5} />
+                                <Text style={styles.whyUsItemTitle}>AI-Powered Insights</Text>
+                                <Text style={styles.whyUsItemDescription}>
+                                    Our AI scans and summarizes comments from the neighborhood based on zip code, helping you make informed decisions with real-time sentiment analysis.
+                                </Text>
+                            </View>
+                            <View style={styles.connectorLine} />
+
+                            
+                        </View>
+                    </View>
+
+                  <View style={styles.rightColumn}>
+                        <Image
+                            source={require('E:/Again/geostate-frontend/assets/images/Globe3.jpg')}
+                            style={styles.whyUsImage}
+                            resizeMode="cover"
+                        />
+                         <LinearGradient
+        colors={['rgba(0, 0, 0, 0.2)', 'rgba(0, 0, 0, 0.5)']} 
+        style={StyleSheet.absoluteFillObject}
+    /> 
+                    </View>
+
+                </View>
+            </View>
+        </SafeAreaView>
+    );
+};
+
+const ReviewSection = () => {
+    return (
+        <View style={styles.mainContainer}>
+            <ScrollView contentContainerStyle={styles.scrollContainer}>
+                <Text style={styles.ReviewSubtitle}>Reviews</Text>
+                <Text style={styles.sectionLabel}>What Our Clients Say</Text>
+
+                <Text style={styles.tagline}>Hear about the experiences of our happy clients!</Text>
+
+                <View style={styles.reviewBoxContainer}>
+                    <View style={styles.reviewBox}>
+
+                        <Image
+                            source={require('E:/Again/geostate-frontend/assets/images/person.jpg')} 
+                            style={styles.personImage}
+                        />
+                        <View style={styles.reviewContent}>
+                            <Text style={styles.reviewText}>
+                                "GeoEstate has completely transformed the way I view real estate. The 3D maps and personalized suggestions really helped me find the perfect property. I highly recommend it!"
+                            </Text>
+                            <Text style={styles.reviewerName}>- Michael Kai</Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.reviewBox}>
+                        <Image
+                            source={require('E:/Again/geostate-frontend/assets/images/person2.jpg')} 
+                            style={styles.personImage}
+                        />
+                        <View style={styles.reviewContent}>
+                            <Text style={styles.reviewText}>
+                                "The experience was outstanding! GeoEstate's user interface is smooth and intuitive. The 3D map feature helped me navigate the market with ease. Definitely worth checking out."
+                            </Text>
+                            <Text style={styles.reviewerName}>- Clara Smith</Text>
+                        </View>
+                    </View>
+                </View>
+
+            </ScrollView>
+        </View>
+    );
+};
+
 
 const Footer = () => (
     <SafeAreaView style={styles.footer}>
@@ -480,6 +613,7 @@ const Footer = () => (
         </View>
     </SafeAreaView>
 );
+
 
 const styles = StyleSheet.create({
     //team section styles start
@@ -710,7 +844,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.03)',
         borderRadius: 24,
         padding: 32,
-        width: Platform.select({ web: 400, default: 100 }),
+        width: Platform.OS === "web" ? 400 : '100%',
         position: 'relative',
         overflow: 'hidden',
         borderWidth: 1,

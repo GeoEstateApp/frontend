@@ -1,23 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { auth } from '@/lib/firebase';
+import { FontAwesome } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createUserWithEmailAndPassword, GoogleAuthProvider, sendEmailVerification, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-    View,
+    ActivityIndicator,
+    Alert,
+    Animated,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    StyleSheet,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    Alert,
-    Animated,
-    ActivityIndicator,
-    Modal,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FontAwesome } from '@expo/vector-icons';
-import { auth } from '@/lib/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendEmailVerification } from 'firebase/auth';
-import { useRouter } from 'expo-router';
 
 interface FormData {
     email: string;
@@ -279,6 +280,14 @@ export default function AuthScreen() {
                     setIsLoading(false);
                     return;
                 }
+
+                // Get the JWT token and user ID
+                const idToken = await userCredential.user.getIdToken();
+                const uid = userCredential.user.uid;
+                
+                // Store the tokens in AsyncStorage
+                await AsyncStorage.setItem('idToken', idToken);
+                await AsyncStorage.setItem('uid', uid);
                 
                 router.push('/explore');
             } else {
@@ -365,16 +374,33 @@ export default function AuthScreen() {
         setIsGoogleLoading(true);
         try {
             const provider = new GoogleAuthProvider();
-            await signInWithPopup(auth, provider);
-            router.push('/explore');
+            const result = await signInWithPopup(auth, provider);
+        
+            // Retrieve UID
+            const uid = result.user.uid;
+        
+            // Retrieve ID token
+            const idToken = await result.user.getIdToken();
+        
+          // Store the UID and ID token in AsyncStorage
+        await AsyncStorage.setItem("idToken", idToken);
+        await AsyncStorage.setItem("uid", uid);
+        
+            // Log the UID
+            console.log("User UID:", uid);
+        
+            // Navigate to the explore page
+            router.push("/explore");
         } catch (error) {
             Alert.alert(
-                'Error',
-                'Google sign-in failed. Please try again.',
-                [{ text: 'OK', onPress: () => console.log('OK Pressed') }]
+                "Error",
+                "Google sign-in failed. Please try again.",
+                [{ text: "OK", onPress: () => console.log("OK Pressed") }]
             );
         } finally {
             setIsGoogleLoading(false);
+            const storedIdToken = localStorage.getItem("idToken");
+            console.log("Retrieved ID Token from localStorage:", storedIdToken);
         }
     };
 
