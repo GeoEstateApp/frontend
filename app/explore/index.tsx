@@ -1,4 +1,5 @@
 import { Earth, SearchBox, SidePanel } from '@/components'
+import FavoritesPanel from '@/components/favoritespanel/favoritespanel'
 import { APIProvider } from '@vis.gl/react-google-maps'
 import { StyleSheet, Text, View } from 'react-native'
 import { useEffect, useState } from 'react'
@@ -73,7 +74,7 @@ export default function index() {
         <Earth />
         <SearchBox />
         <SidePanel />
-      
+        <FavoritesPanel />
       </APIProvider>
 
       <Toast position='bottom' bottomOffset={20} />

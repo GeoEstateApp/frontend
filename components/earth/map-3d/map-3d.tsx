@@ -44,7 +44,7 @@ declare global {
 
 export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<google.maps.maps3d.Map3DElement | null>) => {
   const { selectedPlacePolygonCoordinates, setSelectedPlacePolygonCoordinates } = useMapStore()
-  const { setSidePanelPlace, setShowPanel } = useSidePanelStore()
+  const { setShowPanel, setSelectedPlace } = useSidePanelStore()
   const { insights } = useInsightsStore()
   const [markers, setMarkers] = useState<Array<{id: string, position: LatLngLiteralWithAltitude, pin?: any}>>([])
 
@@ -90,7 +90,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
         const types = place.types || []
         const url = place.url || ""
 
-        setSidePanelPlace({ 
+        setSelectedPlace({ 
           placeId: place.place_id,
           name: place.name,
           address, 

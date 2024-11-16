@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView, Image } from 'react-nati
 import React, { useEffect, useRef, useState } from 'react'
 import { IconFilter, IconHeart, IconHeartFilled, IconBookmark } from '@tabler/icons-react'
 import { useSidePanelStore } from '@/states/sidepanel'
+import { useFavoritesPanelStore } from '@/states/favoritespanel'
 import { getPlaceInsights, PlaceInsight } from '@/api/insights'
 import { UI_FILTERS } from '@/const/filters'
 import { useInsightsStore } from '@/states/insights'
@@ -9,9 +10,11 @@ import Toast from 'react-native-toast-message'
 import { addFavorite, favoritesData, removeFavorite } from '@/api/favorites'
 
 export default function SidePanel() {
+  const { togglePanel, showPanel, selectedPlace, setShowPanel } = useSidePanelStore()
+  const { togglePanel: toggleFavoritesPanel, showPanel: showFavoritesPanel, setShowPanel: setShowFavoritesPanel } = useFavoritesPanelStore()
+ 
   const { insights, setInsights } = useInsightsStore()
  
-  const { togglePanel, showPanel, selectedPlace } = useSidePanelStore()
   const [selectedFilters, setSelectedFilters] = useState<string[]>([])
   const [callFilterAPI, setCallFilterAPI] = useState(false)
 
@@ -159,30 +162,30 @@ export default function SidePanel() {
     }
   }
 
+  const handleFilterClick = () => {
+    if (showFavoritesPanel) {
+      setShowFavoritesPanel(false)
+    }
+    togglePanel()
+  }
+
+  const handleFavoritesClick = () => {
+    if (showPanel) {
+      setShowPanel(false)
+    }
+    toggleFavoritesPanel()
+  }
+
   return (
     <View style={styles.container}>
       {showPanel && (
         <View style={styles.panel}>
           <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false} 
-          style={styles.filters}
-          contentContainerStyle={{gap: 8}}>
-            <Pressable
-              onPress={() => setShowFavorites(!showFavorites)}
-              style={[{
-                padding: 10,
-                borderRadius: 5,
-                backgroundColor: showFavorites ? '#4CAF50' : 'white',
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 5
-              }]}>
-              <IconBookmark size={20} color={showFavorites ? 'white' : 'black'} />
-              <Text style={{ color: showFavorites ? 'white' : 'black' }}>
-                Favorites
-              </Text>
-            </Pressable>
+            horizontal 
+            showsHorizontalScrollIndicator={false} 
+            style={styles.filters}
+            contentContainerStyle={{gap: 8}}
+          >
             {UI_FILTERS.map((filter, index) => {
               const filterKey = filter.split(' ').join('_').toLowerCase()
 
@@ -203,82 +206,46 @@ export default function SidePanel() {
             })}
           </ScrollView>
 
-          {showFavorites ? (
-            <ScrollView style={styles.favoritesList}>
-              {favorites.map((favorite, index) => (
+          {selectedPlace && (
+            <View style={styles.selectedPlace}>
+              <Image source={{ uri: imageUri || selectedPlace.photosUrl[0] }} style={{ width: 400, height: 300, objectFit: 'cover' }} />
+              <View style={styles.placeHeader}>
+                <Text style={styles.placeTitle}>{selectedPlace.address}</Text>
                 <Pressable
-                  key={index}
-                  style={styles.favoriteItem}
-                  onPress={() => {
-                    // TODO: Implement selecting a favorite place
-                    Toast.show({
-                      type: 'info',
-                      text1: 'Selected Favorite',
-                      text2: favorite.name,
-                      visibilityTime: 2000,
-                    });
-                  }}
+                  style={styles.favoriteButton}
+                  onPress={handleFavoriteToggle}
                 >
-                  <View style={styles.favoriteContent}>
-                    <Text style={styles.favoriteName}>{favorite.name || 'Unnamed Place'}</Text>
-                    <Text style={styles.favoriteAddress}>{favorite.address}</Text>
-                  </View>
-                  <Pressable
-                    style={styles.removeFavoriteButton}
-                    onPress={async (e) => {
-                      e.stopPropagation();
-                      try {
-                        await removeFavorite(favorite.place_id);
-                        const updatedFavorites = await favoritesData();
-                        setFavorites(updatedFavorites);
-                        Toast.show({
-                          type: 'success',
-                          text1: 'Success',
-                          text2: 'Removed from favorites',
-                          visibilityTime: 2000,
-                        });
-                      } catch (error) {
-                        Toast.show({
-                          type: 'error',
-                          text1: 'Error',
-                          text2: 'Could not remove favorite',
-                          visibilityTime: 3000,
-                        });
-                      }
-                    }}
-                  >
-                    <IconHeartFilled size={20} color="#ff4444" />
-                  </Pressable>
+                  {isFavorite ? (
+                    <IconHeartFilled size={24} color="#ff4444" />
+                  ) : (
+                    <IconHeart size={24} color="#666" />
+                  )}
                 </Pressable>
-              ))}
-            </ScrollView>
-          ) : (
-            selectedPlace && (
-              <View style={styles.selectedPlace}>
-                <Image source={{ uri: imageUri || selectedPlace.photosUrl[0] }} style={{ width: 400, height: 300, objectFit: 'cover' }} />
-                <View style={styles.placeHeader}>
-                  <Text style={styles.placeTitle}>{selectedPlace.address}</Text>
-                  <Pressable
-                    style={styles.favoriteButton}
-                    onPress={handleFavoriteToggle}
-                  >
-                    {isFavorite ? (
-                      <IconHeartFilled size={24} color="#ff4444" />
-                    ) : (
-                      <IconHeart size={24} color="#666" />
-                    )}
-                  </Pressable>
-                </View>
-                { selectedPlace.rating !== 0 && <Text> {selectedPlace.rating}</Text> }
               </View>
-            )
+              { selectedPlace.rating !== 0 && <Text> {selectedPlace.rating}</Text> }
+            </View>
           )}
         </View>
       )}
 
-      <Pressable style={styles.toggleButton} onPress={() => togglePanel()}>
-        <IconFilter size={20} stroke="#000" strokeWidth={2} />
-      </Pressable>
+      <View style={[styles.buttonContainer, (showPanel || showFavoritesPanel) && styles.buttonContainerMoved]}>
+        <Pressable 
+          style={[styles.toggleButton, showPanel && styles.toggleButtonActive]} 
+          onPress={handleFilterClick}
+        >
+          <IconFilter size={20} stroke={showPanel ? "#fff" : "#000"} />
+        </Pressable>
+        <Pressable 
+          style={[styles.toggleButton, showFavoritesPanel && styles.toggleButtonActive]} 
+          onPress={handleFavoritesClick}
+        >
+          <IconHeart 
+            size={20} 
+            stroke={showFavoritesPanel ? "#fff" : "#000"} 
+            fill={showFavoritesPanel ? "#ff4444" : "none"} 
+          />
+        </Pressable>
+      </View>
     </View>
   )
 }
@@ -288,21 +255,25 @@ const styles = StyleSheet.create({
     position: 'absolute',
     height: '100%',
     left: 0,
-    display: 'flex',
-    flexDirection: 'row',
+    top: 0,
   },
-  toggleButton: {
+  buttonContainer: {
+    position: 'absolute',
+    left: 10,
+    top: 10,
     display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    padding: 10,
-    margin: 10,
-    borderRadius: 5,
-    width: 48,
-    height: 48,
+    flexDirection: 'column',
+    gap: 10,
+    zIndex: 1000,
+    transition: 'left 0.3s ease-in-out',
+  },
+  buttonContainerMoved: {
+    left: 410,
   },
   panel: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
     display: 'flex',
     flexDirection: 'column',
     gap: 10,
@@ -401,5 +372,26 @@ const styles = StyleSheet.create({
   },
   removeFavoriteButton: {
     padding: 8,
+  },
+  toggleButton: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    padding: 10,
+    borderRadius: 5,
+    width: 48,
+    height: 48,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  toggleButtonActive: {
+    backgroundColor: '#4CAF50',
   },
 })
