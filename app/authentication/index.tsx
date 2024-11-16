@@ -6,7 +6,6 @@ import { createUserWithEmailAndPassword, GoogleAuthProvider, sendEmailVerificati
 import React, { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     Animated,
     KeyboardAvoidingView,
     Modal,
@@ -19,7 +18,7 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { addUser } from '@/api/user';
+import { addUser, findUserById, findUserByUsername } from '@/api/user';
 
 interface FormData {
     email: string;
@@ -348,9 +347,16 @@ export default function AuthScreen() {
                 const idToken = await userCredential.user.getIdToken();
                 const uid = userCredential.user.uid;
                 
-                // tokens in AsyncStorage
+                // user data from backend
+                const response = await findUserByUsername(uid);
+                if (response.error) {
+                    throw new Error('Failed to get user data');
+                }
+                
+                // tokens and username in AsyncStorage
                 await AsyncStorage.setItem('idToken', idToken);
                 await AsyncStorage.setItem('uid', uid);
+                await AsyncStorage.setItem('username', response.username);
                 
                 router.push('/explore');
             } else {
@@ -482,17 +488,30 @@ export default function AuthScreen() {
     };
 
     const handleGoogleSignIn = async () => {
-        setIsGoogleLoading(true);
         try {
-            const provider = new GoogleAuthProvider();
-            const result = await signInWithPopup(auth, provider);
+            setIsGoogleLoading(true);
+            const result = await signInWithPopup(auth, new GoogleAuthProvider());
+            if (!result) {
+                throw new Error('Google sign in failed');
+            }
         
             // store tokens
             const idToken = await result.user.getIdToken();
             await AsyncStorage.setItem("idToken", idToken);
             await AsyncStorage.setItem("uid", result.user.uid);
 
-            // add user to backend
+            // user exists and has a username
+            const existingUser = await findUserById(result.user.uid);
+            console.log('Existing user check:', existingUser);
+            
+            if (!existingUser.error && existingUser.username && existingUser.username.length > 0) {
+                // user exists and has a username
+                await AsyncStorage.setItem("username", existingUser.username);
+                router.push('/explore');
+                return;
+            }
+
+            // user doesn't exist or doesn't have a username
             const response = await addUser({
                 userid: result.user.uid,
                 name: result.user.displayName || '',
@@ -501,18 +520,20 @@ export default function AuthScreen() {
                 status: 'active'
             });
 
-            // if user doesn't exist, show username modal
-            if (response.error === 'USERNAME_REQUIRED') {
-                setPendingGoogleUser(result.user);
-                setShowUsernameModal(true);
-                return;
+            if (response.error && response.error !== 'USERNAME_REQUIRED') {
+                throw new Error(response.message || 'Failed to create user profile');
             }
 
-            // if no error or user exists, proceed to app
-            router.push('/explore');
+            setPendingGoogleUser(result.user);
+            setShowUsernameModal(true);
+            
         } catch (error: any) {
-            console.error('Google sign-in error:', error);
-            showCustomAlert('Error', error.message || 'Failed to sign in with Google');
+            console.error('Google sign in error:', error);
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: error.message || 'Failed to sign in with Google'
+            });
         } finally {
             setIsGoogleLoading(false);
         }
@@ -530,6 +551,7 @@ export default function AuthScreen() {
             const idToken = await user.getIdToken();
             await AsyncStorage.setItem("idToken", idToken);
             await AsyncStorage.setItem("uid", user.uid);
+            await AsyncStorage.setItem("username", formData.username || '');
 
             // send verification email
             await sendEmailVerification(user);

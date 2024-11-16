@@ -34,6 +34,14 @@ export interface UserProfile {
   name: string;
 }
 
+export interface UserProfileResponse {
+  userid?: string;
+  username?: string;
+  name?: string;
+  error?: string;
+  message?: string;
+}
+
 export const addUser = async (userData: UserData): Promise<UserResponse> => {
   try {
     const { idToken, uid } = await getAuthTokens();
@@ -109,14 +117,17 @@ export const addUser = async (userData: UserData): Promise<UserResponse> => {
   }
 };
 
-export const findUserByUsername = async (username: string): Promise<UserProfile> => {
+export const findUserByUsername = async (username: string): Promise<UserProfileResponse> => {
   try {
     const { idToken, uid } = await getAuthTokens();
     console.log('Auth tokens:', { hasIdToken: !!idToken, hasUid: !!uid, uid });
     
     if (!idToken || !uid) {
       console.error("Missing tokens - idToken:", !!idToken, "uid:", !!uid);
-      throw new Error("Authentication tokens are missing");
+      return {
+        error: 'AUTH_MISSING',
+        message: 'Authentication tokens are missing'
+      };
     }
 
     const url = `${API_URL}/users/find/${username}`;
@@ -135,7 +146,10 @@ export const findUserByUsername = async (username: string): Promise<UserProfile>
     console.log('Response text:', responseText);
 
     if (response.status === 404) {
-      throw new Error('User not found');
+      return {
+        error: 'USER_NOT_FOUND',
+        message: 'User not found'
+      };
     }
 
     let data;
@@ -143,17 +157,97 @@ export const findUserByUsername = async (username: string): Promise<UserProfile>
       data = JSON.parse(responseText);
     } catch (e) {
       console.error('Failed to parse response as JSON:', responseText);
-      throw new Error('Invalid response from server');
+      return {
+        error: 'INVALID_RESPONSE',
+        message: 'Invalid response from server'
+      };
     }
 
     if (response.ok) {
-      return data;
+      return {
+        userid: data.userid,
+        username: data.username,
+        name: data.name
+      };
     }
 
-    throw new Error(data.error || 'Failed to find user');
+    return {
+      error: data.error || 'UNKNOWN_ERROR',
+      message: data.error || 'Failed to find user'
+    };
   } catch (error: any) {
     console.error("Error finding user:", error);
-    throw error;
+    return {
+      error: 'REQUEST_FAILED',
+      message: error.message
+    };
+  }
+};
+
+export const findUserById = async (userid: string): Promise<UserProfileResponse> => {
+  try {
+    const { idToken, uid } = await getAuthTokens();
+    console.log('Auth tokens:', { hasIdToken: !!idToken, hasUid: !!uid, uid });
+    
+    if (!idToken || !uid) {
+      console.error("Missing tokens - idToken:", !!idToken, "uid:", !!uid);
+      return {
+        error: 'AUTH_MISSING',
+        message: 'Authentication tokens are missing'
+      };
+    }
+
+    const url = `${API_URL}/users/${userid}`;
+    console.log('Making request to:', url);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Authorization': `Bearer ${idToken}`,
+      },
+    });
+
+    console.log('Response status:', response.status);
+    const responseText = await response.text();
+    console.log('Response text:', responseText);
+
+    if (response.status === 404) {
+      return {
+        error: 'USER_NOT_FOUND',
+        message: 'User not found'
+      };
+    }
+
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      console.error('Failed to parse response as JSON:', responseText);
+      return {
+        error: 'INVALID_RESPONSE',
+        message: 'Invalid response from server'
+      };
+    }
+
+    if (response.ok) {
+      return {
+        userid: data.userid,
+        username: data.username,
+        name: data.name
+      };
+    }
+
+    return {
+      error: data.error || 'UNKNOWN_ERROR',
+      message: data.error || 'Failed to find user'
+    };
+  } catch (error: any) {
+    console.error("Error finding user:", error);
+    return {
+      error: 'REQUEST_FAILED',
+      message: error.message
+    };
   }
 };
 
