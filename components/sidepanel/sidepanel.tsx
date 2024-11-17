@@ -10,7 +10,7 @@ import Toast from 'react-native-toast-message'
 export default function SidePanel() {
   const { insights, setInsights } = useInsightsStore()
  
-  const { showPanel, selectedPlace } = useSidePanelStore()
+  const { selectedPlace, realEstateProperties, setSelectedRealEstateProperty, selectedRealEstateProperty } = useSidePanelStore()
   const [selectedFilters, setSelectedFilters] = useState<string[]>([])
   const [callFilterAPI, setCallFilterAPI] = useState(false)
 
@@ -41,8 +41,6 @@ export default function SidePanel() {
     const includingFilters = selectedFilters.map(filter => filter)
 
     const fetchInsights = async () => {
-      // TODO: move the camera to higher altitude (200) to see the insights
-
       const insights: PlaceInsight[] = await getPlaceInsights(selectedPlace.lat, selectedPlace.lng, includingFilters) || []
       setInsights(insights)
       setCallFilterAPI(false)
@@ -96,40 +94,68 @@ export default function SidePanel() {
   return (
     <View style={styles.container}>
         <View style={styles.panel}>
-          <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false} 
-          style={styles.filters}
-          contentContainerStyle={{gap: 8}}>
-            {UI_FILTERS.map((filter, index) => {
-              const filterKey = filter.split(' ').join('_').toLowerCase()
+          {
+            selectedPlace && (
+              <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              style={{...styles.filters, flexShrink: 0, minHeight: 40 }}
+              contentContainerStyle={{ gap: 8, minHeight: 40 }}>
+                {UI_FILTERS.map((filter, index) => {
+                  const filterKey = filter.split(' ').join('_').toLowerCase()
 
-              return (
-                <Pressable
-                  key={index}
-                  onPress={() => handleOnFilterPress(filterKey)}
-                  style={[{
-                    padding: 10,
-                    borderRadius: 5,
-                    backgroundColor: selectedFilters.includes(filterKey) ? `${SUPPORTED_FILTERS_MAP[filterKey as keyof typeof SUPPORTED_FILTERS_MAP]?.fill.substring(0, 7) || 'grey'}` : 'grey',
-                  }]}>
-                    <Text style={{ color: selectedFilters.includes(filterKey) ? 'white' : 'white' }}>
-                      {filter}
-                    </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+                  return (
+                    <Pressable
+                      key={index}
+                      onPress={() => handleOnFilterPress(filterKey)}
+                      style={[{
+                        padding: 10,
+                        borderRadius: 5,
+                        backgroundColor: selectedFilters.includes(filterKey) ? `${SUPPORTED_FILTERS_MAP[filterKey as keyof typeof SUPPORTED_FILTERS_MAP]?.fill.substring(0, 7) || 'grey'}` : 'grey',
+                      }]}>
+                        <Text style={{ color: selectedFilters.includes(filterKey) ? 'white' : 'white' }}>
+                          {filter}
+                        </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            )
+          }
 
           {
             selectedPlace && (
               <View style={styles.selectedPlace}>
-                <Image source={{ uri: imageUri || selectedPlace.photosUrl[0] }} style={{ width: 400, height: 300, objectFit: 'cover' }} />
+                <Image source={{ uri: imageUri || selectedPlace.photosUrl[0] }} style={{ width: 400, height: 250, objectFit: 'cover' }} />
                 <Text style={styles.placeTitle}>{selectedPlace.address}</Text>
                 { selectedPlace.rating !== 0 && <Text>🌟 {selectedPlace.rating}</Text> }
               </View>
             )
           }
+
+          { realEstateProperties && realEstateProperties.length > 0 && <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10, marginTop: 24 }}>Real Estate Properties</Text> }
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {
+              realEstateProperties && realEstateProperties.length > 0 && (
+                <View style={{ gap: 8, flexDirection: 'column' }}>
+                    {
+                      realEstateProperties.map((property, index) => {
+                        return <Pressable style={{...styles.realEstateProperty, backgroundColor: selectedRealEstateProperty?.property_id === property.property_id ? '#49A84C' : 'white'}} key={index} onPress={() => setSelectedRealEstateProperty(property)}>
+                          <Image source={{ uri: property.img_url }} style={{ width: 100, objectFit: 'cover', borderRadius: 6 }} />
+                          <View style={{ gap: 4, display: 'flex', flexDirection: 'column' }}>
+                            <Text style={{ fontSize: 16, fontWeight: 'bold', color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.address_line}</Text>
+                            <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>Property: {property.property_type.split('_').join(' ').toUpperCase()}</Text>
+                            { property.size_sqft && <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>Size: {property.size_sqft} ft²</Text> }
+                            <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.price}</Text>
+                            <Text style={{ fontSize: 12, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.status}</Text>
+                          </View>
+                        </Pressable>
+                      })
+                    }
+                </View>
+              )
+            }
+          </ScrollView>
         </View>
     </View>
   )
@@ -167,7 +193,6 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'row',
     gap: 8,
-    flexGrow: 0,
     flexWrap: 'nowrap',
   },
   selectedPlace: {
@@ -187,4 +212,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     padding: 10,
   },
+  realEstateProperty: {
+    display: 'flex',
+    flexDirection: 'row',
+    gap: 10,
+    padding: 10,
+    backgroundColor: 'white',
+    borderRadius: 6,
+    cursor: 'pointer'
+  }
 })

@@ -4,13 +4,13 @@ import { create } from 'zustand'
 interface ZipcodeInsights {
   zipcode: string
   zipcodes: ZipcodeData[],
-  polygon: PolygonCoordinates[]
-  polygons: PolygonCoordinates[][]
+  polygon: PolygonCoordinates[] | null
+  polygons: PolygonCoordinates[][] | null
 
   setZipcode: (zipcode: string) => void
   setZipcodes: (zipcodes: ZipcodeData[]) => void
-  setPolygon: (polygon: PolygonCoordinates[]) => void
-  setPolygons: (polygons: PolygonCoordinates[][]) => void
+  setPolygon: (polygon: PolygonCoordinates[] | null) => void
+  setPolygons: (polygons: PolygonCoordinates[][] | null) => void
 
   zipcodeInsights: ZipcodeInsight
   setZipcodeInsights: (zipcodeInsights: ZipcodeInsight) => void
@@ -57,8 +57,8 @@ export const useZipcodeInsights = create<ZipcodeInsights>((set) => ({
 
   setZipcode: (zipcode: string) => set({ zipcode }),
   setZipcodes: (zipcodes: ZipcodeData[]) => set({ zipcodes }),  
-  setPolygon: (polygon: PolygonCoordinates[]) => set({ polygon }),
-  setPolygons: (polygons: PolygonCoordinates[][]) => set({ polygons }),
+  setPolygon: (polygon: PolygonCoordinates[] | null) => set({ polygon }),
+  setPolygons: (polygons: PolygonCoordinates[][] | null) => set({ polygons }),
 
   zipcodeInsights: {} as ZipcodeInsight,
   setZipcodeInsights: (zipcodeInsights: ZipcodeInsight) => set({ zipcodeInsights }),
