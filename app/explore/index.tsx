@@ -1,4 +1,4 @@
-import { AIChat, Earth, SearchBox, SidePanel, ZipPanel } from '@/components'
+import { AIChat, Earth, SearchBox, SidePanel, Suitability, ZipPanel } from '@/components'
 import { APIProvider } from '@vis.gl/react-google-maps'
 import { ActivityIndicator, Button, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useEffect, useState } from 'react'
@@ -9,6 +9,7 @@ import { auth } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import Toast from 'react-native-toast-message'
 import { useSidePanelStore } from '@/states/sidepanel'
+import { useSuitability } from '@/states/suitability'
 
 const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY
 const GOOGLE_MAP_VERSION = 'alpha'
@@ -54,6 +55,7 @@ export default function index() {
   const [isLoading, setIsLoading] = useState(false)
 
   const { setShowPanel, showPanel, selectedRealEstateProperty, setSelectedRealEstateProperty } = useSidePanelStore()
+  const { isModalOpen } = useSuitability()
 
   if (!API_KEY) {
     return (
@@ -177,7 +179,7 @@ export default function index() {
                 <Text style={{ fontSize: 14 }}><b>Female Median Age:</b> {selectedRealEstateProperty.median_age_female}</Text>
                 <Text style={{ fontSize: 14 }}>
                   <b>Predicted Price (1-Year):</b> {
-                    `$${(Number(selectedRealEstateProperty.price.replace("$", "").replaceAll(",", "")) + Math.abs(Number(selectedRealEstateProperty.price.replace("$", "").replaceAll(",", "")) * (selectedRealEstateProperty.home_value_forecast / 10))).toLocaleString("en-US")}`
+                    `$${(Number(selectedRealEstateProperty.price.replace("$", "").replaceAll(",", "")) + Number(selectedRealEstateProperty.price.replace("$", "").replaceAll(",", "")) * (selectedRealEstateProperty.home_value_forecast / 10)).toLocaleString("en-US")}`
                   }
                 </Text>
               </View>
@@ -228,9 +230,10 @@ export default function index() {
             </Pressable>
           </View>
         </View>
-        
         ) 
       }
+
+      { isModalOpen && <Suitability /> }
 
       <Toast position='bottom' bottomOffset={20} />
     </View>

@@ -1,6 +1,5 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, Image } from 'react-native'
-import React, { useEffect, useRef, useState } from 'react'
-import { IconFilter } from '@tabler/icons-react'
+import React, { useEffect, useState } from 'react'
 import { useSidePanelStore } from '@/states/sidepanel'
 import { getPlaceInsights, PlaceInsight } from '@/api/insights'
 import { SUPPORTED_FILTERS_MAP, UI_FILTERS } from '@/const/filters'
@@ -99,7 +98,7 @@ export default function SidePanel() {
               <ScrollView 
               horizontal 
               showsHorizontalScrollIndicator={false} 
-              style={{...styles.filters, flexShrink: 0, minHeight: 40 }}
+              style={{...styles.filters, flexGrow: 0, minHeight: 40 }}
               contentContainerStyle={{ gap: 8, minHeight: 40 }}>
                 {UI_FILTERS.map((filter, index) => {
                   const filterKey = filter.split(' ').join('_').toLowerCase()
@@ -109,6 +108,9 @@ export default function SidePanel() {
                       key={index}
                       onPress={() => handleOnFilterPress(filterKey)}
                       style={[{
+                        flexShrink: 0,
+                        flexGrow: 0,
+                        height: 40,
                         padding: 10,
                         borderRadius: 5,
                         backgroundColor: selectedFilters.includes(filterKey) ? `${SUPPORTED_FILTERS_MAP[filterKey as keyof typeof SUPPORTED_FILTERS_MAP]?.fill.substring(0, 7) || 'grey'}` : 'grey',

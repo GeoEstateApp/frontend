@@ -1,9 +1,12 @@
 import { View, StyleSheet, TextInput, Text, Platform } from 'react-native'
 import React, { useEffect, useRef, useState } from 'react'
-import { IconSearch } from '@tabler/icons-react'
+import { IconCalculator, IconCalculatorFilled, IconCalculatorOff, IconSearch, IconSum } from '@tabler/icons-react'
 import { useMapsLibrary } from '@vis.gl/react-google-maps'
 import { useMapStore } from '@/states/map'
 import { useSidePanelStore } from '@/states/sidepanel'
+import { getAuth } from 'firebase/auth'
+import { useSuitability } from '@/states/suitability'
+import Toast from 'react-native-toast-message'
 
 const MIN_SEARCH_LENGTH = 3
 
@@ -11,6 +14,7 @@ export default function SearchBox() {
   const [placeAutocompleteService, setPlaceAutocompleteService] = useState<google.maps.places.AutocompleteService | null>(null)
   const [predictions, setPredictions] = useState<Array<google.maps.places.AutocompletePrediction>>([])
   const [searchText, setSearchText] = useState("")
+  const { toggleModal } = useSuitability()
 
   const places = useMapsLibrary('places')
 
@@ -69,30 +73,44 @@ export default function SearchBox() {
   
   return (
     <View style={styles.container}>
-      <View style={styles.searchBoxContainer}>
-        <IconSearch size={16} stroke="#e4e4e7" />
-        <TextInput
-          style={styles.input}
-          value={searchText}
-          placeholder="Search for any place"
-          onChangeText={(searchText) => handleSearchTextChange(searchText)}
-          placeholderTextColor="#666" />
-      </View>
+      <IconSum style={styles.calculatorButton} size={22} stroke="#e4e4e7" onClick={() => {
+        if (getAuth().currentUser) toggleModal()
+        else {
+          Toast.show({
+            type: 'info',
+            text1: 'Please login to use this feature.',
+            visibilityTime: 3000,
+            text1Style: { fontSize: 14 },
+            autoHide: true
+          }) 
+        }
+      }} />
+      <View style={{ flexDirection: 'column' }}>
+        <View style={styles.searchBoxContainer}>
+          <IconSearch size={16} stroke="#e4e4e7" />
+          <TextInput
+            style={styles.input}
+            value={searchText}
+            placeholder="Search for any place"
+            onChangeText={(searchText) => handleSearchTextChange(searchText)}
+            placeholderTextColor="#666" />
+        </View>
 
-      {
-        predictions.length > 0 && (
-          <View style={styles.predictionsContainer}>
-            {predictions.map((prediction, index) => (
-              <Text
-                key={index}
-                style={styles.predictionsItem}
-                onPress={() => handleSelectPlace(prediction.place_id || "")}>
-                {prediction.description}
-              </Text>
-            ))}
-          </View>
-        )
-      }
+        {
+          predictions.length > 0 && (
+            <View style={styles.predictionsContainer}>
+              {predictions.map((prediction, index) => (
+                <Text
+                  key={index}
+                  style={styles.predictionsItem}
+                  onPress={() => handleSelectPlace(prediction.place_id || "")}>
+                  {prediction.description}
+                </Text>
+              ))}
+            </View>
+          )
+        }
+      </View>
     </View>
   )
 }
@@ -102,11 +120,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: Platform.OS === 'web' ? 10 : 30,
     display: 'flex',
-    flexDirection: 'column',
-    width: '30%',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    maxWidth: 400,
+    minWidth: 400,
     zIndex: 999,
   },
   searchBoxContainer: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
@@ -114,11 +135,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#f4f4f5',
     borderRadius: 8,
     marginHorizontal: 16,
-    borderWidth: 1,
     borderColor: '#e4e4e7',
   },
   input: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     fontSize: 16,
     color: '#27272a',
     borderWidth: 0,
@@ -145,5 +167,21 @@ const styles = StyleSheet.create({
   predictionsText: {
     fontSize: 16,
     color: '#27272a',
+  },
+  calculatorButton: {
+    flexShrink: 0,
+    zIndex: 1000,
+    backgroundColor: 'white',
+    padding: 10,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    cursor: 'pointer'
   },
 })
