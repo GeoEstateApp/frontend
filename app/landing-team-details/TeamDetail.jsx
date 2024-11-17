@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import {View, Image,Animated, StyleSheet, Text,TouchableOpacity} from "react-native";
+import {View,Image,Animated,StyleSheet,Text,TouchableOpacity,} from "react-native";
 import logoImage from "../../assets/images/favicon.png";
 
 function TeamDetail({ teamMembers }) {
@@ -17,7 +17,7 @@ function TeamDetail({ teamMembers }) {
     teamMembers.map(() => new Animated.Value(0))
   ).current;
 
-  // team logo animations
+  // Team logo animations
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -35,7 +35,7 @@ function TeamDetail({ teamMembers }) {
     ).start();
   }, [pulseAnim]);
 
-  //  hover enter/leave animations
+  // hover enter/leave animations
   const handleMouseEnter = (index) => {
     Animated.timing(hoverAnim[index], {
       toValue: 1.2,
@@ -74,7 +74,7 @@ function TeamDetail({ teamMembers }) {
     setSelectedIndex(null);
   };
 
-  //  particles in bg
+  // Particles in background
   const generateParticles = () => {
     let particles = [];
     for (let i = 0; i < 50; i++) {
@@ -99,47 +99,7 @@ function TeamDetail({ teamMembers }) {
 
   return (
     <View style={styles.Tcontainer}>
-      <View style={styles.particlesBackground}>{generateParticles()}</View>
-
-      <View style={styles.teamContainer}>
-        <Animated.View
-          style={[styles.logoContainer, { transform: [{ scale: pulseAnim }] }]}
-        >
-          <Image source={logoImage} style={styles.logoImage} />
-        </Animated.View>
-
-        {teamMembers.map((member, index) => {
-          const angle = index * angleStep;
-          const x = radius * Math.cos(angle);
-          const y = radius * Math.sin(angle);
-
-          return (
-            <View
-              key={index}
-              style={[
-                styles.profilePosition,
-                { transform: [{ translateX: x }, { translateY: y }] },
-              ]}
-            >
-              <Animated.Image
-                source={{ uri: member.image }}
-                style={[
-                  styles.profileImage,
-                  { transform: [{ scale: hoverAnim[index] }] },
-                ]}
-                onMouseEnter={() => handleMouseEnter(index)}
-                onMouseLeave={() => handleMouseLeave(index)}
-              />
-              <Animated.View
-                style={[styles.tooltip, { opacity: tooltipOpacity[index] }]}
-              >
-                <Text style={styles.roleText}>{member.role}</Text>
-              </Animated.View>
-            </View>
-          );
-        })}
-      </View>
-
+      <View style={styles.particlesBackground}>{generateParticles()}</View> 
       <View style={styles.namesList}>
         {teamMembers.map((member, index) => (
           <TouchableOpacity
@@ -189,6 +149,45 @@ function TeamDetail({ teamMembers }) {
           </TouchableOpacity>
         ))}
       </View>
+
+      <View style={styles.teamContainer}>
+        <Animated.View
+          style={[styles.logoContainer, { transform: [{ scale: pulseAnim }] }]}
+        >
+          <Image source={logoImage} style={styles.logoImage} />
+        </Animated.View>
+
+        {teamMembers.map((member, index) => {
+          const angle = index * angleStep;
+          const x = radius * Math.cos(angle);
+          const y = radius * Math.sin(angle);
+
+          return (
+            <View
+              key={index}
+              style={[
+                styles.profilePosition,
+                { transform: [{ translateX: x }, { translateY: y }] },
+              ]}
+            >
+              <Animated.Image
+                source={{ uri: member.image }}
+                style={[
+                  styles.profileImage,
+                  { transform: [{ scale: hoverAnim[index] }] },
+                ]}
+                onMouseEnter={() => handleMouseEnter(index)}
+                onMouseLeave={() => handleMouseLeave(index)}
+              />
+              <Animated.View
+                style={[styles.tooltip, { opacity: tooltipOpacity[index] }]}
+              >
+                <Text style={styles.roleText}>{member.role}</Text>
+              </Animated.View>
+            </View>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -221,7 +220,7 @@ const styles = StyleSheet.create({
       alignItems: "center",
       justifyContent: "center",
       position: "relative",
-      marginRight : 40
+      marginRight : 200
     },
     logoContainer: {
       position: "absolute",
@@ -233,8 +232,8 @@ const styles = StyleSheet.create({
       zIndex: 1,
     },
     logoImage: {
-      width: 100,
-      height: 100,
+      width: 120,
+      height: 120,
       borderRadius: 40,
     },
     profilePosition: {
