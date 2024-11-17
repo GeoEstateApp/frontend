@@ -136,7 +136,7 @@ export default function BucketListPanel() {
           onPress={() => setViewMode('search')}
         >
           <IconUsers size={20} color={viewMode === 'search' ? '#fff' : '#000'} />
-          <Text style={[styles.tabText, viewMode === 'search' && styles.activeTabText]}>Search Users</Text>
+          <Text style={[styles.tabText, viewMode === 'search' && styles.activeTabText]}>Discover</Text>
         </TouchableOpacity>
       </View>
 
