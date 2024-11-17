@@ -1,19 +1,20 @@
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native'
-import React, { useEffect, useState } from 'react'
-import { IconHeart, IconHeartFilled } from '@tabler/icons-react'
-import { favoritesData, removeFavorite } from '@/api/favorites'
-import Toast from 'react-native-toast-message'
-import { useFavoritesPanelStore } from '@/states/favoritespanel'
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { IconHeartFilled } from '@tabler/icons-react';
+import { getFavorites, FavoriteItem } from '@/api/favorites';
+import Toast from 'react-native-toast-message';
+import { useFavoritesPanelStore } from '@/states/favoritespanel';
 
 export default function FavoritesPanel() {
-  const { showPanel } = useFavoritesPanelStore()
-  const [favorites, setFavorites] = useState<any[]>([])
+  const { showPanel } = useFavoritesPanelStore();
+  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // Load user's favorites
   useEffect(() => {
     const loadFavorites = async () => {
+      setLoading(true);
       try {
-        const userFavorites = await favoritesData();
+        const userFavorites = await getFavorites();
         setFavorites(userFavorites);
       } catch (error) {
         console.error('Error loading favorites:', error);
@@ -22,66 +23,40 @@ export default function FavoritesPanel() {
           text1: 'Error',
           text2: 'Could not load favorites. Please try again.',
         });
+      } finally {
+        setLoading(false);
       }
     };
-    loadFavorites();
-  }, []);
+
+    if (showPanel) {
+      loadFavorites();
+    }
+  }, [showPanel]);
 
   if (!showPanel) return null;
 
   return (
     <View style={styles.panel}>
-      <Text style={styles.title}>Favorites</Text>
+      <Text style={styles.title}>My Favorites</Text>
       <ScrollView style={styles.favoritesList}>
-        {favorites.map((favorite, index) => (
-          <Pressable
-            key={index}
-            style={styles.favoriteItem}
-            onPress={() => {
-              // TODO: Implement selecting a favorite place
-              Toast.show({
-                type: 'info',
-                text1: 'Selected Favorite',
-                text2: favorite.name,
-                visibilityTime: 2000,
-              });
-            }}
-          >
-            <View style={styles.favoriteContent}>
-              <Text style={styles.favoriteName}>{favorite.name || 'Unnamed Place'}</Text>
-              <Text style={styles.favoriteAddress}>{favorite.address}</Text>
+        {loading ? (
+          <Text style={styles.emptyMessage}>Loading favorites...</Text>
+        ) : favorites.length === 0 ? (
+          <Text style={styles.emptyMessage}>You haven't added any favorites yet!</Text>
+        ) : (
+          favorites.map((favorite, index) => (
+            <View key={index} style={styles.favoriteItem}>
+              <View style={styles.favoriteContent}>
+                <Text style={styles.favoriteName}>{favorite.name}</Text>
+                <Text style={styles.favoriteAddress}>{favorite.address}</Text>
+              </View>
+              <IconHeartFilled size={24} color="#ff4444" />
             </View>
-            <Pressable
-              style={styles.removeFavoriteButton}
-              onPress={async (e) => {
-                e.stopPropagation();
-                try {
-                  await removeFavorite(favorite.place_id);
-                  const updatedFavorites = await favoritesData();
-                  setFavorites(updatedFavorites);
-                  Toast.show({
-                    type: 'success',
-                    text1: 'Success',
-                    text2: 'Removed from favorites',
-                    visibilityTime: 2000,
-                  });
-                } catch (error) {
-                  Toast.show({
-                    type: 'error',
-                    text1: 'Error',
-                    text2: 'Could not remove favorite',
-                    visibilityTime: 3000,
-                  });
-                }
-              }}
-            >
-              <IconHeartFilled size={20} color="#ff4444" />
-            </Pressable>
-          </Pressable>
-        ))}
+          ))
+        )}
       </ScrollView>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -89,53 +64,55 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     top: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 10,
-    backgroundColor: '#ffffff90',
+    bottom: 0,
     width: 400,
-    height: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     padding: 20,
+    zIndex: 1000,
+    borderRightWidth: 1,
+    borderColor: 'rgba(221, 221, 221, 0.5)',
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 16,
   },
   favoritesList: {
     flex: 1,
   },
   favoriteItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'white',
-    padding: 15,
+    padding: 16,
+    backgroundColor: '#fff',
     borderRadius: 8,
-    marginBottom: 10,
+    marginBottom: 8,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 1,
+      height: 2,
     },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    elevation: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   favoriteContent: {
     flex: 1,
-    marginRight: 10,
+    marginRight: 16,
   },
   favoriteName: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: 'bold',
     marginBottom: 4,
   },
   favoriteAddress: {
     fontSize: 14,
     color: '#666',
   },
-  removeFavoriteButton: {
-    padding: 8,
+  emptyMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    padding: 16,
   },
-})
+});
