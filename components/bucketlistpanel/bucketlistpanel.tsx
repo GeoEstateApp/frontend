@@ -4,10 +4,17 @@ import { getBucketList, removeFromBucketList, BucketListItem } from '../../api/b
 import { IconList, IconSearch, IconTrash, IconUser, IconUsers } from '@tabler/icons-react';
 import Toast from 'react-native-toast-message';
 import { useBucketListPanelStore } from '@/states/bucketlistpanel';
+import { useMapStore } from '@/states/map';
+import { useSidePanelStore } from '@/states/sidepanel';
+import { useFavoritesPanelStore } from '@/states/favoritespanel';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DiscoveryFeed from './discoveryfeed';
 
 export default function BucketListPanel() {
-  const { showPanel } = useBucketListPanelStore();
+  const { showPanel, setShowPanel } = useBucketListPanelStore();
+  const { setSelectedPlace } = useMapStore();
+  const { setShowPanel: setShowSidePanel } = useSidePanelStore();
+  const { setShowPanel: setShowFavoritesPanel } = useFavoritesPanelStore();
   const [searchUsername, setSearchUsername] = useState('');
   const [bucketList, setBucketList] = useState<BucketListItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -119,87 +126,84 @@ export default function BucketListPanel() {
       <View style={styles.tabContainer}>
         <TouchableOpacity 
           style={[styles.tab, viewMode === 'own' && styles.activeTab]}
-          onPress={handleViewOwnList}
+          onPress={() => setViewMode('own')}
         >
           <IconUser size={20} color={viewMode === 'own' ? '#fff' : '#000'} />
           <Text style={[styles.tabText, viewMode === 'own' && styles.activeTabText]}>My List</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.tab, viewMode === 'search' && styles.activeTab]}
-          onPress={handleViewSearch}
+          onPress={() => setViewMode('search')}
         >
           <IconUsers size={20} color={viewMode === 'search' ? '#fff' : '#000'} />
           <Text style={[styles.tabText, viewMode === 'search' && styles.activeTabText]}>Search Users</Text>
         </TouchableOpacity>
       </View>
 
-      {viewMode === 'search' && (
-        <View style={styles.searchContainer}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Enter username"
-            value={searchUsername}
-            onChangeText={setSearchUsername}
-            onSubmitEditing={handleSearch}
-          />
-          <TouchableOpacity 
-            style={styles.searchButton}
-            onPress={handleSearch}
-          >
-            <IconSearch size={24} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      )}
+      {viewMode === 'search' ? (
+        <DiscoveryFeed />
+      ) : (
+        <ScrollView style={styles.listContainer}>
+          {loading ? (
+            <View style={styles.centerContainer}>
+              <ActivityIndicator size="large" color="#0000ff" />
+              <Text style={styles.centerText}>Loading...</Text>
+            </View>
+          ) : bucketList.length === 0 ? (
+            <View style={styles.centerContainer}>
+              <Text style={styles.centerText}>
+                You haven't added any places to your bucket list yet
+              </Text>
+            </View>
+          ) : (
+            <>
+              {bucketList.map((item) => (
+                <TouchableOpacity
+                  key={`${item.place_id}-${item.userid}`}
+                  style={styles.listItem}
+                  onPress={() => {
+                    // Close all panels
+                    setShowPanel(false);
+                    setShowSidePanel(false);
+                    setShowFavoritesPanel(false);
+                    
+                    // Navigate to location
+                    setSelectedPlace({
+                      place_id: item.place_id,
+                      name: item.name,
+                      formatted_address: item.address,
+                      geometry: {
+                        location: {
+                          lat: () => item.latitude,
+                          lng: () => item.longitude
+                        }
+                      }
+                    } as google.maps.places.PlaceResult);
 
-      <ScrollView style={styles.listContainer}>
-        {loading ? (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color="#0000ff" />
-            <Text style={styles.centerText}>Loading...</Text>
-          </View>
-        ) : bucketList.length === 0 ? (
-          <View style={styles.centerContainer}>
-            <Text style={styles.centerText}>
-              {viewMode === 'own' 
-                ? "You haven't added any places to your bucket list yet"
-                : "No places found in bucket list"}
-            </Text>
-          </View>
-        ) : (
-          <>
-            {viewMode === 'search' && searchUsername && (
-              <Text style={styles.subtitle}>Showing bucket list for: {searchUsername}</Text>
-            )}
-            {bucketList.map((item) => (
-              <TouchableOpacity
-                key={`${item.place_id}-${item.userid}`}
-                style={styles.listItem}
-                onPress={() => {
-                  Toast.show({
-                    type: 'info',
-                    text1: item.name,
-                    text2: item.address,
-                    visibilityTime: 2000,
-                  });
-                }}
-              >
-                <View style={styles.itemContent}>
-                  <Text style={styles.itemName}>{item.name}</Text>
-                  <Text style={styles.itemAddress}>{item.address}</Text>
-                </View>
-                {viewMode === 'own' && (
+                    Toast.show({
+                      type: 'success',
+                      text1: 'Navigating to location',
+                      text2: item.name,
+                      visibilityTime: 2000,
+                    });
+                  }}
+                >
+                  <View style={styles.itemContent}>
+                    <Text style={styles.itemName}>{item.name}</Text>
+                    <Text style={styles.itemAddress}>{item.address}</Text>
+                  </View>
                   <TouchableOpacity
                     style={styles.removeButton}
                     onPress={() => handleRemove(item.place_id)}
                   >
                     <IconTrash size={20} color="#ff4444" />
                   </TouchableOpacity>
-                )}
-              </TouchableOpacity>
-            ))}
-          </>
-        )}
-      </ScrollView>
+                </TouchableOpacity>
+              ))}
+            </>
+          )}
+        </ScrollView>
+      )}
     </View>
   );
 }

@@ -97,15 +97,30 @@ export default function SidePanel() {
       try {
         const userBucketList = await getBucketList();
         setBucketList(userBucketList);
-        if (selectedPlace) {
-          setIsInBucketList(userBucketList.some((item: any) => item.place_id === selectedPlace.placeId));
-        }
       } catch (error) {
         console.error('Error loading bucket list:', error);
       }
     };
     loadBucketList();
-  }, [showBucketListPanel, selectedPlace]);
+  }, [showBucketListPanel]);
+
+  // Check if selected place is in bucket list
+  useEffect(() => {
+    const checkBucketListStatus = async () => {
+      if (!selectedPlace) {
+        setIsInBucketList(false);
+        return;
+      }
+      try {
+        const userBucketList = await getBucketList();
+        setIsInBucketList(userBucketList.some((item: any) => item.place_id === selectedPlace.placeId));
+      } catch (error) {
+        console.error('Error checking bucket list status:', error);
+        setIsInBucketList(false);
+      }
+    };
+    checkBucketListStatus();
+  }, [selectedPlace]);
 
   // Only load favorites when favorites panel is shown
   useEffect(() => {
