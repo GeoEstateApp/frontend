@@ -79,7 +79,7 @@ export default function index() {
         <Earth />
         <SearchBox />
         { showPanel && <SidePanel /> }
-        { isZipcodePanelOpen && <ZipPanel isZipcodePanelOpen /> }
+        { isZipcodePanelOpen && <ZipPanel /> }
         { showAIChat && <AIChat /> }
 
         <View style={{...styles.toggleButtonGroup, left: showPanel || isZipcodePanelOpen || showAIChat ? 420 : 20}}>

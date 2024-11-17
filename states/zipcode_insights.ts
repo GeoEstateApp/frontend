@@ -3,18 +3,20 @@ import { create } from 'zustand'
 
 interface ZipcodeInsights {
   zipcode: string
+  zipcodes: ZipcodeData[],
   polygon: PolygonCoordinates[]
   polygons: PolygonCoordinates[][]
 
   setZipcode: (zipcode: string) => void
+  setZipcodes: (zipcodes: ZipcodeData[]) => void
   setPolygon: (polygon: PolygonCoordinates[]) => void
   setPolygons: (polygons: PolygonCoordinates[][]) => void
 
-  zipcodeInsights: ZipcodeInsights
-  setZipcodeInsights: (zipcodeInsights: ZipcodeInsights) => void
+  zipcodeInsights: ZipcodeInsight
+  setZipcodeInsights: (zipcodeInsights: ZipcodeInsight) => void
 }
 
-interface ZipcodeInsights {
+export interface ZipcodeInsight {
   state: string,
   city: string,
   county: string,
@@ -27,6 +29,11 @@ interface ZipcodeInsights {
   vacanciesForRentPercent: number,
   vacanciesForSalePercent: number,
   homeValueForecast: number
+}
+
+export interface ZipcodeData {
+  zipcode: string
+  name: string
 }
 
 export const useZipcodeInsights = create<ZipcodeInsights>((set) => ({
@@ -44,13 +51,15 @@ export const useZipcodeInsights = create<ZipcodeInsights>((set) => ({
   homeValueForecast: 0,
 
   zipcode: '',
+  zipcodes: [],
   polygon: [],
   polygons: [],
 
   setZipcode: (zipcode: string) => set({ zipcode }),
+  setZipcodes: (zipcodes: ZipcodeData[]) => set({ zipcodes }),  
   setPolygon: (polygon: PolygonCoordinates[]) => set({ polygon }),
   setPolygons: (polygons: PolygonCoordinates[][]) => set({ polygons }),
 
-  zipcodeInsights: {} as ZipcodeInsights,
-  setZipcodeInsights: (zipcodeInsights: ZipcodeInsights) => set({ zipcodeInsights }),
+  zipcodeInsights: {} as ZipcodeInsight,
+  setZipcodeInsights: (zipcodeInsights: ZipcodeInsight) => set({ zipcodeInsights }),
 }))

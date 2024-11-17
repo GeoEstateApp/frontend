@@ -186,11 +186,16 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
   }, []);
 
   useEffect(() => {
-    if (selectedPlacePolygonCoordinates.length <= 0) return
-
     const polygon = document.querySelector('gmp-polygon-3d')
     if (!polygon) return
     if (!map3DElement) return
+    
+    if (selectedPlacePolygonCoordinates.length <= 0) {
+      customElements.whenDefined(polygon.localName).then(() => {
+        (polygon as any).outerCoordinates = []
+      })
+      return
+    }
 
     customElements.whenDefined(polygon.localName).then(() => {
       (polygon as any).outerCoordinates = selectedPlacePolygonCoordinates

@@ -41,6 +41,8 @@ export default function SearchBox() {
   const handleSelectPlace = (placeId: string) => {
     if (placeId === "" || placeId === undefined || !places) return
 
+    setSidePanelPlace(null)
+
     const placesService = new places.PlacesService(document.createElement('div'))
     placesService.getDetails({ placeId }, (place, status) => {
       if (status !== google.maps.places.PlacesServiceStatus.OK) return
@@ -57,6 +59,8 @@ export default function SearchBox() {
       setSearchText(place.name || "")
       setSelectedPlace(place)
       setPredictions([])
+
+      console.log(`lat: ${lat}, lng: ${lng}`)
 
       setSidePanelPlace({ address, photosUrl, rating, types, lat, lng })
       setShowPanel(true)

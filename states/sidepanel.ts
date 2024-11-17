@@ -14,7 +14,7 @@ interface SidePanelStore {
   setShowPanel: (showPanel: boolean) => void
 
   selectedPlace: SelectedPlace | null
-  setSidePanelPlace: (selectedPlace: SelectedPlace) => void
+  setSidePanelPlace: (selectedPlace: SelectedPlace | null) => void
 }
 
 export const useSidePanelStore = create<SidePanelStore>((set) => ({

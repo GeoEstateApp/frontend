@@ -2,25 +2,15 @@ import { View, Text, StyleSheet, Pressable, TextInput, ScrollView } from 'react-
 import React, { useEffect, useState } from 'react'
 import { useDebouncedEffect } from '@/hooks/utility-hooks'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useZipcodeInsights } from '@/states/zipcode_insights'
+import { useZipcodeInsights, ZipcodeData, ZipcodeInsight } from '@/states/zipcode_insights'
 import { convexHull, PolygonCoordinates } from '@/api/osm'
 import Toast from 'react-native-toast-message'
 
-interface ZipPanelProps {
-  isZipcodePanelOpen: boolean
-}
-
-interface ZipcodeData {
-  zipcode: string
-  name: string
-}
-
-export default function ZipPanel({ isZipcodePanelOpen }: ZipPanelProps) {
-  const [zipcodes, setZipcodes] = useState<ZipcodeData[]>([])
+export default function ZipPanel() {
   const [searchingZipcodeText, setSearchingZipcodeText] = useState<string>("")
-  const [zipcodeList, setZipcodeList] = useState<ZipcodeData[]>(zipcodes)
+  const [zipcodeList, setZipcodeList] = useState<ZipcodeData[]>([])
 
-  const { zipcode, setPolygon, setZipcode, zipcodeInsights, setPolygons } = useZipcodeInsights()
+  const { zipcode, zipcodes, setPolygon, setZipcode, setZipcodes, setZipcodeInsights, zipcodeInsights, setPolygons } = useZipcodeInsights()
 
   const handleZipcodeFilter = (text: string) => {
     const filteredZipcodes = zipcodes.filter((zipcodeData) => zipcodeData.zipcode.includes(text) || zipcodeData.name.includes(text))
@@ -65,7 +55,6 @@ export default function ZipPanel({ isZipcodePanelOpen }: ZipPanelProps) {
       console.log("No auth tokens found.")
       return
     }
-    console.log(idToken)
 
     try {
       const response = await fetch(`https://photo-gateway-7fw1yavc.ue.gateway.dev/api/locations`, {
@@ -154,6 +143,15 @@ export default function ZipPanel({ isZipcodePanelOpen }: ZipPanelProps) {
 
       const coordinates = data[0].geometry.coordinates[0].map((coordinate: number[]) => ({ lat: coordinate[1], lng: coordinate[0], altitude: 150 }))
       setPolygon(convexHull(coordinates))
+
+      const { population, medianAge, medianAgeMale, medianAgeFemale, malePop, femalePop, vacanciesForRentPercent, vacanciesForSalePercent, homeValueForecast } = data[0]
+      const insights: ZipcodeInsight = {
+        population, medianAge, medianAgeMale, medianAgeFemale, malePop, femalePop, vacanciesForRentPercent, vacanciesForSalePercent, homeValueForecast,
+        state: '',
+        city: '',
+        county: ''
+      }
+      setZipcodeInsights(insights)
 
       Toast.hide()
     } catch (error) {
