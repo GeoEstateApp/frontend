@@ -1,42 +1,52 @@
-import { View, Text, StyleSheet, Pressable, TextInput, ScrollView } from 'react-native'
-import React, { useEffect, useState } from 'react'
-import { useDebouncedEffect } from '@/hooks/utility-hooks'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useZipcodeInsights, ZipcodeData, ZipcodeInsight } from '@/states/zipcode_insights'
-import { convexHull, PolygonCoordinates } from '@/api/osm'
-import Toast from 'react-native-toast-message'
+import { View, Text, StyleSheet, Pressable, TextInput, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { useDebouncedEffect } from '@/hooks/utility-hooks';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useZipcodeInsights, ZipcodeData, ZipcodeInsight } from '@/states/zipcode_insights';
+import { convexHull, PolygonCoordinates } from '@/api/osm';
+import { addComment, getComments } from '@/api/comments';
+import Toast from 'react-native-toast-message';
 
 export default function ZipPanel() {
-  const [searchingZipcodeText, setSearchingZipcodeText] = useState<string>("")
-  const [zipcodeList, setZipcodeList] = useState<ZipcodeData[]>([])
+  const [searchingZipcodeText, setSearchingZipcodeText] = useState<string>('');
+  const [zipcodeList, setZipcodeList] = useState<ZipcodeData[]>([]);
+  const [viewingZipcodeDetails, setViewingZipcodeDetails] = useState<string | null>(null); // New state to track details view
+  const [comments, setComments] = useState<string[]>([]);
+  const [newComment, setNewComment] = useState<string>('');
 
-  const { zipcode, zipcodes, setPolygon, setZipcode, setZipcodes, setZipcodeInsights, zipcodeInsights, setPolygons } = useZipcodeInsights()
-
-  const handleZipcodeFilter = (text: string) => {
-    const filteredZipcodes = zipcodes.filter((zipcodeData) => zipcodeData.zipcode.includes(text) || zipcodeData.name.includes(text))
-    setZipcodeList(filteredZipcodes)
-  }
+  const { zipcode, zipcodes, setPolygon, setZipcode, setZipcodes, setZipcodeInsights, zipcodeInsights, setPolygons } = useZipcodeInsights();
   
+    
+  const handleZipcodeFilter = (text: string) => {
+    const filteredZipcodes = zipcodes.filter((zipcodeData) => zipcodeData.zipcode.includes(text) || zipcodeData.name.includes(text));
+    setZipcodeList(filteredZipcodes);
+  };
+
   useDebouncedEffect(() => {
-    if (searchingZipcodeText === "") {
-      setZipcodeList(zipcodes)
-      return
+    if (searchingZipcodeText === '') {
+      setZipcodeList(zipcodes);
+      return;
     }
 
-    handleZipcodeFilter(searchingZipcodeText)
-  }, 300, [searchingZipcodeText])
+    handleZipcodeFilter(searchingZipcodeText);
+  }, 300, [searchingZipcodeText]);
 
   useEffect(() => {
-    if (zipcode === '') return
+    if (zipcode === '') return;
 
-    handleZipcodeChange()
-  }, [zipcode])
+    handleZipcodeChange();
+  }, [zipcode]);
 
   useEffect(() => {
-    if (zipcodes.length === 0) getAllZipcodes()
+    if (zipcodes.length === 0) getAllZipcodes();
+  }, []);
 
-    // renderMultipleZipcodes()
-  }, [])
+  useEffect(() => {
+    if (zipcode) {
+      handleGetComments(zipcode);
+    }
+  }, [zipcode]);
+  
 
   const getAllZipcodes = async () => {
     Toast.show({
@@ -48,73 +58,77 @@ export default function ZipPanel() {
       topOffset: 20,
       text1Style: { fontSize: 16, fontWeight: 'bold' },
       text2Style: { fontSize: 14 },
-    })
+    });
 
-    const { idToken, uid } = await getAuthTokens()
+    const { idToken, uid } = await getAuthTokens();
     if (!idToken || !uid) {
-      console.log("No auth tokens found.")
-      return
+      console.log('No auth tokens found.');
+      return;
     }
 
     try {
       const response = await fetch(`https://photo-gateway-7fw1yavc.ue.gateway.dev/api/locations`, {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${idToken}`
-        }
-      })
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
 
-      if (!response.ok) throw new Error("Failed to fetch zipcode data.")
+      if (!response.ok) throw new Error('Failed to fetch zipcode data.');
 
-      const data = await response.json()
+      const data = await response.json();
 
-      setZipcodes(data.map((item: any) => ({ zipcode: item.zipcode, name: item.name })))
-      setZipcodeList(data.map((item: any) => ({ zipcode: item.zipcode, name: item.name })))
+      setZipcodes(data.map((item: any) => ({ zipcode: item.zipcode, name: item.name })));
+      setZipcodeList(data.map((item: any) => ({ zipcode: item.zipcode, name: item.name })));
 
-      Toast.hide()
+      Toast.hide();
     } catch (error) {
-      console.error("Error fetching data:", error)
+      console.error('Error fetching data:', error);
     }
-  }
+  };
+  
+// --------------------------------
 
-  // const renderMultipleZipcodes = async () => {
-  //   const { idToken, uid } = await getAuthTokens()
-  //   if (!idToken || !uid) {
-  //     console.log("No auth tokens found.")
-  //     return
-  //   }
+  const handleGetComments = async (zipcode: string) => {
+    try {
+      const data = await getComments(zipcode);  
+      if (data) {
+    // const commentsArray = data.comments.split(", ").map   (comment => comment.replace(/"/g, ""));
+    
+      // setComments(commentsArray);  
+      } else {
+        console.log('Failed to fetch comments');
+      }
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    }
+  };
 
-  //   const polygons: PolygonCoordinates[] = []
-  //   const promises = zipcodes.map(async (zipcodeData) => {
-  //     try {
-  //       const response = await fetch(`https://photo-gateway-7fw1yavc.ue.gateway.dev/api/locations/${zipcodeData.zipcode}`, {
-  //         method: 'GET',
-  //         credentials: 'include',
-  //         headers: {
-  //           Authorization: `Bearer ${idToken}`
-  //         }
-  //       })
-
-  //       if (!response.ok) throw new Error("Failed to fetch zipcode data.")
-
-  //       const data = await response.json()
-  //       const coordinates = data[0].geometry.coordinates[0].map((coordinate: number[]) => ({ lat: coordinate[1], lng: coordinate[0], altitude: 150 }))
-  //       polygons.push((convexHull(coordinates) as any))
-  //     } catch (error) {
-  //   	  console.error("Error fetching data:", error)
-  //       return null
-  //     }
-  //   })
-
-  //   await Promise.all(promises)
-  //   setPolygons((polygons as any))
-  // }
+  
+  const handleAddComment = async () => {
+    if (!newComment.trim()) return; 
+  
+    try {
+      const data = await addComment(zipcode, newComment);  
+      if (data) {
+        console.log('Comment added succcesfully, ', zipcode);
+        setNewComment('');  
+        handleGetComments(zipcode);  
+      } else {
+        console.log('Failed to post comment');
+      }
+    } catch (error) {
+      console.error('Error posting comment:', error);
+    }
+  };
+  
+  //---------------------
 
   const handleZipcodeChange = async () => {
-    const { idToken, uid } = await getAuthTokens()
+    const { idToken, uid } = await getAuthTokens();
     if (!idToken || !uid) {
-      console.log("No auth tokens found.")
-      return
+      console.log('No auth tokens found.');
+      return;
     }
 
     try {
@@ -127,7 +141,7 @@ export default function ZipPanel() {
         topOffset: 20,
         text1Style: { fontSize: 16, fontWeight: 'bold' },
         text2Style: { fontSize: 14 },
-      })
+      });
 
       const response = await fetch(`https://photo-gateway-7fw1yavc.ue.gateway.dev/api/locations/${zipcode}`, {
         method: 'GET',
@@ -135,80 +149,130 @@ export default function ZipPanel() {
         headers: {
           Authorization: `Bearer ${idToken}`,
         },
-      })
+      });
 
-      if (!response.ok) throw new Error("Failed to fetch zipcode data.") 
+      if (!response.ok) throw new Error('Failed to fetch zipcode data.');
 
-      const data = await response.json()
+      const data = await response.json();
 
-      const coordinates = data[0].geometry.coordinates[0].map((coordinate: number[]) => ({ lat: coordinate[1], lng: coordinate[0], altitude: 150 }))
-      setPolygon(convexHull(coordinates))
+      const coordinates = data[0].geometry.coordinates[0].map((coordinate: number[]) => ({ lat: coordinate[1], lng: coordinate[0], altitude: 150 }));
+      setPolygon(convexHull(coordinates));
 
-      const { population, medianAge, medianAgeMale, medianAgeFemale, malePop, femalePop, vacanciesForRentPercent, vacanciesForSalePercent, homeValueForecast } = data[0]
+      const { population, medianAge, medianAgeMale, medianAgeFemale, malePop, femalePop, vacanciesForRentPercent, vacanciesForSalePercent, homeValueForecast } = data[0];
       const insights: ZipcodeInsight = {
-        population, medianAge, medianAgeMale, medianAgeFemale, malePop, femalePop, vacanciesForRentPercent, vacanciesForSalePercent, homeValueForecast,
+        population,
+        medianAge,
+        medianAgeMale,
+        medianAgeFemale,
+        malePop,
+        femalePop,
+        vacanciesForRentPercent,
+        vacanciesForSalePercent,
+        homeValueForecast,
         state: '',
         city: '',
-        county: ''
-      }
-      setZipcodeInsights(insights)
+        county: '',
+      };
+      setZipcodeInsights(insights);
 
-      Toast.hide()
+      Toast.hide();
     } catch (error) {
-      console.error("Error fetching data:", error)
+      console.error('Error fetching data:', error);
     }
-  }
+  };
 
   const getAuthTokens = async () => {
     try {
-      const idToken = await AsyncStorage.getItem("idToken");
-      const uid = await AsyncStorage.getItem("uid");
+      const idToken = await AsyncStorage.getItem('idToken');
+      const uid = await AsyncStorage.getItem('uid');
       return { idToken, uid };
     } catch (error) {
-      console.error("Error retrieving auth tokens:", error);
+      console.error('Error retrieving auth tokens:', error);
       throw error;
     }
   };
 
+  const handleBackToList = () => {
+    setViewingZipcodeDetails(null); 
+  };
+
   return (
     <View style={styles.container}>
-          <View style={styles.panel}>
-            <TextInput 
-              style={styles.input} 
-              value={searchingZipcodeText}
-              placeholder="Enter zipcode to search"
-              onChangeText={(text) => setSearchingZipcodeText(text)} />
+      <View style={styles.panel}>
+        {viewingZipcodeDetails ? (
+          <>
+            {/* Back button */}
+            <Pressable onPress={handleBackToList} style={styles.backButton}>
+              <Text>← Back to Zipcode List</Text>
+            </Pressable>
 
             <ScrollView contentContainerStyle={{ gap: 10 }} showsVerticalScrollIndicator={false}>
-              {
-                zipcodeList.map((zip, idx) => {
-                  return (
-                    <Pressable key={idx} style={{...styles.zipcodeButton, backgroundColor: zip.zipcode === zipcode ? '#e0e0e0' : '#fff', gap: 20 }} onPress={() => setZipcode(zip.zipcode)}>
-                      <View>
-                        <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{zip.zipcode}</Text>
-                        <Text>{zip.name}</Text>
-                      </View>
+              {/* Zipcode insights */}
+              <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Zipcode Insights:</Text>
+              <Text>Population: {zipcodeInsights.population}</Text>
+              <Text>Median Age: {zipcodeInsights.medianAge}</Text>
+              <Text>Vacancies [Rent]: {zipcodeInsights.vacanciesForRentPercent}</Text>
+              <Text>Vacancies [Sale]: {zipcodeInsights.vacanciesForSalePercent}</Text>
+              <Text>Home Forecast: {zipcodeInsights.homeValueForecast}</Text>
 
-                      {
-                        zip.zipcode === zipcode && (
-                          <View style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Zipcode Insights:</Text>
-                            <Text>Population: {zipcodeInsights.population}</Text>
-                            <Text>Median Age: {zipcodeInsights.medianAge}</Text>
-                            <Text>Vacancies [Rent]: {zipcodeInsights.vacanciesForRentPercent}</Text>
-                            <Text>Vacancies [Sale]: {zipcodeInsights.vacanciesForSalePercent}</Text>
-                            <Text>Home Forecast: {zipcodeInsights.homeValueForecast}</Text>
-                          </View>
-                        )
-                      }
-                    </Pressable>
-                  )
-                })
-              }
+            <View style={styles.commentSection}>
+              <TextInput
+                 style={styles.inputComment}
+                  placeholder="Post a comment"
+                  value={newComment}
+                  onChangeText={setNewComment}
+              />
+              <Pressable onPress={handleAddComment} style={styles.addButton}>
+              <Text style={styles.buttonText}>Add Comment</Text>
+              </Pressable>  
+
+              <Text style={styles.commentsHeader}>Comments:</Text>
+                <ScrollView>
+                      {comments.map((comment, idx) => (
+                      <Text key={idx} style={styles.commentText}>
+                      {comment}
+                  </Text>
+                  ))}
+                </ScrollView>
+            </View>
+
             </ScrollView>
-          </View>
+          </>
+        ) : (
+          <>
+            <TextInput
+              style={styles.input}
+              value={searchingZipcodeText}
+              placeholder="Enter zipcode to search"
+              onChangeText={(text) => setSearchingZipcodeText(text)}
+            />
+
+            <ScrollView contentContainerStyle={{ gap: 10 }} showsVerticalScrollIndicator={false}>
+              {zipcodeList.map((zip, idx) => (
+                <Pressable
+                  key={idx}
+                  style={{
+                    ...styles.zipcodeButton,
+                    backgroundColor: zip.zipcode === zipcode ? '#e0e0e0' : '#fff',
+                    gap: 20,
+                  }}
+                  onPress={() => {
+                    setZipcode(zip.zipcode);
+                    setViewingZipcodeDetails(zip.zipcode); 
+                  }}
+                >
+                  <View>
+                    <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{zip.zipcode}</Text>
+                    <Text>{zip.name}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </>
+        )}
+      </View>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -223,7 +287,7 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'column',
     gap: 20,
-    backgroundColor: '#ffffff99',
+    backgroundColor: '#fffffff9',
     width: 400,
     height: '100%',
     padding: 20,
@@ -241,39 +305,41 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
   },
-})
-
-const zipcodeAltitudeValue = 150
-const dummyZipcodePolygon = [
-  { "altitude": zipcodeAltitudeValue, "lat": 40.743568340946261, "lng": -73.992318886166558 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.741030960243258, "lng": -73.994164916527083 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.739673401389197, "lng": -73.990945214511953 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.731408854252287, "lng": -73.996974348167711 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.730715240556655, "lng": -73.995562446131657 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.729552248526417, "lng": -73.996572149745887 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.731706121723342, "lng": -74.000954413025354 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.734134852685671, "lng": -73.999187793333434 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.734069744697962, "lng": -73.999653095276756 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.739396052141906, "lng": -74.002789343814612 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.739752663660255, "lng": -74.002523815526416 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.742378003497791, "lng": -74.00880950909432 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.742674373115257, "lng": -74.008748081052858 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.742951557677706, "lng": -74.009634063336563 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.743972534922626, "lng": -74.009452551384712 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.743920479055546, "lng": -74.008902227012982 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.744929441743977, "lng": -74.008727363268548 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.745055351967032, "lng": -74.00956057606966 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.748414065928408, "lng": -74.008946405061423 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.748533487820332, "lng": -74.010086402442397 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.75005116701184, "lng": -74.009541640440617 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.749966841515423, "lng": -74.009213701338354 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.752587143684494, "lng": -74.008270177111342 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.752444033485908, "lng": -74.007712620872738 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.750356904723162, "lng": -74.008486397211598 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.747146795510531, "lng": -74.000848265910392 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.747767914957706, "lng": -74.000398506655785 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.746669602135519, "lng": -73.997760217808292 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.746580923224279, "lng": -73.997551645501957 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.745951324030827, "lng": -73.998008212784072 },
-  { "altitude": zipcodeAltitudeValue, "lat": 40.743568340946261, "lng": -73.992318886166558 }
-]
+  backButton: {
+    padding: 10,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  commentBox: {
+    marginTop: 20,
+  },commentSection: {
+    marginTop: 20,
+  },
+  inputComment: {
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 5,
+    color: '#27272a',
+    marginBottom: 10,
+  },
+  addButton: {
+    backgroundColor: '#007bff',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  commentsHeader: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  commentText: {
+    fontSize: 16,
+    marginBottom: 8,
+  }
+});
