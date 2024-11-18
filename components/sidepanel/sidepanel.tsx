@@ -12,14 +12,16 @@ import { addFavorite, getFavorites, removeFavorite, FavoriteItem } from '@/api/f
 import { addToBucketList, removeFromBucketList, getBucketList } from '@/api/bucketlist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Animated } from 'react-native';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export default function SidePanel() {
   const { toggleFavPanel, showFavPanel, setShowFavPanel } = useFavoritesPanelStore()
   const { toggleBucketListPanel, showBucketListPanel, setShowBucketListPanel } = useBucketListPanelStore()
+  const { reset: resetSidePanel, selectedPlace, realEstateProperties, setSelectedRealEstateProperty, selectedRealEstateProperty } = useSidePanelStore()
  
   const { insights, setInsights } = useInsightsStore()
  
-  const { selectedPlace, realEstateProperties, setSelectedRealEstateProperty, selectedRealEstateProperty } = useSidePanelStore()
   const [selectedFilters, setSelectedFilters] = useState<string[]>([])
   const [callFilterAPI, setCallFilterAPI] = useState(false)
 
@@ -30,6 +32,28 @@ export default function SidePanel() {
   const [bucketList, setBucketList] = useState<any[]>([])
   const [username, setUsername] = useState<string>('');
   const [userid, setUserid] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        // User is signed out, so
+        // reset all panel states when logged out
+        resetSidePanel()
+        setShowFavPanel(false)
+        setShowBucketListPanel(false)
+        setSelectedFilters([])
+        setImageUri(null)
+        setIsFavorite(false)
+        setIsInBucketList(false)
+        setFavorites([])
+        setBucketList([])
+        setUsername('')
+        setUserid(null)
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (!selectedPlace) return
@@ -120,7 +144,7 @@ export default function SidePanel() {
     checkBucketListStatus();
   }, [selectedPlace]);
 
-  // Only load favorites when favorites panel is shown
+  // Load favorites when favorites panel is shown
   useEffect(() => {
     const loadFavorites = async () => {
       if (!showFavPanel) return;
@@ -141,10 +165,23 @@ export default function SidePanel() {
 
   // Check if selected place is favorited
   useEffect(() => {
-    if (!selectedPlace || !favorites) return;
-    const isFav = favorites.some(fav => fav.place_id === selectedPlace.placeId);
-    setIsFavorite(isFav);
-  }, [selectedPlace, favorites]);
+    const checkFavoriteStatus = async () => {
+      if (!selectedPlace || !userid) {
+        setIsFavorite(false);
+        return;
+      }
+      try {
+        const userFavorites = await getFavorites();
+        const isFav = userFavorites.some((item: any) => item.place_id === selectedPlace.placeId);
+        console.log('Checking favorite status:', { placeId: selectedPlace.placeId, isFav, favoritesCount: userFavorites.length });
+        setIsFavorite(isFav);
+      } catch (error) {
+        console.error('Error checking favorite status:', error);
+        setIsFavorite(false);
+      }
+    };
+    checkFavoriteStatus();
+  }, [selectedPlace, userid]);
 
   const handleFavoriteToggle = async () => {
     try {
@@ -159,10 +196,20 @@ export default function SidePanel() {
       if (!selectedPlace.placeId) {
         throw new Error("Place ID is required");
       }
+
+      if (!userid) {
+        Toast.show({
+          type: 'error',
+          text1: 'Authentication required',
+          text2: 'Please log in to use the favorites feature',
+        });
+        return;
+      }
       
       if (isFavorite) {
         // Remove from favorites
         await removeFavorite(selectedPlace.placeId);
+        setIsFavorite(false);
       } else {
         // Add to favorites
         await addFavorite({
@@ -172,14 +219,12 @@ export default function SidePanel() {
           latitude: selectedPlace.lat || 0,
           longitude: selectedPlace.lng || 0,
         });
+        setIsFavorite(true);
       }
-      
-      // Refresh favorites list
+
+      // Always refresh favorites list to keep it in sync
       const updatedFavorites = await getFavorites();
       setFavorites(updatedFavorites);
-      
-      // Update UI state
-      setIsFavorite(!isFavorite);
       
       Toast.show({
         type: 'success',
