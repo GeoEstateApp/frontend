@@ -6,6 +6,7 @@ import { createUserWithEmailAndPassword, GoogleAuthProvider, sendEmailVerificati
 import React, { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    Alert,
     Animated,
     KeyboardAvoidingView,
     Modal,
@@ -536,6 +537,8 @@ export default function AuthScreen() {
             });
         } finally {
             setIsGoogleLoading(false);
+            const storedIdToken = localStorage.getItem("idToken");
+            console.log("Retrieved ID Token from localStorage:", storedIdToken);
         }
     };
 

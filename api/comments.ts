@@ -4,15 +4,18 @@ const getAuthTokens = async () => {
   try {
     const idToken = await AsyncStorage.getItem("idToken");
     const uid = await AsyncStorage.getItem("uid");
-    return { idToken, uid };
+    const userName= await AsyncStorage.getItem("username");
+
+    return { idToken, uid, userName };
   } catch (error) {
     console.error("Error retrieving auth tokens:", error);
     throw error;
   }
 };
 
-export const addComment = async () => {
-  const { idToken, uid } = await getAuthTokens();
+export const addComment = async (zipCode: string , newComment:string) => {
+  const { idToken, uid, userName } = await getAuthTokens();
+
   if (!idToken || !uid) {
     throw new Error("Authentication tokens are missing.");
   }
@@ -25,16 +28,16 @@ export const addComment = async () => {
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${idToken}`,  // Pass Firebase ID token as Bearer token
+        'Authorization': `Bearer ${idToken}`,  
       },
       body: JSON.stringify({
         userId: uid,
-        userName: "test4",
+        userName: "Ayesha",
         location: {
-          zipCode: "10003"
+          zipCode: zipCode   
         },
-        comment: "Great place to visit!",
-        zipCode: "10004"
+        comment: newComment,
+        zipCode: "10036"   //user's zipcode
       })
     });
 
@@ -51,32 +54,33 @@ export const addComment = async () => {
   }
 };
 
-export const getComments = async () => {
-  const { idToken, uid } = await getAuthTokens();
-  if (!idToken || !uid) {
-    throw new Error("Authentication tokens are missing.");
-  }
-
-  const url = `https://photo-gateway-7fw1yavc.ue.gateway.dev/api/comments/${uid}`;
-
-  try {
-    const response = await fetch(url, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Authorization': `Bearer ${idToken}`,  // Pass Firebase ID token as Bearer token
-      }
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      console.log('Get Comments API response:', data);
-      return data;
-    } else {
-      throw new Error(`Error: ${response.statusText}`);
+export const getComments = async (zipcode: string ) => {
+    const { idToken, uid } = await getAuthTokens();
+    if (!idToken || !uid) {
+      throw new Error("Authentication tokens are missing.");
     }
-  } catch (error) {
-    console.error("Error fetching comments:", error);
-    throw error;
-  }
-};
+  
+   
+    const url = `https://photo-gateway-7fw1yavc.ue.gateway.dev/api/comments/${zipcode}`;
+  
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${idToken}`,  
+        }
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Get Comments API response:', data);
+        return data; 
+      } else {
+        throw new Error(`Error: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      throw error;
+    }
+  };

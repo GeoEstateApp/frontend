@@ -1,19 +1,15 @@
-import { Earth, SearchBox, SidePanel } from '@/components'
-import FavoritesPanel from '@/components/favoritespanel/favoritespanel'
-import BucketListPanel from '@/components/bucketlistpanel/bucketlistpanel'
+import { AIChat, Earth, SearchBox, SidePanel, Suitability, ZipPanel } from '@/components'
 import { APIProvider } from '@vis.gl/react-google-maps'
-import { StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Button, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useEffect, useState } from 'react'
 import { TouchableOpacity } from 'react-native'
 import { useRouter } from 'expo-router'
-import { IconUser, IconLogin, IconList, IconFilter, IconHeart } from '@tabler/icons-react'
+import { IconUser, IconLogin, IconFilter, IconZip, IconSparkles, IconBed, IconBath, IconBuildingSkyscraper, IconAi, IconLiveView, IconGenderMale, IconGenderFemale, IconX } from '@tabler/icons-react'
 import { auth } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import Toast from 'react-native-toast-message'
-import { addToBucketList } from '@/api/bucketlist'
-import { useBucketListPanelStore } from '@/states/bucketlistpanel';
-import { useFavoritesPanelStore } from '@/states/favoritespanel';
-import { useSidePanelStore } from '@/states/sidepanel';
+import { useSidePanelStore } from '@/states/sidepanel'
+import { useSuitability } from '@/states/suitability'
 
 const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY
 const GOOGLE_MAP_VERSION = 'alpha'
@@ -51,7 +47,16 @@ function HeaderButton() {
   )
 }
 
-export default function ExploreScreen() {
+export default function index() {
+  const [isZipcodePanelOpen, setIsZipcodePanelOpen] = useState(false)
+  const [showAIChat, setShowAIChat] = useState(false)
+
+  const [showNeighbourhoodInsights, setNeighbourhoodInsights] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const { setShowPanel, showPanel, selectedRealEstateProperty, setSelectedRealEstateProperty } = useSidePanelStore()
+  const { isModalOpen } = useSuitability()
+  
   if (!API_KEY) {
     return (
       <View style={styles.container}>
@@ -76,6 +81,17 @@ export default function ExploreScreen() {
     })
   }, [])
 
+  useEffect(() => setNeighbourhoodInsights(false), [selectedRealEstateProperty])
+
+  const handleNeighbourhoodInsightsChange = (value: boolean) => {
+    setIsLoading(true)
+    const interval = Math.random() * (1000 - 100) + 200
+
+    setTimeout(() => {
+      setNeighbourhoodInsights(value)
+      setIsLoading(false)
+    }, interval)
+  }
   const handleAddToBucketList = async (place: google.maps.places.PlaceResult) => {
     if (!place.place_id) {
       Toast.show({
@@ -114,9 +130,144 @@ export default function ExploreScreen() {
       <APIProvider apiKey={API_KEY} version={GOOGLE_MAP_VERSION}>
         <Earth />
         <SearchBox />
-        <SidePanel />
-        <FavoritesPanel />
-        <BucketListPanel />
+        { showPanel && <SidePanel /> }
+        { isZipcodePanelOpen && <ZipPanel /> }
+        { showAIChat && <AIChat /> }
+
+        <View style={{...styles.toggleButtonGroup, left: showPanel || isZipcodePanelOpen || showAIChat ? 420 : 20}}>
+          <Pressable style={{...styles.toggleButton, backgroundColor: showPanel ? '#49A84C' : 'white'}} onPress={() => {
+            setIsZipcodePanelOpen(false)
+            setShowAIChat(false)
+            setShowPanel(!showPanel)
+          }}>
+            <IconFilter size={20} strokeWidth={2} color={showPanel ? 'white' : 'black'} />
+          </Pressable>
+
+          <Pressable style={{...styles.toggleButton, backgroundColor: isZipcodePanelOpen ? '#49A84C' : 'white'}} onPress={() => {
+            setShowPanel(false)
+            setShowAIChat(false)
+              setIsZipcodePanelOpen(!isZipcodePanelOpen)
+            }}>
+            <IconZip size={20} strokeWidth={2} color={isZipcodePanelOpen ? 'white' : 'black'} />
+          </Pressable>
+
+          <Pressable style={{...styles.toggleButton, backgroundColor: showAIChat ? '#49A84C' : 'white'}} onPress={() => {
+            setIsZipcodePanelOpen(false)
+            setShowPanel(false)
+            setShowAIChat(!showAIChat)
+            }}>
+            <IconSparkles size={20} strokeWidth={2} color={showAIChat ? 'white' : 'black'} />
+          </Pressable>
+        </View>
+
+      { selectedRealEstateProperty && (
+          <View style={styles.modal}>
+          <IconX 
+            style={{
+              position: 'absolute',
+              top: -20, 
+              left: -20, 
+              backgroundColor: '#49A84C',
+              borderRadius: 4,
+              cursor: 'pointer',
+              padding: 4, 
+            }}
+            color='white'
+            onClick={() => setSelectedRealEstateProperty(null)}
+            size={28}
+          />
+        
+          <View style={{ gap: 6, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+            <Image 
+              source={{ uri: selectedRealEstateProperty.img_url }} 
+              style={{ height: 180, objectFit: 'cover', borderRadius: 6 }} 
+            />
+            <Text style={{ fontSize: 16, fontWeight: 'bold' }}>
+              {selectedRealEstateProperty.address_line} [{selectedRealEstateProperty.status.split('_').join(' ').toUpperCase()}]
+            </Text>
+            <Text style={{ fontSize: 14, fontWeight: 'bold' }}>
+              {selectedRealEstateProperty.price}
+            </Text>
+            { selectedRealEstateProperty.size_sqft && (
+              <Text style={{ fontSize: 14 }}>{selectedRealEstateProperty.size_sqft} ft²</Text>
+            )}
+            <Text style={{ fontSize: 14, display: 'flex', flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+              <IconBuildingSkyscraper /> <b>Type:</b> {selectedRealEstateProperty.property_type.split('_').join(' ').toUpperCase()}
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Text style={{ fontSize: 14, display: 'flex', flexDirection: 'row', gap: 4, justifyContent: 'center', alignItems: 'center' }}>
+                <IconBed /> {selectedRealEstateProperty.num_beds === 0 ? '?' : selectedRealEstateProperty.num_beds}
+              </Text>
+              <Text style={{ fontSize: 14, display: 'flex', flexDirection: 'row', gap: 4, justifyContent: 'center', alignItems: 'center' }}>
+                <IconBath /> {selectedRealEstateProperty.num_baths === 0 ? '?' : selectedRealEstateProperty.num_baths}
+              </Text>
+            </View>
+        
+            { showNeighbourhoodInsights && (
+              <View style={{ gap: 6, display: 'flex', flexDirection: 'column' }}>
+                <Text style={{ fontSize: 14 }}><b>Population:</b> {selectedRealEstateProperty.population}</Text>
+                <Text style={{ fontSize: 14 }}><b>Median Age:</b> {selectedRealEstateProperty.median_age}</Text>
+                <Text style={{ fontSize: 14 }}><b>Male Population:</b> {selectedRealEstateProperty.male_pop}</Text>
+                <Text style={{ fontSize: 14 }}><b>Male Median Age:</b> {selectedRealEstateProperty.median_age_male}</Text>
+                <Text style={{ fontSize: 14 }}><b>Female Population:</b> {selectedRealEstateProperty.female_pop}</Text>
+                <Text style={{ fontSize: 14 }}><b>Female Median Age:</b> {selectedRealEstateProperty.median_age_female}</Text>
+                <Text style={{ fontSize: 14 }}>
+                  <b>Predicted Price (1-Year):</b> {
+                    `$${(Number(selectedRealEstateProperty.price.replace("$", "").replaceAll(",", "")) + Number(selectedRealEstateProperty.price.replace("$", "").replaceAll(",", "")) * (selectedRealEstateProperty.home_value_forecast / 10)).toLocaleString("en-US")}`
+                  }
+                </Text>
+              </View>
+            )}
+        
+            { !showNeighbourhoodInsights && (
+              <Pressable 
+                style={{ 
+                  backgroundColor: '#4285F4', 
+                  marginTop: 10, 
+                  padding: 10, 
+                  borderRadius: 6, 
+                  flexDirection: 'row', 
+                  gap: 4, 
+                  justifyContent: 'center', 
+                  alignItems: 'center' 
+                }} 
+                onPress={() => handleNeighbourhoodInsightsChange(!showNeighbourhoodInsights)}
+              >
+                { 
+                  isLoading ? (
+                    <ActivityIndicator color='white' size='small' />
+                  ) : (
+                    <View style={{ flexDirection: 'row', gap: 4, justifyContent: 'center', alignItems: 'center' }}>
+                      <IconSparkles color='white' />
+                      <Text style={{ fontSize: 14, color: 'white', textAlign: 'center', fontWeight: 'bold' }}>Neighbourhood Insights</Text>
+                    </View>
+                  ) 
+                }
+              </Pressable>
+            )}
+        
+            <Pressable 
+              style={{ 
+                backgroundColor: '#49A84C', 
+                marginTop: showNeighbourhoodInsights ? 10 : 0, 
+                padding: 10, 
+                borderRadius: 6, 
+                flexDirection: 'row', 
+                gap: 4, 
+                justifyContent: 'center', 
+                alignItems: 'center' 
+              }} 
+              onPress={() => Linking.openURL(selectedRealEstateProperty.prop_url)}
+            >
+              <IconLiveView color='white' />
+              <Text style={{ fontSize: 14, color: 'white', textAlign: 'center', fontWeight: 'bold' }}>View Live</Text>
+            </Pressable>
+          </View>
+        </View>
+        ) 
+      }
+
+      { isModalOpen && <Suitability /> }
       </APIProvider>
       <Toast position='bottom' bottomOffset={20} />
     </View>
@@ -146,10 +297,32 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5
   },
-  sidebarButtons: {
-    // Add styles for sidebar buttons
+  toggleButtonGroup: {
+    position: 'absolute',
+    top: 10,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10
   },
-  sidebarButton: {
-    // Add styles for sidebar button
+  toggleButton: {
+    padding: 10,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modal: {
+    position: 'absolute',
+    top: 80,
+    right: 20,
+    backgroundColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    padding: 20,
+    borderRadius: 10,
+    width: 300,
   }
 })
