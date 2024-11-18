@@ -56,7 +56,7 @@ export default function index() {
 
   const { setShowPanel, showPanel, selectedRealEstateProperty, setSelectedRealEstateProperty } = useSidePanelStore()
   const { isModalOpen } = useSuitability()
-
+  
   if (!API_KEY) {
     return (
       <View style={styles.container}>
@@ -64,6 +64,10 @@ export default function index() {
       </View>
     )
   }
+
+  const { showPanel: showFilters, setShowPanel: setShowFilters } = useSidePanelStore()
+  const { showPanel: showFavorites, setShowPanel: setShowFavorites } = useFavoritesPanelStore()
+  const { showPanel: showBucketList, setShowPanel: setShowBucketList } = useBucketListPanelStore()
 
   useEffect(() => {
     Toast.show({
@@ -88,6 +92,37 @@ export default function index() {
       setIsLoading(false)
     }, interval)
   }
+  const handleAddToBucketList = async (place: google.maps.places.PlaceResult) => {
+    if (!place.place_id) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Invalid place data',
+      })
+      return;
+    }
+
+    try {
+      await addToBucketList({
+        place_id: place.place_id,
+        name: place.name || '',
+        address: place.formatted_address || '',
+        latitude: place.geometry?.location?.lat() || 0,
+        longitude: place.geometry?.location?.lng() || 0,
+      });
+      Toast.show({
+        type: 'success',
+        text1: 'Added to bucket list',
+      });
+    } catch (error) {
+      console.error('Error adding to bucket list:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error instanceof Error ? error.message : 'Could not add to bucket list',
+      });
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -233,9 +268,7 @@ export default function index() {
       }
 
       { isModalOpen && <Suitability /> }
-
       </APIProvider>
-
       <Toast position='bottom' bottomOffset={20} />
     </View>
   )

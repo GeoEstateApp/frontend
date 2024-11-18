@@ -15,6 +15,7 @@ const getAuthTokens = async () => {
 
 export const addComment = async (zipCode: string , newComment:string) => {
   const { idToken, uid, userName } = await getAuthTokens();
+
   if (!idToken || !uid) {
     throw new Error("Authentication tokens are missing.");
   }
@@ -83,4 +84,3 @@ export const getComments = async (zipcode: string ) => {
       throw error;
     }
   };
-  

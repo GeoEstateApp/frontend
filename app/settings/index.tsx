@@ -1,19 +1,22 @@
-import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, Modal, Alert } from 'react-native'
-import { useRouter } from 'expo-router'
 import { auth } from '@/lib/firebase'
-import { signOut, updatePassword, updateEmail, EmailAuthProvider, reauthenticateWithCredential, verifyBeforeUpdateEmail } from 'firebase/auth'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import * as ImagePicker from 'expo-image-picker'
-import { 
-  IconArrowLeft, 
-  IconLogout,
-  IconLock,
+import {
+  IconArrowLeft,
   IconCamera,
-  IconMail
+  IconLock,
+  IconLogout,
+  IconMail,
+  IconUser,
+  IconHelp,
+  IconInfoCircle
 } from '@tabler/icons-react'
-
-type ModalType = 'password' | 'email' | null
+import * as ImagePicker from 'expo-image-picker'
+import { useRouter } from 'expo-router'
+import { EmailAuthProvider, reauthenticateWithCredential, signOut, updatePassword, verifyBeforeUpdateEmail } from 'firebase/auth'
+import { useEffect, useState } from 'react'
+import { Alert, Image, StyleSheet, Text, TouchableOpacity, View, Linking } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { Modal, TextInput, ActivityIndicator } from 'react-native'
+type ModalType = 'password' | 'email' | 'profile' | null
 
 export default function SettingsScreen() {
   const router = useRouter()
@@ -26,6 +29,7 @@ export default function SettingsScreen() {
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [newEmail, setNewEmail] = useState('')
+  const [isGoogleUser, setIsGoogleUser] = useState(false)
 
   useEffect(() => {
     const user = auth.currentUser
@@ -36,9 +40,14 @@ export default function SettingsScreen() {
     setUserEmail(user.email)
     setDisplayName(user.displayName)
     setPhotoURL(user.photoURL)
+    
+    // Check if user signed in with Google
+    const googleProvider = user.providerData.find(
+      provider => provider.providerId === 'google.com'
+    )
+    setIsGoogleUser(!!googleProvider)
   }, [])
 
-  // need to add firebase storage to upload the image
   const handlePickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -168,24 +177,80 @@ export default function SettingsScreen() {
         {/* Account Settings */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account Settings</Text>
-          
+
+          {isGoogleUser ? (
+            <>
+              <View style={styles.settingItem}>
+                <View style={styles.settingLeft}>
+                  <IconLock size={24} stroke="#666" />
+                  <View>
+                    <Text style={styles.settingText}>Change Password</Text>
+                    <Text style={styles.settingDescription}>Not available with Google Sign-in</Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.settingItem}>
+                <View style={styles.settingLeft}>
+                  <IconMail size={24} stroke="#666" />
+                  <View>
+                    <Text style={styles.settingText}>Change Email</Text>
+                    <Text style={styles.settingDescription}>Please update through Google Account</Text>
+                  </View>
+                </View>
+              </View>
+            </>
+          ) : (
+            <>
+              <TouchableOpacity 
+                style={styles.settingItem}
+                onPress={() => setModalType('password')}
+              >
+                <View style={styles.settingLeft}>
+                  <IconLock size={24} stroke="#666" />
+                  <Text style={styles.settingText}>Change Password</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.settingItem}
+                onPress={() => setModalType('email')}
+              >
+                <View style={styles.settingLeft}>
+                  <IconMail size={24} stroke="#666" />
+                  <Text style={styles.settingText}>Change Email</Text>
+                </View>
+              </TouchableOpacity>
+            </>
+          )}
+
           <TouchableOpacity 
             style={styles.settingItem}
-            onPress={() => setModalType('email')}
+            onPress={() => setModalType('profile')}
           >
             <View style={styles.settingLeft}>
-              <IconMail size={24} stroke="#666" />
-              <Text style={styles.settingText}>Change Email</Text>
+              <IconUser size={24} stroke="#666" />
+              <Text style={styles.settingText}>Edit Profile</Text>
             </View>
           </TouchableOpacity>
 
           <TouchableOpacity 
             style={styles.settingItem}
-            onPress={() => setModalType('password')}
+            onPress={() => router.push('/')}
           >
             <View style={styles.settingLeft}>
-              <IconLock size={24} stroke="#666" />
-              <Text style={styles.settingText}>Change Password</Text>
+              <IconHelp size={24} stroke="#666" />
+              <Text style={styles.settingText}>Help & Support</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.settingItem}
+            onPress={() => router.push('/')}
+          >
+            <View style={styles.settingLeft}>
+              <IconInfoCircle size={24} stroke="#666" />
+              <Text style={styles.settingText}>About GeoEstate</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -200,7 +265,183 @@ export default function SettingsScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Password Change Modal */}
+      <Modal
+        visible={modalType === 'password'}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalType(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Change Password</Text>
+            
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+            
+            <TextInput
+              style={styles.input}
+              placeholder="Current Password"
+              secureTextEntry
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              placeholderTextColor="#666"
+            />
+            
+            <TextInput
+              style={styles.input}
+              placeholder="New Password"
+              secureTextEntry
+              value={newPassword}
+              onChangeText={setNewPassword}
+              placeholderTextColor="#666"
+            />
 
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setModalType(null)
+                  setCurrentPassword('')
+                  setNewPassword('')
+                  setError('')
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.confirmButton]}
+                onPress={handlePasswordChange}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.confirmButtonText}>Change Password</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Email Change Modal */}
+      <Modal
+        visible={modalType === 'email'}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalType(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Change Email</Text>
+            
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+            
+            <TextInput
+              style={styles.input}
+              placeholder="Current Password"
+              secureTextEntry
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              placeholderTextColor="#666"
+            />
+            
+            <TextInput
+              style={styles.input}
+              placeholder="New Email"
+              value={newEmail}
+              onChangeText={setNewEmail}
+              placeholderTextColor="#666"
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setModalType(null)
+                  setCurrentPassword('')
+                  setNewEmail('')
+                  setError('')
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.confirmButton]}
+                onPress={handleEmailChange}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.confirmButtonText}>Change Email</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Profile Edit Modal */}
+      <Modal
+        visible={modalType === 'profile'}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalType(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Edit Profile</Text>
+            
+            <TouchableOpacity 
+              style={styles.avatarEditContainer}
+              onPress={handlePickImage}
+            >
+              {photoURL ? (
+                <Image source={{ uri: photoURL }} style={styles.avatarLarge} />
+              ) : (
+                <View style={[styles.avatarLarge, styles.avatarPlaceholder]}>
+                  <Text style={styles.avatarTextLarge}>
+                    {displayName?.charAt(0) || userEmail?.charAt(0)}
+                  </Text>
+                </View>
+              )}
+              <View style={styles.cameraButtonLarge}>
+                <IconCamera size={24} stroke="#fff" />
+              </View>
+            </TouchableOpacity>
+            
+            <TextInput
+              style={styles.input}
+              placeholder="Display Name"
+              value={displayName || ''}
+              onChangeText={setDisplayName}
+              placeholderTextColor="#666"
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setModalType(null)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.confirmButton]}
+                onPress={() => {
+                  // Handle profile update
+                  setModalType(null)
+                }}
+              >
+                <Text style={styles.confirmButtonText}>Save Changes</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -289,6 +530,11 @@ const styles = StyleSheet.create({
   settingText: {
     fontSize: 16
   },
+  settingDescription: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
+  },
   signOutButton: {
     backgroundColor: '#e74c3c',
     padding: 16,
@@ -301,63 +547,91 @@ const styles = StyleSheet.create({
   signOutText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
     marginLeft: 8
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20
   },
   modalContent: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    width: '100%',
-    maxWidth: 400
+    borderRadius: 16,
+    padding: 24,
+    width: '90%',
+    maxWidth: 400,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 20
+    marginBottom: 16,
+    textAlign: 'center',
   },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
     padding: 12,
-    marginBottom: 12,
-    fontSize: 16
+    marginBottom: 16,
+    fontSize: 16,
   },
   modalButtons: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12,
-    marginTop: 20
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  modalButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 8,
   },
   cancelButton: {
-    padding: 12
+    backgroundColor: '#f1f1f1',
+  },
+  confirmButton: {
+    backgroundColor: '#007AFF',
   },
   cancelButtonText: {
     color: '#666',
-    fontSize: 16
+    fontSize: 16,
+    fontWeight: '500',
   },
-  saveButton: {
-    backgroundColor: '#007AFF',
-    padding: 12,
-    borderRadius: 8,
-    minWidth: 80,
-    alignItems: 'center'
-  },
-  saveButtonText: {
+  confirmButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '500'
+    fontWeight: '500',
   },
   errorText: {
-    color: '#e74c3c',
-    marginBottom: 12
+    color: '#ff3b30',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  avatarEditContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  avatarLarge: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+  },
+  avatarTextLarge: {
+    fontSize: 48,
+    color: '#fff',
+  },
+  cameraButtonLarge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#007AFF',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   }
 })

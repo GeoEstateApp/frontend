@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 
 interface SelectedPlace {
+  placeId: string
+  name: string
   lat: number
   lng: number
   address: string

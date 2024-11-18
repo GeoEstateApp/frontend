@@ -19,12 +19,14 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { addUser, findUserById, findUserByUsername } from '@/api/user';
 
 interface FormData {
     email: string;
     password: string;
     confirmPassword?: string;
     fullName?: string;
+    username?: string;
 }
 
 interface ValidationError {
@@ -87,6 +89,56 @@ const CustomAlert = ({
                                 </Text>
                             </TouchableOpacity>
                         ))}
+                    </View>
+                </View>
+            </View>
+        </Modal>
+    );
+};
+
+const UsernameModal = ({
+    visible,
+    onSubmit,
+    onClose,
+    error,
+}: {
+    visible: boolean;
+    onSubmit: (username: string) => void;
+    onClose: () => void;
+    error?: string;
+}) => {
+    const [username, setUsername] = useState('');
+
+    return (
+        <Modal
+            transparent
+            visible={visible}
+            onRequestClose={onClose}
+            animationType="fade"
+        >
+            <View style={alertStyles.overlay}>
+                <View style={alertStyles.alertContainer}>
+                    <Text style={alertStyles.alertTitle}>Create Username</Text>
+                    <Text style={alertStyles.alertMessage}>
+                        Choose a unique username for your account
+                    </Text>
+                    <TextInput
+                        style={[styles.input, error && styles.inputError]}
+                        placeholder="Enter username"
+                        value={username}
+                        onChangeText={setUsername}
+                        autoCapitalize="none"
+                    />
+                    {error && (
+                        <Text style={styles.errorText}>{error}</Text>
+                    )}
+                    <View style={alertStyles.buttonContainer}>
+                        <TouchableOpacity
+                            style={alertStyles.button}
+                            onPress={() => onSubmit(username)}
+                        >
+                            <Text style={alertStyles.buttonText}>Submit</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </View>
@@ -158,6 +210,7 @@ export default function AuthScreen() {
         password: '',
         confirmPassword: '',
         fullName: '',
+        username: '',
     });
     const [errors, setErrors] = useState<ValidationError[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -176,6 +229,10 @@ export default function AuthScreen() {
         title: '',
         message: '',
     });
+
+    const [showUsernameModal, setShowUsernameModal] = useState(false);
+    const [usernameError, setUsernameError] = useState<string>();
+    const [pendingGoogleUser, setPendingGoogleUser] = useState<any>(null);
 
     // Animation values
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -232,7 +289,7 @@ export default function AuthScreen() {
         if (!formData.email) {
             newErrors.push({ field: 'email', message: 'Email is required' });
         } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-            newErrors.push({ field: 'email', message: 'Email is invalid' });
+            newErrors.push({ field: 'email', message: 'Invalid email format' });
         }
 
         if (!formData.password) {
@@ -242,21 +299,27 @@ export default function AuthScreen() {
         }
 
         if (!isLogin) {
+            if (!formData.confirmPassword) {
+                newErrors.push({ field: 'confirmPassword', message: 'Please confirm your password' });
+            } else if (formData.password !== formData.confirmPassword) {
+                newErrors.push({ field: 'confirmPassword', message: 'Passwords do not match' });
+            }
+
             if (!formData.fullName) {
                 newErrors.push({ field: 'fullName', message: 'Full name is required' });
             }
 
-            if (formData.password !== formData.confirmPassword) {
-                newErrors.push({ field: 'confirmPassword', message: 'Passwords do not match' });
+            if (!formData.username) {
+                newErrors.push({ field: 'username', message: 'Username is required' });
+            } else if (formData.username.length < 3) {
+                newErrors.push({ field: 'username', message: 'Username must be at least 3 characters' });
+            } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
+                newErrors.push({ field: 'username', message: 'Username can only contain letters, numbers, and underscores' });
             }
         }
 
         setErrors(newErrors);
-        if (newErrors.length > 0) {
-            shakeError();
-            return false;
-        }
-        return true;
+        return newErrors.length === 0;
     };
 
     const handleSubmit = async () => {
@@ -280,6 +343,21 @@ export default function AuthScreen() {
                     setIsLoading(false);
                     return;
                 }
+
+                // JWT token and user ID
+                const idToken = await userCredential.user.getIdToken();
+                const uid = userCredential.user.uid;
+                
+                // user data from backend
+                const response = await findUserByUsername(uid);
+                if (response.error) {
+                    throw new Error('Failed to get user data');
+                }
+                
+                // tokens and username in AsyncStorage
+                await AsyncStorage.setItem('idToken', idToken);
+                await AsyncStorage.setItem('uid', uid);
+                await AsyncStorage.setItem('username', response.username);
                 
                 router.push('/explore');
             } else {
@@ -302,7 +380,8 @@ export default function AuthScreen() {
                                     ...prev,
                                     password: '',
                                     confirmPassword: '',
-                                    fullName: ''
+                                    fullName: '',
+                                    username: ''
                                 }));
                             }
                         }
@@ -327,7 +406,8 @@ export default function AuthScreen() {
                                     ...prev,
                                     password: '',
                                     confirmPassword: '',
-                                    fullName: ''
+                                    fullName: '',
+                                    username: ''
                                 }));
                             }
                         },
@@ -340,7 +420,7 @@ export default function AuthScreen() {
                 return;
             }
             
-            // Handle other error cases
+            // error cases
             switch (authError.code) {
                 case 'auth/invalid-email':
                     errorMessage = 'Invalid email address.';
@@ -362,37 +442,185 @@ export default function AuthScreen() {
         }
     };
 
-    const handleGoogleSignIn = async () => {
-        setIsGoogleLoading(true);
+    const handleUsernameSubmit = async (username: string) => {
         try {
-            const provider = new GoogleAuthProvider();
-            const result = await signInWithPopup(auth, provider);
+            if (!pendingGoogleUser) return;
+
+            if (!username) {
+                setUsernameError('Username is required');
+                return;
+            }
+
+            if (username.length < 3) {
+                setUsernameError('Username must be at least 3 characters');
+                return;
+            }
+
+            if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+                setUsernameError('Username can only contain letters, numbers, and underscores');
+                return;
+            }
+
+            const response = await addUser({
+                userid: pendingGoogleUser.uid,
+                name: pendingGoogleUser.displayName || '',
+                username: username,
+                zipcode: '00000',
+                status: 'active'
+            });
+
+            if (response.error === 'USERNAME_TAKEN') {
+                setUsernameError('This username is already taken');
+                return;
+            }
+
+            if (response.error) {
+                throw new Error(response.message || 'Failed to create user profile');
+            }
+
+            // success
+            setShowUsernameModal(false);
+            setPendingGoogleUser(null);
+            router.push('/explore');
+        } catch (error: any) {
+            console.error('Username creation error:', error);
+            setUsernameError(error.message);
+        }
+    };
+
+    const handleGoogleSignIn = async () => {
+        try {
+            setIsGoogleLoading(true);
+            const result = await signInWithPopup(auth, new GoogleAuthProvider());
+            if (!result) {
+                throw new Error('Google sign in failed');
+            }
         
-            // Retrieve UID
-            const uid = result.user.uid;
-        
-            // Retrieve ID token
+            // store tokens
             const idToken = await result.user.getIdToken();
-        
-          // Store the UID and ID token in AsyncStorage
-        await AsyncStorage.setItem("idToken", idToken);
-        await AsyncStorage.setItem("uid", uid);
-        
-            // Log the UID
-            console.log("User UID:", uid);
-        
-            // Navigate to the explore page
-            router.push("/explore");
-        } catch (error) {
-            Alert.alert(
-                "Error",
-                "Google sign-in failed. Please try again.",
-                [{ text: "OK", onPress: () => console.log("OK Pressed") }]
-            );
+            await AsyncStorage.setItem("idToken", idToken);
+            await AsyncStorage.setItem("uid", result.user.uid);
+
+            // user exists and has a username
+            const existingUser = await findUserById(result.user.uid);
+            console.log('Existing user check:', existingUser);
+            
+            if (!existingUser.error && existingUser.username && existingUser.username.length > 0) {
+                // user exists and has a username
+                await AsyncStorage.setItem("username", existingUser.username);
+                router.push('/explore');
+                return;
+            }
+
+            // user doesn't exist or doesn't have a username
+            const response = await addUser({
+                userid: result.user.uid,
+                name: result.user.displayName || '',
+                username: '', // Empty username for now
+                zipcode: '00000',
+                status: 'active'
+            });
+
+            if (response.error && response.error !== 'USERNAME_REQUIRED') {
+                throw new Error(response.message || 'Failed to create user profile');
+            }
+
+            setPendingGoogleUser(result.user);
+            setShowUsernameModal(true);
+            
+        } catch (error: any) {
+            console.error('Google sign in error:', error);
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: error.message || 'Failed to sign in with Google'
+            });
         } finally {
             setIsGoogleLoading(false);
             const storedIdToken = localStorage.getItem("idToken");
             console.log("Retrieved ID Token from localStorage:", storedIdToken);
+        }
+    };
+
+    const handleSignup = async () => {
+        if (!validateForm()) return;
+
+        try {
+            setIsLoading(true);
+            const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+            const user = userCredential.user;
+
+            // store tokens in AsyncStorage
+            const idToken = await user.getIdToken();
+            await AsyncStorage.setItem("idToken", idToken);
+            await AsyncStorage.setItem("uid", user.uid);
+            await AsyncStorage.setItem("username", formData.username || '');
+
+            // send verification email
+            await sendEmailVerification(user);
+
+            // add user to backend
+            const response = await addUser({
+                userid: user.uid,
+                name: formData.fullName || '',
+                username: formData.username || '',
+                zipcode: '00000', // Default zipcode
+                status: 'active'
+            });
+
+            if (response.error === 'USERNAME_TAKEN') {
+                setErrors([{ field: 'username', message: 'Username is already taken' }]);
+                // delete the Firebase user since we couldn't create the
+                // backend user
+                await user.delete();
+                await AsyncStorage.removeItem("idToken");
+                await AsyncStorage.removeItem("uid");
+                setAlertConfig({
+                    visible: true,
+                    title: 'Error',
+                    message: 'This username is already taken. Please choose a different one.',
+                });
+                return;
+            }
+
+            if (response.error) {
+                // clean up if backend creation failed
+                await user.delete();
+                await AsyncStorage.removeItem("idToken");
+                await AsyncStorage.removeItem("uid");
+                throw new Error(response.message || 'Failed to create user profile');
+            }
+
+            // show success message
+            setAlertConfig({
+                visible: true,
+                title: 'Success!',
+                message: 'Account created successfully. Please check your email for verification.',
+                buttons: [
+                    {
+                        text: 'OK',
+                        onPress: () => {
+                            setIsLogin(true);
+                            setFormData({
+                                email: '',
+                                password: '',
+                                confirmPassword: '',
+                                fullName: '',
+                                username: '',
+                            });
+                        }
+                    }
+                ]
+            });
+        } catch (error: any) {
+            console.error('Signup error:', error);
+            setAlertConfig({
+                visible: true,
+                title: 'Error',
+                message: error.message || 'Failed to create account',
+            });
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -416,6 +644,7 @@ export default function AuthScreen() {
                 password: '',
                 confirmPassword: '',
                 fullName: '',
+                username: ''
             });
             startEntryAnimation();
         });
@@ -471,19 +700,34 @@ export default function AuthScreen() {
                         ]}
                     >
                         {!isLogin && (
-                            <View style={styles.inputContainer}>
-                                <Text style={styles.label}>Full Name</Text>
-                                <TextInput
-                                    style={[styles.input, hasError('fullName') && styles.inputError]}
-                                    placeholder="Enter your full name"
-                                    value={formData.fullName}
-                                    onChangeText={(text) => setFormData({...formData, fullName: text})}
-                                    placeholderTextColor="#95a5a6"
-                                />
-                                {hasError('fullName') && (
-                                    <Text style={styles.errorText}>{getErrorMessage('fullName')}</Text>
-                                )}
-                            </View>
+                            <>
+                                <View style={styles.inputContainer}>
+                                    <Text style={styles.label}>Full Name</Text>
+                                    <TextInput
+                                        style={[styles.input, hasError('fullName') && styles.inputError]}
+                                        placeholder="Enter your full name"
+                                        value={formData.fullName}
+                                        onChangeText={(text) => setFormData({...formData, fullName: text})}
+                                        placeholderTextColor="#95a5a6"
+                                    />
+                                    {hasError('fullName') && (
+                                        <Text style={styles.errorText}>{getErrorMessage('fullName')}</Text>
+                                    )}
+                                </View>
+                                <View style={styles.inputContainer}>
+                                    <Text style={styles.label}>Username</Text>
+                                    <TextInput
+                                        style={[styles.input, hasError('username') && styles.inputError]}
+                                        placeholder="Enter your username"
+                                        value={formData.username}
+                                        onChangeText={(text) => setFormData({...formData, username: text})}
+                                        placeholderTextColor="#95a5a6"
+                                    />
+                                    {hasError('username') && (
+                                        <Text style={styles.errorText}>{getErrorMessage('username')}</Text>
+                                    )}
+                                </View>
+                            </>
                         )}
 
                         <View style={styles.inputContainer}>
@@ -536,7 +780,7 @@ export default function AuthScreen() {
 
                         <TouchableOpacity
                             style={[styles.button, isLoading && styles.buttonDisabled]}
-                            onPress={handleSubmit}
+                            onPress={isLogin ? handleSubmit : handleSignup}
                             disabled={isLoading}
                         >
                             {isLoading ? (
@@ -590,6 +834,15 @@ export default function AuthScreen() {
                 message={alertConfig.message}
                 buttons={alertConfig.buttons}
                 onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+            />
+            <UsernameModal
+                visible={showUsernameModal}
+                onSubmit={handleUsernameSubmit}
+                onClose={() => {
+                    setShowUsernameModal(false);
+                    setPendingGoogleUser(null);
+                }}
+                error={usernameError}
             />
         </SafeAreaView>
     );
