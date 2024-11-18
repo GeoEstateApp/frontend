@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Button, TextInput, ScrollView, Pressable, Image } from 'react-native'
+import { View, Text, StyleSheet, Button, TextInput, ScrollView, Pressable, Image, ActivityIndicator } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { Picker } from '@react-native-picker/picker'
 import { Slider } from '@miblanchard/react-native-slider';
@@ -47,6 +47,7 @@ const MIN_SEARCH_LENGTH = 3
 
 export default function SuitabilityCalculator() {
   const [currentPage, setCurrentPage] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
 
   const [recommendationProperties, setRecommendationProperties] = useState<RecommendationProperties[]>([])
 
@@ -124,13 +125,15 @@ export default function SuitabilityCalculator() {
   }
 
   const handlePageFive = async () => {
+    setIsLoading(true)
+
     const anchorAddresses = recommendedPlaces.map((place) => [place.lat, place.lng])
     console.log(anchorAddresses)
 
     // fetch data
     const prefs: Prefs = {
       rentOrBuy: rentOrBuy,
-      anchorAddresses: anchorAddresses,
+      anchorAddresses: wantAnyRecommendedPlaces ? anchorAddresses : [],
       minBaths: noOfBathrooms,
       minBeds: noOfBedrooms,
       priceMin: minPrice,
@@ -166,6 +169,8 @@ export default function SuitabilityCalculator() {
       setRecommendationProperties(properties)
     } catch (error) {
       console.log(error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -355,7 +360,11 @@ export default function SuitabilityCalculator() {
                       </View>
                     )
                   }
-                  <Button title="Finish" onPress={() => handlePageFive()} />
+                  <Pressable onPress={() => handlePageFive()} style={{ backgroundColor: '#80808080', padding: 8, borderRadius: 6 }}>
+                    {
+                      isLoading ? <ActivityIndicator size="small" /> : "Finish"
+                    }
+                  </Pressable>
                 </View>
               )
             }

@@ -123,7 +123,7 @@ const UsernameModal = ({
                         Choose a unique username for your account
                     </Text>
                     <TextInput
-                        style={[styles.input, error && styles.inputError]}
+                        style={{...styles.input, borderColor: error ? "e74c3c" : "e9ecef"}}
                         placeholder="Enter username"
                         value={username}
                         onChangeText={setUsername}
@@ -357,7 +357,7 @@ export default function AuthScreen() {
                 // tokens and username in AsyncStorage
                 await AsyncStorage.setItem('idToken', idToken);
                 await AsyncStorage.setItem('uid', uid);
-                await AsyncStorage.setItem('username', response.username);
+                await AsyncStorage.setItem('username', response.username || "Unknown");
                 
                 router.push('/explore');
             } else {
