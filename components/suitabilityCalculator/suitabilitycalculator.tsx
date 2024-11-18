@@ -230,7 +230,7 @@ export default function SuitabilityCalculator() {
             {
               currentPage == 2 && (
                 <View style={styles.pageTwo}>
-                  <Text style={{ fontSize: 18, fontWeight: 'bold' }}>How many bathroom's and bedrooms do you need?</Text>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Select the number of bedrooms and bathrooms you'd like to have.</Text>
                   <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 16 }}>
                     <Text>Bathrooms:</Text>
                     <Picker
@@ -318,7 +318,7 @@ export default function SuitabilityCalculator() {
             {
               currentPage == 5 && (
                 <View style={styles.pageFive}>
-                  <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Do you have an address you'd live to live near?</Text>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Do you have any addresses you'd like to live near? (e.g. workplace, family, friends, favorite dinner spot)</Text>
                   <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 16, flexGrow: 1, maxHeight: 38 }}>
                     <Button title="Yes" onPress={() => setWantAnyRecommendedPlaces(true)} color={wantAnyRecommendedPlaces ? 'green' : 'blue'} />
                     <Button title="No" onPress={() => setWantAnyRecommendedPlaces(false)} color={wantAnyRecommendedPlaces ? 'blue' : 'green'} />
