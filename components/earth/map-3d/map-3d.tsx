@@ -16,9 +16,9 @@ import { useMapStore } from '@/states/map'
 
 type LatLngLiteralWithAltitude = google.maps.LatLngLiteral & { altitude: number };
 
-import { convexHull, fetchPolygonCoordinates } from '@/api/osm'
+import { convexHull, fetchPolygonCoordinates, PolygonCoordinates } from '@/api/osm'
 import { getPlaceId } from '@/api/geocoding'
-import { RealEstateProperty, useSidePanelStore } from '@/states/sidepanel'
+import { useSidePanelStore } from '@/states/sidepanel'
 import { useInsightsStore } from '@/states/insights'
 import { SUPPORTED_FILTERS_MAP } from '@/const/filters'
 import { useZipcodeInsights } from '@/states/zipcode_insights'
@@ -45,11 +45,13 @@ declare global {
   }
 }
 
+const emptyPolygonCoordinates: PolygonCoordinates[] = [{ lat: 0, lng: 0, altitude: 0 }]
+
 export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<google.maps.maps3d.Map3DElement | null>) => {
   const { selectedPlacePolygonCoordinates, setSelectedPlacePolygonCoordinates, selectedPlace } = useMapStore()
   const { setSidePanelPlace, setShowPanel, setRealEstateProperties, selectedRealEstateProperty } = useSidePanelStore()
   const { insights } = useInsightsStore()
-  const { polygon, polygons, setPolygon } = useZipcodeInsights()
+  const { polygon, setPolygon } = useZipcodeInsights()
 
   const [markers, setMarkers] = useState<Array<{id: string, position: LatLngLiteralWithAltitude, pin?: any}>>([])
 
@@ -71,42 +73,24 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
   useEffect(() => {
     if (!map3DElement) return
     if (!polygon) {
-      (zipcodePolygonRef.current as any).outerCoordinates = null
+      try {
+        (zipcodePolygonRef.current as any).outerCoordinates = emptyPolygonCoordinates
+      } catch (e) {}
+
       return
     }
     if (!zipcodePolygonRef.current) return
 
     customElements.whenDefined((zipcodePolygonRef.current as any).localName).then(() => {
-      (zipcodePolygonRef.current as any).outerCoordinates = convexHull(polygon);
+      try {
+        (zipcodePolygonRef.current as any).outerCoordinates = convexHull(polygon);
+      } catch (e) {}
 
       (zipcodePolygonRef.current as any).addEventListener('click', (event: any) => {
         console.log("Polygon Clicked", event)
       })
     })
   }, [zipcodePolygonRef.current, polygon, map3DElement])
-
-  // useEffect(() => {
-  //   if (!map3DElement) return
-  //   if (!polygons) return
-
-  //   const zipcodePolygons = polygons.map((polygon, idx) => {
-  //     const zipcodePolygon = document.createElement('gmp-polygon-3d') as any
-
-  //     customElements.whenDefined(zipcodePolygon.localName).then(() => {
-  //       const { fill, stroke } = SUPPORTED_FILTERS_MAP.manual
-  //       zipcodePolygon.setAttribute('altitude-mode', 'relative-to-ground')
-  //       zipcodePolygon.setAttribute('fill-color', fill)
-  //       zipcodePolygon.setAttribute('stroke-color', stroke)
-  //       zipcodePolygon.setAttribute('stroke-width', '3')
-  //       zipcodePolygon.setAttribute('extruded', '')
-  //       zipcodePolygon.setAttribute('id', `zipcode-${idx}`)
-
-  //       zipcodePolygon.outerCoordinates = convexHull(polygon) || []
-
-  //       map3DElement.appendChild(zipcodePolygon)
-  //     })
-  //   })
-  // }, [polygons])
 
   useEffect(() => {
     if (!map3DElement) return;
@@ -137,9 +121,9 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
         const types = place.types || []
         const url = place.url || ""
 
-        setSelectedPlace({ 
-          placeId: place.place_id,
-          name: place.name,
+        setSidePanelPlace({ 
+          placeId: place.place_id || '',
+          name: place.name || '',
           address, 
           photosUrl, 
           rating, 
@@ -171,7 +155,9 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
     if (polygonCoordinates && polygonCoordinates.length <= 0) return
 
     let polygon = map3DElement.querySelector('#real-estate') as any
-    if (polygon) polygon.outerCoordinates = null
+    try {
+      if (polygon) polygon.outerCoordinates = emptyPolygonCoordinates
+    } catch (e) {}
 
     polygon = document.createElement('gmp-polygon-3d')
     if (!polygon) return
@@ -186,7 +172,9 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
     polygon.setAttribute('id', 'real-estate')
 
     customElements.whenDefined(polygon.localName).then(() => {
-      (polygon as any).outerCoordinates = polygonCoordinates
+      try {
+        (polygon as any).outerCoordinates = polygonCoordinates
+      } catch (e) {}
       map3DElement.appendChild(polygon)
     })
   }
@@ -217,7 +205,9 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
       polygon.setAttribute('id', `${insight.type}-${idx}`)
 
       customElements.whenDefined(polygon.localName).then(() => {
-        (polygon as any).outerCoordinates = coordinates
+        try {
+          (polygon as any).outerCoordinates = coordinates
+        } catch (e) {}
         map3DElement.appendChild(polygon)
       })
     })
@@ -238,18 +228,24 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
     const polygon = document.querySelector('gmp-polygon-3d')
     if (!polygon) return
     if (!map3DElement) return
+    if (!selectedPlacePolygonCoordinates) return
 
     setPolygon(null)
+
     
     if (selectedPlacePolygonCoordinates.length <= 0) {
       customElements.whenDefined(polygon.localName).then(() => {
-        (polygon as any).outerCoordinates = []
+        try {
+          (polygon as any).outerCoordinates = emptyPolygonCoordinates
+        } catch (e) {}
       })
       return
     }
 
     customElements.whenDefined(polygon.localName).then(() => {
-      (polygon as any).outerCoordinates = selectedPlacePolygonCoordinates
+      try {
+        (polygon as any).outerCoordinates = selectedPlacePolygonCoordinates
+      } catch (e) {}
     })
 
     // Fetch RealEstate data
