@@ -1,11 +1,13 @@
 import { create } from 'zustand'
 
 interface BucketListPanelState {
-  showPanel: boolean
-  setShowPanel: (show: boolean) => void
+  showBucketListPanel: boolean
+  setShowBucketListPanel: (show: boolean) => void
+  toggleBucketListPanel: () => void
 }
 
 export const useBucketListPanelStore = create<BucketListPanelState>((set) => ({
-  showPanel: false,
-  setShowPanel: (show) => set({ showPanel: show }),
+  showBucketListPanel: false,
+  setShowBucketListPanel: (show) => set({ showBucketListPanel: show }),
+  toggleBucketListPanel: () => set((state) => ({ showBucketListPanel: !state.showBucketListPanel })),
 }))

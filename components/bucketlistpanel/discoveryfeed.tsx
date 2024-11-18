@@ -32,7 +32,7 @@ export default function DiscoveryFeed() {
   const [viewMode, setViewMode] = useState<ViewMode>('popular');
   const { setSelectedPlace } = useMapStore();
   const { setShowPanel: setShowSidePanel } = useSidePanelStore();
-  const { setShowPanel: setShowBucketListPanel } = useBucketListPanelStore();
+  const { setShowBucketListPanel } = useBucketListPanelStore();
 
   useEffect(() => {
     if (viewMode === 'popular') {

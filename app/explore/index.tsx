@@ -4,7 +4,7 @@ import { ActivityIndicator, Button, Image, Linking, Pressable, StyleSheet, Text,
 import { useEffect, useState } from 'react'
 import { TouchableOpacity } from 'react-native'
 import { useRouter } from 'expo-router'
-import { IconUser, IconLogin, IconFilter, IconZip, IconSparkles, IconBed, IconBath, IconBuildingSkyscraper, IconAi, IconLiveView, IconGenderMale, IconGenderFemale, IconX } from '@tabler/icons-react'
+import { IconUser, IconLogin, IconFilter, IconZip, IconSparkles, IconBed, IconBath, IconBuildingSkyscraper, IconAi, IconLiveView, IconGenderMale, IconGenderFemale, IconX, IconHeart, IconBookmark } from '@tabler/icons-react'
 import { auth } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import Toast from 'react-native-toast-message'
@@ -13,6 +13,8 @@ import { useSuitability } from '@/states/suitability'
 import { useFavoritesPanelStore } from '@/states/favoritespanel'
 import { useBucketListPanelStore } from '@/states/bucketlistpanel'
 import { addToBucketList } from '@/api/bucketlist'
+import BucketListPanel from '@/components/bucketlistpanel/bucketlistpanel'
+import FavoritesPanel from '@/components/favoritespanel/favoritespanel'
 
 const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY
 const GOOGLE_MAP_VERSION = 'alpha'
@@ -37,7 +39,7 @@ function HeaderButton() {
   }
 
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.headerButton}
       onPress={handlePress}
     >
@@ -59,7 +61,10 @@ export default function index() {
 
   const { setShowPanel, showPanel, selectedRealEstateProperty, setSelectedRealEstateProperty } = useSidePanelStore()
   const { isModalOpen } = useSuitability()
-  
+
+  const { showFavPanel, setShowFavPanel } = useFavoritesPanelStore()
+  const { showBucketListPanel, setShowBucketListPanel } = useBucketListPanelStore()
+
   if (!API_KEY) {
     return (
       <View style={styles.container}>
@@ -67,10 +72,6 @@ export default function index() {
       </View>
     )
   }
-
-  const { showPanel: showFilters, setShowPanel: setShowFilters } = useSidePanelStore()
-  const { showPanel: showFavorites, setShowPanel: setShowFavorites } = useFavoritesPanelStore()
-  const { showPanel: showBucketList, setShowPanel: setShowBucketList } = useBucketListPanelStore()
 
   useEffect(() => {
     Toast.show({
@@ -95,6 +96,7 @@ export default function index() {
       setIsLoading(false)
     }, interval)
   }
+
   const handleAddToBucketList = async (place: google.maps.places.PlaceResult) => {
     if (!place.place_id) {
       Toast.show({
@@ -127,149 +129,185 @@ export default function index() {
     }
   };
 
+  const handleFavoritesClick = () => {
+      setShowFavPanel(!showFavPanel)
+      setShowBucketListPanel(false)
+      setShowPanel(false)
+      setShowAIChat(false)
+      setIsZipcodePanelOpen(false)
+  }
+
+  const handleBucketListClick = () => {
+      setShowBucketListPanel(!showBucketListPanel)
+      setShowFavPanel(false)
+      setShowPanel(false)
+      setShowAIChat(false)
+      setIsZipcodePanelOpen(false)
+  }
+
   return (
     <View style={styles.container}>
       <HeaderButton />
       <APIProvider apiKey={API_KEY} version={GOOGLE_MAP_VERSION}>
         <Earth />
         <SearchBox />
-        { showPanel && <SidePanel /> }
-        { isZipcodePanelOpen && <ZipPanel /> }
-        { showAIChat && <AIChat /> }
+        {showPanel && <SidePanel />}
+        {isZipcodePanelOpen && <ZipPanel />}
+        {showAIChat && <AIChat />}
+        {showBucketListPanel && <BucketListPanel />}
+        {showFavPanel && <FavoritesPanel />}
 
-        <View style={{...styles.toggleButtonGroup, left: showPanel || isZipcodePanelOpen || showAIChat ? 420 : 20}}>
-          <Pressable style={{...styles.toggleButton, backgroundColor: showPanel ? '#49A84C' : 'white'}} onPress={() => {
+        <View style={{ ...styles.toggleButtonGroup, left: showPanel || isZipcodePanelOpen || showAIChat || showBucketListPanel || showFavPanel ? 420 : 20 }}>
+          <Pressable style={{ ...styles.toggleButton, backgroundColor: showPanel ? '#49A84C' : 'white' }} onPress={() => {
             setIsZipcodePanelOpen(false)
             setShowAIChat(false)
             setShowPanel(!showPanel)
+            setShowFavPanel(false)
+            setShowBucketListPanel(false)
           }}>
             <IconFilter size={20} strokeWidth={2} color={showPanel ? 'white' : 'black'} />
           </Pressable>
 
-          <Pressable style={{...styles.toggleButton, backgroundColor: isZipcodePanelOpen ? '#49A84C' : 'white'}} onPress={() => {
+          <Pressable style={{ ...styles.toggleButton, backgroundColor: isZipcodePanelOpen ? '#49A84C' : 'white' }} onPress={() => {
             setShowPanel(false)
             setShowAIChat(false)
-              setIsZipcodePanelOpen(!isZipcodePanelOpen)
-            }}>
+            setIsZipcodePanelOpen(!isZipcodePanelOpen)
+            setShowFavPanel(false)
+            setShowBucketListPanel(false)
+          }}>
             <IconZip size={20} strokeWidth={2} color={isZipcodePanelOpen ? 'white' : 'black'} />
           </Pressable>
 
-          <Pressable style={{...styles.toggleButton, backgroundColor: showAIChat ? '#49A84C' : 'white'}} onPress={() => {
+          <Pressable style={{ ...styles.toggleButton, backgroundColor: showAIChat ? '#49A84C' : 'white' }} onPress={() => {
             setIsZipcodePanelOpen(false)
             setShowPanel(false)
             setShowAIChat(!showAIChat)
-            }}>
+            setShowFavPanel(false)
+            setShowBucketListPanel(false)
+          }}>
             <IconSparkles size={20} strokeWidth={2} color={showAIChat ? 'white' : 'black'} />
+          </Pressable>
+          <Pressable
+            style={{ ...styles.toggleButton, backgroundColor: showFavPanel ? '#49A84C' : 'white' }}
+            onPress={handleFavoritesClick}
+          >
+            <IconHeart size={20} strokeWidth={2} color={showFavPanel ? 'white' : 'black'} />
+          </Pressable>
+          <Pressable
+            style={{ ...styles.toggleButton, backgroundColor: showBucketListPanel ? '#49A84C' : 'white' }}
+            onPress={handleBucketListClick}
+          >
+            <IconBookmark size={20} strokeWidth={2} color={showBucketListPanel ? 'white' : 'black'} />
           </Pressable>
         </View>
 
-      { selectedRealEstateProperty && (
+        {selectedRealEstateProperty && (
           <View style={styles.modal}>
-          <IconX 
-            style={{
-              position: 'absolute',
-              top: -20, 
-              left: -20, 
-              backgroundColor: '#49A84C',
-              borderRadius: 4,
-              cursor: 'pointer',
-              padding: 4, 
-            }}
-            color='white'
-            onClick={() => setSelectedRealEstateProperty(null)}
-            size={28}
-          />
-        
-          <View style={{ gap: 6, display: 'flex', flexDirection: 'column', position: 'relative' }}>
-            <Image 
-              source={{ uri: selectedRealEstateProperty.img_url }} 
-              style={{ height: 180, objectFit: 'cover', borderRadius: 6 }} 
+            <IconX
+              style={{
+                position: 'absolute',
+                top: -20,
+                left: -20,
+                backgroundColor: '#49A84C',
+                borderRadius: 4,
+                cursor: 'pointer',
+                padding: 4,
+              }}
+              color='white'
+              onClick={() => setSelectedRealEstateProperty(null)}
+              size={28}
             />
-            <Text style={{ fontSize: 16, fontWeight: 'bold' }}>
-              {selectedRealEstateProperty.address_line} [{selectedRealEstateProperty.status.split('_').join(' ').toUpperCase()}]
-            </Text>
-            <Text style={{ fontSize: 14, fontWeight: 'bold' }}>
-              {selectedRealEstateProperty.price}
-            </Text>
-            { selectedRealEstateProperty.size_sqft && (
-              <Text style={{ fontSize: 14 }}>{selectedRealEstateProperty.size_sqft} ft²</Text>
-            )}
-            <Text style={{ fontSize: 14, display: 'flex', flexDirection: 'row', gap: 4, alignItems: 'center' }}>
-              <IconBuildingSkyscraper /> <b>Type:</b> {selectedRealEstateProperty.property_type.split('_').join(' ').toUpperCase()}
-            </Text>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <Text style={{ fontSize: 14, display: 'flex', flexDirection: 'row', gap: 4, justifyContent: 'center', alignItems: 'center' }}>
-                <IconBed /> {selectedRealEstateProperty.num_beds === 0 ? '?' : selectedRealEstateProperty.num_beds}
+
+            <View style={{ gap: 6, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+              <Image
+                source={{ uri: selectedRealEstateProperty.img_url }}
+                style={{ height: 180, objectFit: 'cover', borderRadius: 6 }}
+              />
+              <Text style={{ fontSize: 16, fontWeight: 'bold' }}>
+                {selectedRealEstateProperty.address_line} [{selectedRealEstateProperty.status.split('_').join(' ').toUpperCase()}]
               </Text>
-              <Text style={{ fontSize: 14, display: 'flex', flexDirection: 'row', gap: 4, justifyContent: 'center', alignItems: 'center' }}>
-                <IconBath /> {selectedRealEstateProperty.num_baths === 0 ? '?' : selectedRealEstateProperty.num_baths}
+              <Text style={{ fontSize: 14, fontWeight: 'bold' }}>
+                {selectedRealEstateProperty.price}
               </Text>
-            </View>
-        
-            { showNeighbourhoodInsights && (
-              <View style={{ gap: 6, display: 'flex', flexDirection: 'column' }}>
-                <Text style={{ fontSize: 14 }}><b>Population:</b> {selectedRealEstateProperty.population}</Text>
-                <Text style={{ fontSize: 14 }}><b>Median Age:</b> {selectedRealEstateProperty.median_age}</Text>
-                <Text style={{ fontSize: 14 }}><b>Male Population:</b> {selectedRealEstateProperty.male_pop}</Text>
-                <Text style={{ fontSize: 14 }}><b>Male Median Age:</b> {selectedRealEstateProperty.median_age_male}</Text>
-                <Text style={{ fontSize: 14 }}><b>Female Population:</b> {selectedRealEstateProperty.female_pop}</Text>
-                <Text style={{ fontSize: 14 }}><b>Female Median Age:</b> {selectedRealEstateProperty.median_age_female}</Text>
-                <Text style={{ fontSize: 14 }}>
-                  <b>Predicted Price (1-Year):</b> {
-                    `$${(Number(selectedRealEstateProperty.price.replace("$", "").replaceAll(",", "")) + Number(selectedRealEstateProperty.price.replace("$", "").replaceAll(",", "")) * (selectedRealEstateProperty.home_value_forecast / 10)).toLocaleString("en-US")}`
-                  }
+              {selectedRealEstateProperty.size_sqft && (
+                <Text style={{ fontSize: 14 }}>{selectedRealEstateProperty.size_sqft} ft²</Text>
+              )}
+              <Text style={{ fontSize: 14, display: 'flex', flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+                <IconBuildingSkyscraper /> <b>Type:</b> {selectedRealEstateProperty.property_type.split('_').join(' ').toUpperCase()}
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <Text style={{ fontSize: 14, display: 'flex', flexDirection: 'row', gap: 4, justifyContent: 'center', alignItems: 'center' }}>
+                  <IconBed /> {selectedRealEstateProperty.num_beds === 0 ? '?' : selectedRealEstateProperty.num_beds}
+                </Text>
+                <Text style={{ fontSize: 14, display: 'flex', flexDirection: 'row', gap: 4, justifyContent: 'center', alignItems: 'center' }}>
+                  <IconBath /> {selectedRealEstateProperty.num_baths === 0 ? '?' : selectedRealEstateProperty.num_baths}
                 </Text>
               </View>
-            )}
-        
-            { !showNeighbourhoodInsights && (
-              <Pressable 
-                style={{ 
-                  backgroundColor: '#4285F4', 
-                  marginTop: 10, 
-                  padding: 10, 
-                  borderRadius: 6, 
-                  flexDirection: 'row', 
-                  gap: 4, 
-                  justifyContent: 'center', 
-                  alignItems: 'center' 
-                }} 
-                onPress={() => handleNeighbourhoodInsightsChange(!showNeighbourhoodInsights)}
+
+              {showNeighbourhoodInsights && (
+                <View style={{ gap: 6, display: 'flex', flexDirection: 'column' }}>
+                  <Text style={{ fontSize: 14 }}><b>Population:</b> {selectedRealEstateProperty.population}</Text>
+                  <Text style={{ fontSize: 14 }}><b>Median Age:</b> {selectedRealEstateProperty.median_age}</Text>
+                  <Text style={{ fontSize: 14 }}><b>Male Population:</b> {selectedRealEstateProperty.male_pop}</Text>
+                  <Text style={{ fontSize: 14 }}><b>Male Median Age:</b> {selectedRealEstateProperty.median_age_male}</Text>
+                  <Text style={{ fontSize: 14 }}><b>Female Population:</b> {selectedRealEstateProperty.female_pop}</Text>
+                  <Text style={{ fontSize: 14 }}><b>Female Median Age:</b> {selectedRealEstateProperty.median_age_female}</Text>
+                  <Text style={{ fontSize: 14 }}>
+                    <b>Predicted Price (1-Year):</b> {
+                      `$${(Number(selectedRealEstateProperty.price.replace("$", "").replaceAll(",", "")) + Number(selectedRealEstateProperty.price.replace("$", "").replaceAll(",", "")) * (selectedRealEstateProperty.home_value_forecast / 10)).toLocaleString("en-US")}`
+                    }
+                  </Text>
+                </View>
+              )}
+
+              {!showNeighbourhoodInsights && (
+                <Pressable
+                  style={{
+                    backgroundColor: '#4285F4',
+                    marginTop: 10,
+                    padding: 10,
+                    borderRadius: 6,
+                    flexDirection: 'row',
+                    gap: 4,
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                  }}
+                  onPress={() => handleNeighbourhoodInsightsChange(!showNeighbourhoodInsights)}
+                >
+                  {
+                    isLoading ? (
+                      <ActivityIndicator color='white' size='small' />
+                    ) : (
+                      <View style={{ flexDirection: 'row', gap: 4, justifyContent: 'center', alignItems: 'center' }}>
+                        <IconSparkles color='white' />
+                        <Text style={{ fontSize: 14, color: 'white', textAlign: 'center', fontWeight: 'bold' }}>Neighbourhood Insights</Text>
+                      </View>
+                    )
+                  }
+                </Pressable>
+              )}
+
+              <Pressable
+                style={{
+                  backgroundColor: '#49A84C',
+                  marginTop: showNeighbourhoodInsights ? 10 : 0,
+                  padding: 10,
+                  borderRadius: 6,
+                  flexDirection: 'row',
+                  gap: 4,
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}
+                onPress={() => Linking.openURL(selectedRealEstateProperty.prop_url)}
               >
-                { 
-                  isLoading ? (
-                    <ActivityIndicator color='white' size='small' />
-                  ) : (
-                    <View style={{ flexDirection: 'row', gap: 4, justifyContent: 'center', alignItems: 'center' }}>
-                      <IconSparkles color='white' />
-                      <Text style={{ fontSize: 14, color: 'white', textAlign: 'center', fontWeight: 'bold' }}>Neighbourhood Insights</Text>
-                    </View>
-                  ) 
-                }
+                <IconLiveView color='white' />
+                <Text style={{ fontSize: 14, color: 'white', textAlign: 'center', fontWeight: 'bold' }}>View Live</Text>
               </Pressable>
-            )}
-        
-            <Pressable 
-              style={{ 
-                backgroundColor: '#49A84C', 
-                marginTop: showNeighbourhoodInsights ? 10 : 0, 
-                padding: 10, 
-                borderRadius: 6, 
-                flexDirection: 'row', 
-                gap: 4, 
-                justifyContent: 'center', 
-                alignItems: 'center' 
-              }} 
-              onPress={() => Linking.openURL(selectedRealEstateProperty.prop_url)}
-            >
-              <IconLiveView color='white' />
-              <Text style={{ fontSize: 14, color: 'white', textAlign: 'center', fontWeight: 'bold' }}>View Live</Text>
-            </Pressable>
+            </View>
           </View>
-        </View>
-        ) 
-      }
-      { isModalOpen && <SuitabilityCalculator /> }
+        )
+        }
+        {isModalOpen && <SuitabilityCalculator />}
       </APIProvider>
       <Toast position='bottom' bottomOffset={20} />
     </View>

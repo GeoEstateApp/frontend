@@ -6,7 +6,7 @@ import Toast from 'react-native-toast-message';
 import { useFavoritesPanelStore } from '@/states/favoritespanel';
 
 export default function FavoritesPanel() {
-  const { showPanel } = useFavoritesPanelStore();
+  const { showFavPanel } = useFavoritesPanelStore();
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -28,12 +28,12 @@ export default function FavoritesPanel() {
       }
     };
 
-    if (showPanel) {
+    if (showFavPanel) {
       loadFavorites();
     }
-  }, [showPanel]);
+  }, [showFavPanel]);
 
-  if (!showPanel) return null;
+  if (!showFavPanel) return null;
 
   return (
     <View style={styles.panel}>

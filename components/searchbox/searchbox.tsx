@@ -7,6 +7,9 @@ import { useSidePanelStore } from '@/states/sidepanel'
 import { getAuth } from 'firebase/auth'
 import { useSuitability } from '@/states/suitability'
 import Toast from 'react-native-toast-message'
+import { useBucketListPanelStore } from '@/states/bucketlistpanel'
+import { useFavoritesPanelStore } from '@/states/favoritespanel'
+import { useZipcodeInsights } from '@/states/zipcode_insights'
 
 const MIN_SEARCH_LENGTH = 3
 
@@ -19,7 +22,9 @@ export default function SearchBox() {
   const places = useMapsLibrary('places')
 
   const { setSelectedPlace } = useMapStore()
-  const { setShowPanel, setSelectedPlace: setSidePanelSelectedPlace } = useSidePanelStore()
+  const { setShowPanel, setSidePanelPlace } = useSidePanelStore()
+  const { setShowBucketListPanel } = useBucketListPanelStore()
+  const { setShowFavPanel } = useFavoritesPanelStore()
 
   useEffect(() => {
     if (!places) return
@@ -46,6 +51,8 @@ export default function SearchBox() {
     if (placeId === "" || placeId === undefined || !places) return
 
     setSidePanelPlace(null)
+    setShowFavPanel(false)
+    setShowBucketListPanel(false)
 
     const placesService = new places.PlacesService(document.createElement('div'))
     placesService.getDetails({ placeId }, (place, status) => {
@@ -64,9 +71,9 @@ export default function SearchBox() {
       setSelectedPlace(place)
       setPredictions([])
 
-      setSidePanelSelectedPlace({ 
-        placeId: place.place_id,
-        name: place.name,
+      setSidePanelPlace({ 
+        placeId: place.place_id || '',
+        name: place.name || '',
         address, 
         photosUrl, 
         rating, 

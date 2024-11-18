@@ -4,14 +4,14 @@ import { useDebouncedEffect } from '@/hooks/utility-hooks';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useZipcodeInsights, ZipcodeData, ZipcodeInsight } from '@/states/zipcode_insights';
 import { convexHull, PolygonCoordinates } from '@/api/osm';
-import { addComment, getComments } from '@/api/comments';
+import { addComment, Comment, getComments } from '@/api/comments';
 import Toast from 'react-native-toast-message';
 
 export default function ZipPanel() {
   const [searchingZipcodeText, setSearchingZipcodeText] = useState<string>('');
   const [zipcodeList, setZipcodeList] = useState<ZipcodeData[]>([]);
   const [viewingZipcodeDetails, setViewingZipcodeDetails] = useState<string | null>(null); // New state to track details view
-  const [comments, setComments] = useState<string[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState<string>('');
 
   const { zipcode, zipcodes, setPolygon, setZipcode, setZipcodes, setZipcodeInsights, zipcodeInsights, setPolygons } = useZipcodeInsights();
@@ -91,13 +91,10 @@ export default function ZipPanel() {
   const handleGetComments = async (zipcode: string) => {
     try {
       const data = await getComments(zipcode);  
-      if (data) {
-      const commentsArray = data.comments.split(", ").map((comment: any) => comment.replace(/"/g, ""));
-    
-      setComments(commentsArray);  
-      } else {
-        console.log('Failed to fetch comments');
-      }
+      if (!data) return
+
+      const comments: Comment[] = data.map((comment: Comment) => comment)
+      setComments(comments)
     } catch (error) {
       console.error('Error fetching comments:', error);
     }
@@ -224,12 +221,23 @@ export default function ZipPanel() {
               </Pressable>  
 
               <Text style={styles.commentsHeader}>Comments:</Text>
-                <ScrollView>
-                      {comments.map((comment, idx) => (
-                      <Text key={idx} style={styles.commentText}>
-                      {comment}
-                  </Text>
-                  ))}
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+                    {
+                      comments.map((comment, idx) => {
+                        const dateString = comment.created_at;
+                        const date = new Date(dateString);
+                        const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' };
+                        const formattedDate = new Intl.DateTimeFormat('en-US', options).format(date);
+
+                        return (
+                          <View style={styles.commentCard} key={idx}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{comment.comment}</Text>
+                            <Text style={{ fontSize: 16 }}>- {comment.user_name}</Text>
+                            <Text style={{}}>{formattedDate}</Text>
+                          </View>
+                        )
+                      })
+                    }
                 </ScrollView>
             </View>
 
@@ -334,9 +342,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
+    marginTop: 20
   },
-  commentText: {
-    fontSize: 16,
-    marginBottom: 8,
+  commentCard: {
+    backgroundColor: '#fefefe',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   }
 });

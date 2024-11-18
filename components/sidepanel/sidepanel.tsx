@@ -5,7 +5,7 @@ import { useSidePanelStore } from '@/states/sidepanel';
 import { useFavoritesPanelStore } from '@/states/favoritespanel';
 import { useBucketListPanelStore } from '@/states/bucketlistpanel';
 import { getPlaceInsights, PlaceInsight } from '@/api/insights';
-import { UI_FILTERS } from '@/const/filters';
+import { SUPPORTED_FILTERS_MAP, UI_FILTERS } from '@/const/filters';
 import { useInsightsStore } from '@/states/insights';
 import Toast from 'react-native-toast-message';
 import { addFavorite, getFavorites, removeFavorite, FavoriteItem } from '@/api/favorites';
@@ -14,9 +14,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Animated } from 'react-native';
 
 export default function SidePanel() {
-  const { togglePanel, showPanel, selectedPlace, setShowPanel } = useSidePanelStore()
-  const { togglePanel: toggleFavoritesPanel, showPanel: showFavoritesPanel, setShowPanel: setShowFavoritesPanel } = useFavoritesPanelStore()
-  const { togglePanel: toggleBucketListPanel, showPanel: showBucketListPanel, setShowPanel: setShowBucketListPanel } = useBucketListPanelStore()
+  const { toggleFavPanel, showFavPanel, setShowFavPanel } = useFavoritesPanelStore()
+  const { toggleBucketListPanel, showBucketListPanel, setShowBucketListPanel } = useBucketListPanelStore()
  
   const { insights, setInsights } = useInsightsStore()
  
@@ -124,7 +123,7 @@ export default function SidePanel() {
   // Only load favorites when favorites panel is shown
   useEffect(() => {
     const loadFavorites = async () => {
-      if (!showFavoritesPanel) return;
+      if (!showFavPanel) return;
       try {
         const userFavorites = await getFavorites();
         setFavorites(userFavorites);
@@ -138,7 +137,7 @@ export default function SidePanel() {
       }
     };
     loadFavorites();
-  }, [showFavoritesPanel]);
+  }, [showFavPanel]);
 
   // Check if selected place is favorited
   useEffect(() => {
@@ -302,31 +301,20 @@ export default function SidePanel() {
   }
 
   const handleFilterClick = () => {
-    if (showFavoritesPanel) {
-      setShowFavoritesPanel(false)
-    }
-    if (showBucketListPanel) {
-      setShowBucketListPanel(false)
-    }
-    togglePanel()
+    if (showFavPanel) setShowFavPanel(false)
+    if (showBucketListPanel) setShowBucketListPanel(false)
   }
 
   const handleFavoritesClick = () => {
-    if (showPanel) {
-      setShowPanel(false)
-    }
-    if (showBucketListPanel) {
-      setShowBucketListPanel(false)
-    }
-    toggleFavoritesPanel()
+    if (showFavPanel) setShowFavPanel(false)
+    if (showBucketListPanel) setShowBucketListPanel(false)
   }
 
   const handleBucketListClick = () => {
     if (showBucketListPanel) {
       setShowBucketListPanel(false)
     } else {
-      setShowPanel(false)
-      setShowFavoritesPanel(false)
+      setShowFavPanel(false)
       setShowBucketListPanel(true)
     }
   }
@@ -366,36 +354,6 @@ export default function SidePanel() {
             )
           }
 
-          {
-            selectedPlace && (
-              <View style={styles.selectedPlace}>
-                <Image source={{ uri: imageUri || selectedPlace.photosUrl[0] }} style={{ width: 400, height: 250, objectFit: 'cover' }} />
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false} 
-            style={styles.filters}
-            contentContainerStyle={{gap: 8}}
-          >
-            {UI_FILTERS.map((filter, index) => {
-              const filterKey = filter.split(' ').join('_').toLowerCase()
-
-              return (
-                <Pressable
-                  key={index}
-                  onPress={() => handleOnFilterPress(filterKey)}
-                  style={[{
-                    padding: 10,
-                    borderRadius: 5,
-                    backgroundColor: selectedFilters.includes(filterKey) ? '#4CAF50' : 'white',
-                  }]}>
-                    <Text style={{ color: selectedFilters.includes(filterKey) ? 'white' : 'black' }}>
-                      {filter}
-                    </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-
           {selectedPlace && (
             <View style={styles.selectedPlace}>
               <Image source={{ uri: imageUri || selectedPlace.photosUrl[0] }} style={{ width: 400, height: 300, objectFit: 'cover' }} />
@@ -418,7 +376,8 @@ export default function SidePanel() {
                   </Pressable>
                 </View>
               </View>
-            )
+            </View>
+              )
           }
 
           { realEstateProperties && realEstateProperties.length > 0 && <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10, marginTop: 24 }}>Real Estate Properties</Text> }
@@ -444,41 +403,11 @@ export default function SidePanel() {
               )
             }
           </ScrollView>
-        </View>
-              { selectedPlace.rating !== 0 && <Text> {selectedPlace.rating}</Text> }
-            </View>
-          )}
-        </View>
-      )}
-
-      <View style={[styles.buttonContainer, (showPanel || showFavoritesPanel || showBucketListPanel) && styles.buttonContainerMoved]}>
-        <Pressable 
-          style={[styles.toggleButton, showPanel && styles.toggleButtonActive]} 
-          onPress={handleFilterClick}
-        >
-          <IconFilter size={20} stroke={showPanel ? "#fff" : "#000"} />
-        </Pressable>
-        <Pressable 
-          style={[styles.toggleButton, showFavoritesPanel && styles.toggleButtonActive]} 
-          onPress={handleFavoritesClick}
-        >
-          <IconHeart 
-            size={20} 
-            stroke={showFavoritesPanel ? "#fff" : "#000"} 
-            fill={showFavoritesPanel ? "#ff4444" : "none"} 
-          />
-        </Pressable>
-        <Pressable 
-          style={[styles.toggleButton, showBucketListPanel && styles.toggleButtonActive]} 
-          onPress={handleBucketListClick}
-        >
-          <IconBookmark 
-            size={20} 
-            stroke={showBucketListPanel ? "#fff" : "#000"} 
-            fill={showBucketListPanel ? "#4444ff" : "none"} 
-          />
-        </Pressable>
-      </View>
+        
+        {
+          selectedPlace && selectedPlace.rating !== 0 && <Text> selectedPlace.rating </Text>
+        }
+    </View>
     </View>
   )
 }

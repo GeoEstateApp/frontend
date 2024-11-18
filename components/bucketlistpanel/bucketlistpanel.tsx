@@ -11,10 +11,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import DiscoveryFeed from './discoveryfeed';
 
 export default function BucketListPanel() {
-  const { showPanel, setShowPanel } = useBucketListPanelStore();
+  const { showBucketListPanel, setShowBucketListPanel } = useBucketListPanelStore();
   const { setSelectedPlace } = useMapStore();
   const { setShowPanel: setShowSidePanel } = useSidePanelStore();
-  const { setShowPanel: setShowFavoritesPanel } = useFavoritesPanelStore();
+  const { setShowFavPanel } = useFavoritesPanelStore();
   const [searchUsername, setSearchUsername] = useState('');
   const [bucketList, setBucketList] = useState<BucketListItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -117,7 +117,7 @@ export default function BucketListPanel() {
     setSearchUsername('');
   };
 
-  if (!showPanel) return null;
+  if (!showBucketListPanel) return null;
 
   return (
     <View style={styles.panel}>
@@ -163,9 +163,9 @@ export default function BucketListPanel() {
                   style={styles.listItem}
                   onPress={() => {
                     // Close all panels
-                    setShowPanel(false);
+                    setShowBucketListPanel(false);
                     setShowSidePanel(false);
-                    setShowFavoritesPanel(false);
+                    setShowFavPanel(false);
                     
                     // Navigate to location
                     setSelectedPlace({
