@@ -11,27 +11,33 @@ export interface FavoriteItem {
   latitude: number;
   longitude: number;
   created_at: string;
+  username?: string;
+  user_name?: string;
 }
 
 const getAuthTokens = async () => {
   try {
     const idToken = await AsyncStorage.getItem("idToken");
     const uid = await AsyncStorage.getItem("uid");
-    return { idToken, uid };
+    const username = await AsyncStorage.getItem("username");
+    return { idToken, uid, username };
   } catch (error) {
     console.error("Error retrieving auth tokens:", error);
     throw error;
   }
 };
 
-export const getFavorites = async (): Promise<FavoriteItem[]> => {
+export const getFavorites = async (targetUsername?: string): Promise<FavoriteItem[]> => {
   try {
     const { idToken, uid } = await getAuthTokens();
     if (!idToken || !uid) {
       throw new Error('Authentication required');
     }
 
-    const response = await fetch(`${API_URL}/favorites/${uid}`, {
+    const url = `${API_URL}/favorites/${uid}`;
+    console.log('Fetching favorites from:', url);
+
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${idToken}`,
