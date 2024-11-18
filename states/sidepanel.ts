@@ -50,6 +50,8 @@ interface SidePanelStore {
   setRealEstateProperties: (properties: RealEstateProperty[] | null) => void
   selectedRealEstateProperty: RealEstateProperty | null
   setSelectedRealEstateProperty: (properties: RealEstateProperty | null) => void
+  
+  reset: () => void
 }
 
 export const useSidePanelStore = create<SidePanelStore>((set) => ({
@@ -63,4 +65,11 @@ export const useSidePanelStore = create<SidePanelStore>((set) => ({
   setRealEstateProperties: (realEstateProperties) => set({ realEstateProperties }),
   selectedRealEstateProperty: null,
   setSelectedRealEstateProperty: (selectedRealEstateProperty) => set({ selectedRealEstateProperty }),
+  
+  reset: () => set({
+    showPanel: false,
+    selectedPlace: null,
+    realEstateProperties: null,
+    selectedRealEstateProperty: null
+  })
 }))
