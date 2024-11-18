@@ -33,10 +33,10 @@ export const addComment = async (zipCode: string , newComment:string) => {
         userId: uid,
         userName: "Ayesha",
         location: {
-          zipCode: "10003"
+          zipCode: zipCode   
         },
         comment: newComment,
-        zipCode: zipCode
+        zipCode: "10036"   //user's zipcode
       })
     });
 

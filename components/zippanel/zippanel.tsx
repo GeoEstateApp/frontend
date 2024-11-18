@@ -87,15 +87,14 @@ export default function ZipPanel() {
     }
   };
   
-// --------------------------------
 
   const handleGetComments = async (zipcode: string) => {
     try {
       const data = await getComments(zipcode);  
       if (data) {
-    // const commentsArray = data.comments.split(", ").map   (comment => comment.replace(/"/g, ""));
+     const commentsArray = data.comments.split(", ").map   (comment => comment.replace(/"/g, ""));
     
-      // setComments(commentsArray);  
+      setComments(commentsArray);  
       } else {
         console.log('Failed to fetch comments');
       }
@@ -122,8 +121,6 @@ export default function ZipPanel() {
     }
   };
   
-  //---------------------
-
   const handleZipcodeChange = async () => {
     const { idToken, uid } = await getAuthTokens();
     if (!idToken || !uid) {
