@@ -1,6 +1,6 @@
 import { View, StyleSheet, TextInput, Text, Platform } from 'react-native'
-import React, { useEffect, useRef, useState } from 'react'
-import { IconCalculator, IconCalculatorFilled, IconCalculatorOff, IconSearch, IconSum } from '@tabler/icons-react'
+import React, { useEffect, useState } from 'react'
+import { IconSearch, IconSum } from '@tabler/icons-react'
 import { useMapsLibrary } from '@vis.gl/react-google-maps'
 import { useMapStore } from '@/states/map'
 import { useSidePanelStore } from '@/states/sidepanel'
@@ -63,8 +63,6 @@ export default function SearchBox() {
       setSearchText(place.name || "")
       setSelectedPlace(place)
       setPredictions([])
-
-      console.log(`lat: ${lat}, lng: ${lng}`)
 
       setSidePanelPlace({ address, photosUrl, rating, types, lat, lng })
       setShowPanel(true)

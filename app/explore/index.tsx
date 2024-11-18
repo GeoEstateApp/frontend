@@ -124,7 +124,6 @@ export default function index() {
             <IconSparkles size={20} strokeWidth={2} color={showAIChat ? 'white' : 'black'} />
           </Pressable>
         </View>
-      </APIProvider>
 
       { selectedRealEstateProperty && (
           <View style={styles.modal}>
@@ -234,6 +233,8 @@ export default function index() {
       }
 
       { isModalOpen && <Suitability /> }
+
+      </APIProvider>
 
       <Toast position='bottom' bottomOffset={20} />
     </View>
