@@ -1,21 +1,43 @@
 import React, { useState, useRef, useEffect } from "react";
-import {View,Image,Animated,StyleSheet,Text,TouchableOpacity,} from "react-native";
+import {View, Image, Animated, StyleSheet, Text, TouchableOpacity, Platform, Easing} from "react-native";
+import { LinearGradient } from 'expo-linear-gradient';
 import logoImage from "../../assets/images/favicon.png";
 
 function TeamDetail({ teamMembers }) {
   const radius = 190;
   const angleStep = (2 * Math.PI) / teamMembers.length;
-  const [selectedIndex, setSelectedIndex] = useState(null);
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const hoverAnim = useRef(
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [hoverAnim] = useState(() =>
     teamMembers.map(() => new Animated.Value(1))
-  ).current;
-  const tooltipOpacity = useRef(
+  );
+  const [tooltipOpacity] = useState(() =>
     teamMembers.map(() => new Animated.Value(0))
-  ).current;
-  const underlineWidth = useRef(
+  );
+  const [underlineWidth] = useState(() =>
     teamMembers.map(() => new Animated.Value(0))
-  ).current;
+  );
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        delay: 100,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.cubic),
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 1000,
+        delay: 100,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.cubic),
+      }),
+    ]).start();
+  }, []);
 
   // Team logo animations
   useEffect(() => {
@@ -71,7 +93,7 @@ function TeamDetail({ teamMembers }) {
       duration: 300,
       useNativeDriver: false,
     }).start();
-    setSelectedIndex(null);
+    setSelectedIndex(-1);
   };
 
   // Particles in background
@@ -99,94 +121,110 @@ function TeamDetail({ teamMembers }) {
 
   return (
     <View style={styles.Tcontainer}>
+      <LinearGradient
+        colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.9)', '#000']}
+        style={StyleSheet.absoluteFill}
+      />
       <View style={styles.particlesBackground}>{generateParticles()}</View> 
-      <View style={styles.namesList}>
-        {teamMembers.map((member, index) => (
-          <TouchableOpacity
-            key={index}
-            onPress={() => setSelectedIndex(index)}
-            onMouseEnter={() => handleMouseEnter(index)}
-            onMouseLeave={() => handleMouseLeave(index)}
-          >
-            <View style={styles.nameContainer}>
-              <View style={styles.dashUnderlineContainer}>
+      
+      <Animated.View style={[styles.headerContainer, {
+        opacity: fadeAnim,
+        transform: [{ translateY }]
+      }]}>
+        <Text style={styles.headerSubtitle}>MEET OUR TEAM</Text>
+        <Text style={styles.headerTitle}>The Faces Behind GeoEstate</Text>
+      </Animated.View>
+
+      <View style={styles.contentContainer}>
+        <View style={styles.namesList}>
+          {teamMembers.map((member, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => setSelectedIndex(index)}
+              onMouseEnter={() => handleMouseEnter(index)}
+              onMouseLeave={() => handleMouseLeave(index)}
+            >
+              <View style={styles.nameContainer}>
+                <View style={styles.dashUnderlineContainer}>
+                  <Animated.View
+                    style={[
+                      styles.leftDash,
+                      {
+                        width: underlineWidth[index].interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, 20],
+                        }),
+                      },
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.nameItem,
+                      selectedIndex === index && styles.highlightedName,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {member.name}
+                  </Text>
+                </View>
                 <Animated.View
                   style={[
-                    styles.leftDash,
+                    styles.underline,
                     {
-                      width: underlineWidth[index].interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0, 20],
-                      }),
+                      transform: [
+                        {
+                          scaleX: underlineWidth[index].interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0, 1],
+                          }),
+                        },
+                      ],
                     },
                   ]}
                 />
-                <Text
-                  style={[
-                    styles.nameItem,
-                    selectedIndex === index && styles.highlightedName,
-                  ]}
-                >
-                  {member.name}
-                </Text>
               </View>
-              <Animated.View
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.teamContainer}>
+          <Animated.View
+            style={[styles.logoContainer, { transform: [{ scale: pulseAnim }] }]}
+          >
+            <Image source={logoImage} style={styles.logoImage} />
+          </Animated.View>
+
+          {teamMembers.map((member, index) => {
+            const angle = index * angleStep;
+            const x = radius * Math.cos(angle);
+            const y = radius * Math.sin(angle);
+
+            return (
+              <View
+                key={index}
                 style={[
-                  styles.underline,
-                  {
-                    transform: [
-                      {
-                        scaleX: underlineWidth[index].interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [0, 1],
-                        }),
-                      },
-                    ],
-                  },
+                  styles.profilePosition,
+                  { transform: [{ translateX: x }, { translateY: y }] },
                 ]}
-              />
-            </View>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <View style={styles.teamContainer}>
-        <Animated.View
-          style={[styles.logoContainer, { transform: [{ scale: pulseAnim }] }]}
-        >
-          <Image source={logoImage} style={styles.logoImage} />
-        </Animated.View>
-
-        {teamMembers.map((member, index) => {
-          const angle = index * angleStep;
-          const x = radius * Math.cos(angle);
-          const y = radius * Math.sin(angle);
-
-          return (
-            <View
-              key={index}
-              style={[
-                styles.profilePosition,
-                { transform: [{ translateX: x }, { translateY: y }] },
-              ]}
-            >
-              <Animated.Image
-                source={{ uri: member.image }}
-                style={[
-                  styles.profileImage,
-                  { transform: [{ scale: hoverAnim[index] }] },
-                ]}
-                onMouseEnter={() => handleMouseEnter(index)}
-                onMouseLeave={() => handleMouseLeave(index)}
-              />
-              <Animated.View
-                style={[styles.tooltip, { opacity: tooltipOpacity[index] }]}
               >
-                <Text style={styles.roleText}>{member.role}</Text>
-              </Animated.View>
-            </View>
-          );
-        })}
+                <Animated.Image
+                  source={{ uri: member.image }}
+                  style={[
+                    styles.profileImage,
+                    { transform: [{ scale: hoverAnim[index] }] },
+                  ]}
+                  onMouseEnter={() => handleMouseEnter(index)}
+                  onMouseLeave={() => handleMouseLeave(index)}
+                />
+                <Animated.View
+                  style={[styles.tooltip, { opacity: tooltipOpacity[index] }]}
+                >
+                  <Text style={styles.roleText}>{member.role}</Text>
+                </Animated.View>
+              </View>
+            );
+          })}
+        </View>
       </View>
     </View>
   );
@@ -194,10 +232,44 @@ function TeamDetail({ teamMembers }) {
 
 const styles = StyleSheet.create({
     Tcontainer: {
+      position: "relative",
+      width: '100%',
+      overflow: "hidden",
+      paddingVertical: 20,
+    },
+    headerContainer: {
+      alignItems: 'center',
+      paddingHorizontal: 24,
+      marginBottom: -35,
+    },
+    headerSubtitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#007AFF',
+      letterSpacing: 2,
+      marginBottom: 16,
+    },
+    headerTitle: {
+      fontSize: Platform.select({ web: 48, default: 36 }),
+      fontWeight: 'bold',
+      color: '#fff',
+      textAlign: 'center',
+      marginBottom: 24,
+    },
+    headerDescription: {
+      fontSize: Platform.select({ web: 18, default: 16 }),
+      color: '#fff',
+      opacity: 0.8,
+      textAlign: 'center',
+      maxWidth: 600,
+      lineHeight: Platform.select({ web: 28, default: 24 }),
+    },
+    contentContainer: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      position: "relative",
+      width: '100%',
+      minHeight: 600,
     },
     particlesBackground: {
       position: "absolute",
@@ -206,35 +278,41 @@ const styles = StyleSheet.create({
       right: 0,
       bottom: 0,
       zIndex: -1,
+      backgroundColor: 'rgba(0, 0, 0, 0.02)',
     },
     particle: {
       position: "relative",
-      width: 5,
-      height: 5,
-      borderRadius: 4,
-      backgroundColor: "rgba(0, 122, 255, 0.8)",
+      width: 4,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: "rgba(0, 122, 255, 0.4)",
     },
     teamContainer: {
-      minHeight: "70vh",
+      minHeight: "80vh",
       minWidth: "50vw",
       alignItems: "center",
       justifyContent: "center",
       position: "relative",
-      marginRight : 200
+      marginRight: 240,
+      padding: 60,
     },
     logoContainer: {
       position: "absolute",
-      width: 100,
-      height: 100,
-      borderRadius: 50,
+      width: 120,
+      height: 120,
+      borderRadius: 60,
       alignItems: "center",
       justifyContent: "center",
       zIndex: 1,
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      backdropFilter: "blur(10px)",
+      borderWidth: 2,
+      borderColor: "rgba(0, 122, 255, 0.3)",
     },
     logoImage: {
-      width: 120,
-      height: 120,
-      borderRadius: 40,
+      width: 90,
+      height: 90,
+      borderRadius: 45,
     },
     profilePosition: {
       position: "absolute",
@@ -242,66 +320,82 @@ const styles = StyleSheet.create({
       justifyContent: "center",
     },
     profileImage: {
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      borderWidth: 2,
+      width: 70,
+      height: 70,
+      borderRadius: 35,
+      borderWidth: 3,
       borderColor: "#007AFF",
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      backdropFilter: "blur(8px)",
     },
     tooltip: {
       position: "absolute",
-      top: 70,
-      backgroundColor: "#007AFF",
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 5,
+      top: 80,
+      backgroundColor: "rgba(0, 122, 255, 0.95)",
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 12,
       alignItems: "center",
       zIndex: 10,
-      maxWidth: 120, 
+      maxWidth: 180,
       textAlign: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 6,
+      transform: [{ translateY: 5 }],
     },
     roleText: {
       color: "#fff",
-      fontSize: 12,
+      fontSize: 14,
+      fontWeight: "500",
+      letterSpacing: 0.5,
     },
     namesList: {
       justifyContent: "center",
-      paddingLeft: 1,
+      paddingLeft: 40,
+      minWidth: 240,
     },
     nameContainer: {
       flexDirection: "column",
       alignItems: "flex-start",
-      marginBottom: 10,
-      maxWidth: 180, 
+      marginBottom: 20,
+      width: 240,
     },
     dashUnderlineContainer: {
       flexDirection: "row",
       alignItems: "center",
+      width: '100%',
     },
     leftDash: {
-      width: 15,
+      width: 20,
       height: 2,
       backgroundColor: "#007AFF",
-      marginRight: 5,
+      marginRight: 12,
+      borderRadius: 1,
+      flexShrink: 0,
     },
     nameItem: {
       fontSize: 20,
-      color: "#fff",
-      maxWidth: 500, 
+      color: "rgba(255, 255, 255, 0.85)",
       overflow: "hidden",
-      whiteSpace: "nowrap",
-      textOverflow: "ellipsis",
+      fontWeight: "400",
+      letterSpacing: 0.5,
+      flexShrink: 1,
     },
     highlightedName: {
       color: "#007AFF",
-      fontWeight: "bold",
+      fontWeight: "600",
+      transform: [{ scale: 1.05 }],
     },
     underline: {
-      height: 1,
-      backgroundColor: "rgba(0, 122, 255, 0.4)",
-      marginTop: 5,
-      width : '100%',
+      height: 2,
+      backgroundColor: "rgba(0, 122, 255, 0.3)",
+      marginTop: 8,
+      width: '100%',
       alignSelf: "stretch",
+      borderRadius: 1,
     },
   });
   
