@@ -1,4 +1,4 @@
-import { AIChat, Earth, SearchBox, SidePanel, Suitability, ZipPanel } from '@/components'
+import { AIChat, Earth, SearchBox, SidePanel, SuitabilityCalculator, ZipPanel } from '@/components'
 import { APIProvider } from '@vis.gl/react-google-maps'
 import { ActivityIndicator, Button, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useEffect, useState } from 'react'
@@ -10,6 +10,9 @@ import { onAuthStateChanged } from 'firebase/auth'
 import Toast from 'react-native-toast-message'
 import { useSidePanelStore } from '@/states/sidepanel'
 import { useSuitability } from '@/states/suitability'
+import { useFavoritesPanelStore } from '@/states/favoritespanel'
+import { useBucketListPanelStore } from '@/states/bucketlistpanel'
+import { addToBucketList } from '@/api/bucketlist'
 
 const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY
 const GOOGLE_MAP_VERSION = 'alpha'
@@ -266,8 +269,7 @@ export default function index() {
         </View>
         ) 
       }
-
-      { isModalOpen && <Suitability /> }
+      { isModalOpen && <SuitabilityCalculator /> }
       </APIProvider>
       <Toast position='bottom' bottomOffset={20} />
     </View>

@@ -4,17 +4,18 @@ import { Picker } from '@react-native-picker/picker'
 import { Slider } from '@miblanchard/react-native-slider';
 import { useMapsLibrary } from '@vis.gl/react-google-maps';
 import { IconSearch, IconX } from '@tabler/icons-react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Prefs {
   minBeds: number,
   minBaths: number,
-  rentOrBuy: 'buy' | 'sell',
+  rentOrBuy: 'buy' | 'rent',
   priceMin: number,
   priceMax: number,
   age: number,
   homeValuePriority: boolean,
   filterByMedianAge: boolean,
-  anchorAddresses: [],
+  anchorAddresses: number[][],
   propsToReturn: number
 }
 
@@ -26,11 +27,11 @@ interface RecommendationPlace {
 
 const MIN_SEARCH_LENGTH = 3
 
-export default function Suitability() {
+export default function SuitabilityCalculator() {
   const [currentPage, setCurrentPage] = useState(0)
 
   // Page One
-  const [rentOrBuy, setRentOrBuy] = useState("buy")
+  const [rentOrBuy, setRentOrBuy] = useState<"rent" | "buy">("buy")
 
   // Page Two
   const [noOfBathrooms, setNoOfBathrooms] = useState(0)
@@ -44,7 +45,9 @@ export default function Suitability() {
 
   // Page Four
   const [wantPropertyRecommendationAge, setWantPropertyRecommendationAge] = useState<boolean | null>(null)
+  const [wantPropertyRecommendationMedianAge, setWantPropertyRecommendationMedianAge] = useState<boolean | null>(null)
   const [propertyRecommendationAge, setPropertyRecommendationAge] = useState(0)
+  const [propertyRecommendationMedianAge, setPropertyRecommendationMedianAge] = useState(0)
 
   // Page Five
   const [wantAnyRecommendedPlaces, setWantAnyRecommendedPlaces] = useState<boolean | null>(null)
@@ -91,56 +94,71 @@ export default function Suitability() {
       setRecommendedPlaces((prev) => [...prev, { address, lat, lng }])
     })
   }
-
-  const prefs: Prefs = {
-    minBeds: 0,
-    minBaths: 0,
-    rentOrBuy: 'buy',
-    priceMin: 0,
-    priceMax: 0,
-    age: 0,
-    homeValuePriority: false,
-    filterByMedianAge: false,
-    anchorAddresses: [],
-    propsToReturn: 0
-  }
   const nextPage = () => setCurrentPage((prev) => prev + 1)
 
   const handlePageOne = (answer: string) => {
-    setRentOrBuy(answer)
-    if (answer === "buy" || answer === "sell") prefs.rentOrBuy = answer
+    if (answer === "rent" || answer === "buy") setRentOrBuy(answer)
 
     nextPage()
   }
 
-  const handlePageTwo = () => {
-    prefs.minBeds = noOfBedrooms
-    prefs.minBaths = noOfBathrooms
-
-    nextPage()
-  }
-
-  const handlePageThree = () => {
-    prefs.priceMin = minPrice
-    prefs.priceMax = maxPrice
-
-    nextPage()
-  }
-
-  const handlePageFour = () => {
-    prefs.age = propertyRecommendationAge
-
-    nextPage()
-  }
-
-  const handlePageFive = () => {
+  const handlePageFive = async () => {
     const anchorAddresses = recommendedPlaces.map((place) => [place.lat, place.lng])
     console.log(anchorAddresses)
 
     // fetch data
+    const prefs: Prefs = {
+      rentOrBuy: rentOrBuy,
+      anchorAddresses: anchorAddresses,
+      minBaths: noOfBathrooms,
+      minBeds: noOfBedrooms,
+      priceMin: minPrice,
+      priceMax: maxPrice,
+      age: propertyRecommendationAge,
+      propsToReturn: 5,
+      homeValuePriority: wantPropertyRecommendationAge || false,
+      filterByMedianAge: wantPropertyRecommendationMedianAge || false 
+    }
 
-    console.log(prefs)
+    const { idToken, uid, userName } = await getAuthTokens();
+    if (!idToken || !uid) {
+      throw new Error("Authentication tokens are missing.");
+    }
+
+    try {
+      const response = await fetch(`https://photo-gateway-7fw1yavc.ue.gateway.dev/api/recommendations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify(prefs),
+      })
+
+      if (!response.ok) {
+        console.log(response)
+        return
+      }
+
+      const data = await response.json()
+      console.log(data)
+    } catch (error) {
+      console.log(error)
+    }
   }
+
+  const getAuthTokens = async () => {
+    try {
+      const idToken = await AsyncStorage.getItem("idToken");
+      const uid = await AsyncStorage.getItem("uid");
+      const userName= await AsyncStorage.getItem("username");
+  
+      return { idToken, uid, userName };
+    } catch (error) {
+      console.error("Error retrieving auth tokens:", error);
+      throw error;
+    }
+  };
 
   return (
     <View style={styles.modal}>
@@ -208,7 +226,7 @@ export default function Suitability() {
                 }
               </Picker>
             </View>
-            <Button title="Next" onPress={() => handlePageTwo()} />
+            <Button title="Next" onPress={() => nextPage()} />
           </View>
         )
       }
@@ -235,7 +253,7 @@ export default function Suitability() {
                   setMaxPrice(value[1])
                 }}
               />
-              <Button title="Next" onPress={() => handlePageThree()} />
+              <Button title="Next" onPress={() => nextPage()} />
             </View>
           </View>
         )
@@ -246,8 +264,8 @@ export default function Suitability() {
           <View style={styles.pageFour}>
             <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Do you want property recommendations based on your age?</Text>
             <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 16 }} >
-              <Button title="Yes" onPress={() => setWantPropertyRecommendationAge(true)} />
-              <Button title="No" onPress={() => setWantPropertyRecommendationAge(false)} />
+              <Button title="Yes" onPress={() => setWantPropertyRecommendationAge(true)} color={wantPropertyRecommendationAge ? 'green' : 'blue'} />
+              <Button title="No" onPress={() => setWantPropertyRecommendationAge(false)} color={wantPropertyRecommendationAge ? 'blue' : 'green'} />
             </View>
             {
               wantPropertyRecommendationAge && (
@@ -262,8 +280,12 @@ export default function Suitability() {
                 </View>
               )
             }
-            <Button title="Next" onPress={() => handlePageFour()} />
-
+            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Do you want property recommendations based on median age?</Text>
+            <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 16 }} >
+              <Button title="Yes" onPress={() => setWantPropertyRecommendationMedianAge(true)} color={wantPropertyRecommendationMedianAge ? 'green' : 'blue'} />
+              <Button title="No" onPress={() => setWantPropertyRecommendationMedianAge(false)} color={wantPropertyRecommendationMedianAge ? 'blue' : 'green'} />
+            </View>
+            <Button title="Next" onPress={() => nextPage()} />
           </View>
         )
       }
@@ -273,8 +295,8 @@ export default function Suitability() {
           <View style={styles.pageFive}>
             <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Do you have an address youd live to live near</Text>
             <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 16, flexGrow: 1, maxHeight: 38 }}>
-              <Button title="Yes" onPress={() => setWantAnyRecommendedPlaces(true)} />
-              <Button title="No" onPress={() => setWantAnyRecommendedPlaces(false)} />
+              <Button title="Yes" onPress={() => setWantAnyRecommendedPlaces(true)} color={wantAnyRecommendedPlaces ? 'green' : 'blue'} />
+              <Button title="No" onPress={() => setWantAnyRecommendedPlaces(false)} color={wantAnyRecommendedPlaces ? 'blue' : 'green'} />
             </View>
             {
               wantAnyRecommendedPlaces && (

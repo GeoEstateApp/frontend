@@ -92,7 +92,7 @@ export default function ZipPanel() {
     try {
       const data = await getComments(zipcode);  
       if (data) {
-     const commentsArray = data.comments.split(", ").map   (comment => comment.replace(/"/g, ""));
+      const commentsArray = data.comments.split(", ").map((comment: any) => comment.replace(/"/g, ""));
     
       setComments(commentsArray);  
       } else {
