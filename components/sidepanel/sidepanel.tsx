@@ -36,7 +36,8 @@ export default function SidePanel() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
-        // Reset all panel states when logged out
+        // User is signed out, so
+        // reset all panel states when logged out
         resetSidePanel()
         setShowFavPanel(false)
         setShowBucketListPanel(false)
@@ -143,7 +144,7 @@ export default function SidePanel() {
     checkBucketListStatus();
   }, [selectedPlace]);
 
-  // Only load favorites when favorites panel is shown
+  // Load favorites when favorites panel is shown
   useEffect(() => {
     const loadFavorites = async () => {
       if (!showFavPanel) return;

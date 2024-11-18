@@ -73,8 +73,7 @@ export const getBucketList = async (targetUsername?: string): Promise<BucketList
       throw new Error(errorData.error || `Error: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    return data;
+    return response.json();
   } catch (error) {
     console.error('Error fetching bucket list:', error);
     throw error;
@@ -154,7 +153,7 @@ export const getPopularLocations = async (): Promise<PopularLocation[]> => {
       throw new Error('Authentication required');
     }
 
-    const response = await fetch(`${API_URL}/bucket-list/popular/locations`, {
+    const response = await fetch(`${API_URL}/bucket-list/popular`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${idToken}`,
@@ -175,15 +174,12 @@ export const getPopularLocations = async (): Promise<PopularLocation[]> => {
 
 export const getSimilarUsers = async (): Promise<SimilarUser[]> => {
   try {
-    const { idToken, uid } = await getAuthTokens();
-    if (!idToken || !uid) {
+    const { idToken, username } = await getAuthTokens();
+    if (!idToken || !username) {
       throw new Error('Authentication required');
     }
 
-    const url = `${API_URL}/bucket-list/similar/${uid}`;
-    console.log('Fetching similar users from:', url);
-
-    const response = await fetch(url, {
+    const response = await fetch(`${API_URL}/bucket-list/similar/${username}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${idToken}`,
@@ -192,13 +188,10 @@ export const getSimilarUsers = async (): Promise<SimilarUser[]> => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('Server error response:', errorData);
       throw new Error(errorData.error || `Error: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    console.log('Similar users response:', data);
-    return data;
+    return response.json();
   } catch (error) {
     console.error('Error fetching similar users:', error);
     throw error;
@@ -216,17 +209,17 @@ export const getNearbyBucketList = async (
       throw new Error('Authentication required');
     }
 
-    const params = new URLSearchParams({
-      latitude: latitude.toString(),
-      longitude: longitude.toString(),
-      ...(radius && { radius: radius.toString() }),
-    });
-
-    const response = await fetch(`${API_URL}/bucket-list/nearby?${params}`, {
-      method: 'GET',
+    const response = await fetch(`${API_URL}/bucket-list/nearby`, {
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         'Authorization': `Bearer ${idToken}`,
       },
+      body: JSON.stringify({
+        latitude,
+        longitude,
+        radius: radius || 5000, // Default 5km radius
+      }),
     });
 
     if (!response.ok) {
@@ -236,7 +229,7 @@ export const getNearbyBucketList = async (
 
     return response.json();
   } catch (error) {
-    console.error('Error fetching nearby locations:', error);
+    console.error('Error fetching nearby bucket list items:', error);
     throw error;
   }
 };
