@@ -1,3 +1,4 @@
+import { RecommendationProperties } from '@/components/suitabilityCalculator/suitabilitycalculator'
 import { create } from 'zustand'
 
 interface SelectedPlace {
@@ -48,8 +49,8 @@ interface SidePanelStore {
 
   realEstateProperties: RealEstateProperty[] | null,
   setRealEstateProperties: (properties: RealEstateProperty[] | null) => void
-  selectedRealEstateProperty: RealEstateProperty | null
-  setSelectedRealEstateProperty: (properties: RealEstateProperty | null) => void
+  selectedRealEstateProperty: RealEstateProperty | null | RecommendationProperties
+  setSelectedRealEstateProperty: (properties: RealEstateProperty | null | RecommendationProperties) => void
 }
 
 export const useSidePanelStore = create<SidePanelStore>((set) => ({

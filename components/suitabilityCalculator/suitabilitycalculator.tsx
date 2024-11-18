@@ -1,10 +1,11 @@
-import { View, Text, StyleSheet, Button, TextInput } from 'react-native'
+import { View, Text, StyleSheet, Button, TextInput, ScrollView, Pressable, Image } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { Picker } from '@react-native-picker/picker'
 import { Slider } from '@miblanchard/react-native-slider';
 import { useMapsLibrary } from '@vis.gl/react-google-maps';
 import { IconSearch, IconX } from '@tabler/icons-react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSidePanelStore } from '@/states/sidepanel';
 
 interface Prefs {
   minBeds: number,
@@ -19,6 +20,23 @@ interface Prefs {
   propsToReturn: number
 }
 
+export interface RecommendationProperties {
+  property_id: number,
+  address_line: string,
+  coordinate_lat: number,
+  coordinate_lon: number,
+  size_sqft: number,
+  property_type: string,
+  price: string,
+  status: string,
+  zip_code_id: number,
+  num_beds: number,
+  num_baths: number,
+  prop_url: string,
+  img_url: string,
+  geom: string
+}
+
 interface RecommendationPlace {
   address: string
   lat: number
@@ -29,6 +47,10 @@ const MIN_SEARCH_LENGTH = 3
 
 export default function SuitabilityCalculator() {
   const [currentPage, setCurrentPage] = useState(0)
+
+  const [recommendationProperties, setRecommendationProperties] = useState<RecommendationProperties[]>([])
+
+  const { setSelectedRealEstateProperty, selectedRealEstateProperty } = useSidePanelStore()
 
   // Page One
   const [rentOrBuy, setRentOrBuy] = useState<"rent" | "buy">("buy")
@@ -47,7 +69,6 @@ export default function SuitabilityCalculator() {
   const [wantPropertyRecommendationAge, setWantPropertyRecommendationAge] = useState<boolean | null>(null)
   const [wantPropertyRecommendationMedianAge, setWantPropertyRecommendationMedianAge] = useState<boolean | null>(null)
   const [propertyRecommendationAge, setPropertyRecommendationAge] = useState(0)
-  const [propertyRecommendationMedianAge, setPropertyRecommendationMedianAge] = useState(0)
 
   // Page Five
   const [wantAnyRecommendedPlaces, setWantAnyRecommendedPlaces] = useState<boolean | null>(null)
@@ -117,7 +138,7 @@ export default function SuitabilityCalculator() {
       age: propertyRecommendationAge,
       propsToReturn: 5,
       homeValuePriority: wantPropertyRecommendationAge || false,
-      filterByMedianAge: wantPropertyRecommendationMedianAge || false 
+      filterByMedianAge: wantPropertyRecommendationMedianAge || false
     }
 
     const { idToken, uid, userName } = await getAuthTokens();
@@ -141,7 +162,8 @@ export default function SuitabilityCalculator() {
       }
 
       const data = await response.json()
-      console.log(data)
+      const properties: RecommendationProperties[] = data.data.map((property: RecommendationProperties) => property)
+      setRecommendationProperties(properties)
     } catch (error) {
       console.log(error)
     }
@@ -151,8 +173,8 @@ export default function SuitabilityCalculator() {
     try {
       const idToken = await AsyncStorage.getItem("idToken");
       const uid = await AsyncStorage.getItem("uid");
-      const userName= await AsyncStorage.getItem("username");
-  
+      const userName = await AsyncStorage.getItem("username");
+
       return { idToken, uid, userName };
     } catch (error) {
       console.error("Error retrieving auth tokens:", error);
@@ -161,182 +183,209 @@ export default function SuitabilityCalculator() {
   };
 
   return (
-    <View style={styles.modal}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 8 }}>
-        {
-          currentPage > 0 && (
-            Array.from({ length: 5 }).map((_, idx) => {
-              return (
-                <View key={idx} style={styles.getStarted}>
-                  <Text onPress={() => idx < currentPage && setCurrentPage(idx + 1)} style={{ ...styles.pageNumber, borderColor: currentPage >= idx + 1 ? '#49a84c' : 'grey', color: currentPage >= idx + 1 ? '#49a84c' : 'grey' }}>{idx + 1}</Text>
-                </View>
-              )
-            })
-          )
-        }
-      </View>
-
+    <View style={recommendationProperties && recommendationProperties.length > 0 ? styles.sideModal : styles.modal}>
       {
-        currentPage == 0 && (
-          <View style={styles.getStarted}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Welcome to the Suitability Calculator</Text>
-            <Button title="Get Started" onPress={() => setCurrentPage(1)} />
-          </View>
-        )
-      }
-
-      {
-        currentPage == 1 && (
-          <View style={styles.pageOne}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Are you renting or buying?</Text>
-            <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 16 }} >
-              <Button title="Renting" onPress={() => handlePageOne('rent')} />
-              <Button title="Buying" onPress={() => handlePageOne('buy')} />
+        recommendationProperties && recommendationProperties.length <= 0 && (
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 8 }}>
+              {
+                currentPage > 0 && (
+                  Array.from({ length: 5 }).map((_, idx) => {
+                    return (
+                      <View key={idx} style={styles.getStarted}>
+                        <Text onPress={() => idx < currentPage && setCurrentPage(idx + 1)} style={{ ...styles.pageNumber, borderColor: currentPage >= idx + 1 ? '#49a84c' : 'grey', color: currentPage >= idx + 1 ? '#49a84c' : 'grey' }}>{idx + 1}</Text>
+                      </View>
+                    )
+                  })
+                )
+              }
             </View>
-          </View>
-        )
-      }
 
-      {
-        currentPage == 2 && (
-          <View style={styles.pageTwo}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>How many bathroom's and bedrooms do you need?</Text>
-            <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 16 }}>
-              <Text>Bathrooms:</Text>
-              <Picker
-                style={{ padding: 8 }}
-                selectedValue={noOfBathrooms}
-                onValueChange={(itemValue) => setNoOfBathrooms(itemValue)}>
-                {
-                  Array.from({ length: 9 }).map((_, idx) => (
-                    <Picker.Item key={idx} label={idx.toString()} value={idx} />
-                  ))
-                }
-              </Picker>
-
-              <Text>Bedrooms:</Text>
-              <Picker
-                style={{ padding: 8 }}
-                selectedValue={noOfBedrooms}
-                onValueChange={(itemValue) => setNoOfBedrooms(itemValue)}>
-                {
-                  Array.from({ length: 9 }).map((_, idx) => (
-                    <Picker.Item key={idx} label={idx.toString()} value={idx} />
-                  ))
-                }
-              </Picker>
-            </View>
-            <Button title="Next" onPress={() => nextPage()} />
-          </View>
-        )
-      }
-
-      {
-        currentPage === 3 && (
-          <View style={styles.pageThree}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>What is your price range?</Text>
-            <View style={{ flex: 1, flexDirection: 'column', justifyContent: 'space-between', gap: 16 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text><b>Minimum Price:</b> ${minPrice}</Text>
-                <Text><b>Maximum Price:</b> ${maxPrice}</Text>
-              </View>
-              <Slider
-                minimumValue={MIN_PRICE}
-                maximumValue={MAX_PRICE}
-                value={[minPrice, maxPrice]}
-                step={1000}
-                trackMarks={[minPrice, maxPrice]}
-                minimumTrackTintColor="grey"
-                maximumTrackTintColor="#000000"
-                onValueChange={value => {
-                  setMinPrice(value[0])
-                  setMaxPrice(value[1])
-                }}
-              />
-              <Button title="Next" onPress={() => nextPage()} />
-            </View>
-          </View>
-        )
-      }
-
-      {
-        currentPage == 4 && (
-          <View style={styles.pageFour}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Do you want property recommendations based on your age?</Text>
-            <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 16 }} >
-              <Button title="Yes" onPress={() => setWantPropertyRecommendationAge(true)} color={wantPropertyRecommendationAge ? 'green' : 'blue'} />
-              <Button title="No" onPress={() => setWantPropertyRecommendationAge(false)} color={wantPropertyRecommendationAge ? 'blue' : 'green'} />
-            </View>
             {
-              wantPropertyRecommendationAge && (
-                <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 16 }} >
-                  <Text>Age:</Text>
-                  <TextInput
-                    style={{ height: 40, borderColor: 'gray', borderWidth: 1, padding: 8 }}
-                    keyboardType="numeric"
-                    value={propertyRecommendationAge.toString()}
-                    onChangeText={text => setPropertyRecommendationAge(parseInt(text))}
-                  />
+              currentPage == 0 && (
+                <View style={styles.getStarted}>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Welcome to the Suitability Calculator</Text>
+                  <Button title="Get Started" onPress={() => setCurrentPage(1)} />
                 </View>
               )
             }
-            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Do you want property recommendations based on median age?</Text>
-            <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 16 }} >
-              <Button title="Yes" onPress={() => setWantPropertyRecommendationMedianAge(true)} color={wantPropertyRecommendationMedianAge ? 'green' : 'blue'} />
-              <Button title="No" onPress={() => setWantPropertyRecommendationMedianAge(false)} color={wantPropertyRecommendationMedianAge ? 'blue' : 'green'} />
-            </View>
-            <Button title="Next" onPress={() => nextPage()} />
-          </View>
-        )
-      }
 
-      {
-        currentPage == 5 && (
-          <View style={styles.pageFive}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Do you have an address youd live to live near</Text>
-            <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 16, flexGrow: 1, maxHeight: 38 }}>
-              <Button title="Yes" onPress={() => setWantAnyRecommendedPlaces(true)} color={wantAnyRecommendedPlaces ? 'green' : 'blue'} />
-              <Button title="No" onPress={() => setWantAnyRecommendedPlaces(false)} color={wantAnyRecommendedPlaces ? 'blue' : 'green'} />
-            </View>
             {
-              wantAnyRecommendedPlaces && (
-                <View style={{ flex: 1, flexDirection: 'column', justifyContent: 'space-between', gap: 16 }} >
-                  <View style={styles.searchBoxContainer}>
-                    <IconSearch size={16} stroke="#e4e4e7" />
-                    <TextInput
-                      style={styles.input}
-                      value={searchText}
-                      placeholder="Search for any place"
-                      onChangeText={(searchText) => handleSearchTextChange(searchText)}
-                      placeholderTextColor="#666" />
+              currentPage == 1 && (
+                <View style={styles.pageOne}>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Are you renting or buying?</Text>
+                  <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 16 }} >
+                    <Button title="Renting" onPress={() => handlePageOne('rent')} />
+                    <Button title="Buying" onPress={() => handlePageOne('buy')} />
                   </View>
-
-                  {
-                    predictions.length > 0 && (
-                      <View style={styles.predictionsContainer}>
-                        {predictions.map((prediction, index) => (
-                          <Text
-                            key={index}
-                            style={styles.predictionsItem}
-                            onPress={() => handleSelectPlace(prediction.place_id || "")}>
-                            {prediction.description}
-                          </Text>
-                        ))}
-                      </View>
-                    )
-                  }
-                  {
-                    recommendedPlaces.length > 0 && (
-                      <View style={styles.recommendedPlacesContainer}>
-                        {recommendedPlaces.map((place, index) => <Text key={index} style={styles.recommendedPlacesItem}>{place.address} <IconX style={{ cursor: 'pointer' }} onClick={() => setRecommendedPlaces((prev) => prev.filter((val) => place.address !== val.address))} /></Text>) }
-                      </View>
-                    )
-                  }
                 </View>
               )
             }
-            <Button title="Next" onPress={() => handlePageFive()} />
+
+            {
+              currentPage == 2 && (
+                <View style={styles.pageTwo}>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold' }}>How many bathroom's and bedrooms do you need?</Text>
+                  <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 16 }}>
+                    <Text>Bathrooms:</Text>
+                    <Picker
+                      style={{ padding: 8 }}
+                      selectedValue={noOfBathrooms}
+                      onValueChange={(itemValue) => setNoOfBathrooms(itemValue)}>
+                      {
+                        Array.from({ length: 9 }).map((_, idx) => (
+                          <Picker.Item key={idx} label={idx.toString()} value={idx} />
+                        ))
+                      }
+                    </Picker>
+
+                    <Text>Bedrooms:</Text>
+                    <Picker
+                      style={{ padding: 8 }}
+                      selectedValue={noOfBedrooms}
+                      onValueChange={(itemValue) => setNoOfBedrooms(itemValue)}>
+                      {
+                        Array.from({ length: 9 }).map((_, idx) => (
+                          <Picker.Item key={idx} label={idx.toString()} value={idx} />
+                        ))
+                      }
+                    </Picker>
+                  </View>
+                  <Button title="Next" onPress={() => nextPage()} />
+                </View>
+              )
+            }
+
+            {
+              currentPage === 3 && (
+                <View style={styles.pageThree}>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold' }}>What is your price range?</Text>
+                  <View style={{ flex: 1, flexDirection: 'column', justifyContent: 'space-between', gap: 16 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text><b>Minimum Price:</b> ${minPrice}</Text>
+                      <Text><b>Maximum Price:</b> ${maxPrice}</Text>
+                    </View>
+                    <Slider
+                      minimumValue={MIN_PRICE}
+                      maximumValue={MAX_PRICE}
+                      value={[minPrice, maxPrice]}
+                      step={1000}
+                      trackMarks={[minPrice, maxPrice]}
+                      minimumTrackTintColor="grey"
+                      maximumTrackTintColor="#000000"
+                      onValueChange={value => {
+                        setMinPrice(value[0])
+                        setMaxPrice(value[1])
+                      }}
+                    />
+                    <Button title="Next" onPress={() => nextPage()} />
+                  </View>
+                </View>
+              )
+            }
+
+            {
+              currentPage == 4 && (
+                <View style={styles.pageFour}>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Do you want property recommendations based on your age?</Text>
+                  <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 16 }} >
+                    <Button title="Yes" onPress={() => setWantPropertyRecommendationAge(true)} color={wantPropertyRecommendationAge ? 'green' : 'blue'} />
+                    <Button title="No" onPress={() => setWantPropertyRecommendationAge(false)} color={wantPropertyRecommendationAge ? 'blue' : 'green'} />
+                  </View>
+                  {
+                    wantPropertyRecommendationAge && (
+                      <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 16 }} >
+                        <Text>Age:</Text>
+                        <TextInput
+                          style={{ height: 40, borderColor: 'gray', borderWidth: 1, padding: 8 }}
+                          keyboardType="numeric"
+                          value={propertyRecommendationAge.toString()}
+                          onChangeText={text => setPropertyRecommendationAge(parseInt(text))}
+                        />
+                      </View>
+                    )
+                  }
+                  <Button title="Next" onPress={() => nextPage()} />
+                </View>
+              )
+            }
+
+            {
+              currentPage == 5 && (
+                <View style={styles.pageFive}>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Do you have an address you'd live to live near?</Text>
+                  <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 16, flexGrow: 1, maxHeight: 38 }}>
+                    <Button title="Yes" onPress={() => setWantAnyRecommendedPlaces(true)} color={wantAnyRecommendedPlaces ? 'green' : 'blue'} />
+                    <Button title="No" onPress={() => setWantAnyRecommendedPlaces(false)} color={wantAnyRecommendedPlaces ? 'blue' : 'green'} />
+                  </View>
+                  {
+                    wantAnyRecommendedPlaces && (
+                      <View style={{ flex: 1, flexDirection: 'column', justifyContent: 'space-between', gap: 16 }} >
+                        <View style={styles.searchBoxContainer}>
+                          <IconSearch size={16} stroke="#e4e4e7" />
+                          <TextInput
+                            style={styles.input}
+                            value={searchText}
+                            placeholder="Search for any place"
+                            onChangeText={(searchText) => handleSearchTextChange(searchText)}
+                            placeholderTextColor="#666" />
+                        </View>
+
+                        {
+                          predictions.length > 0 && (
+                            <View style={styles.predictionsContainer}>
+                              {predictions.map((prediction, index) => (
+                                <Text
+                                  key={index}
+                                  style={styles.predictionsItem}
+                                  onPress={() => handleSelectPlace(prediction.place_id || "")}>
+                                  {prediction.description}
+                                </Text>
+                              ))}
+                            </View>
+                          )
+                        }
+                        {
+                          recommendedPlaces.length > 0 && (
+                            <View style={styles.recommendedPlacesContainer}>
+                              {recommendedPlaces.map((place, index) => <Text key={index} style={styles.recommendedPlacesItem}>{place.address} <IconX style={{ cursor: 'pointer' }} onClick={() => setRecommendedPlaces((prev) => prev.filter((val) => place.address !== val.address))} /></Text>)}
+                            </View>
+                          )
+                        }
+                      </View>
+                    )
+                  }
+                  <Button title="Finish" onPress={() => handlePageFive()} />
+                </View>
+              )
+            }
           </View>
+        )
+      }
+
+      {
+        recommendationProperties && recommendationProperties.length > 0 && (
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            {
+              recommendationProperties.map((recommendationProperty, idx) => {
+                return (
+                  <Pressable key={idx} style={{...styles.recommendedPropertiesCard, backgroundColor: selectedRealEstateProperty?.property_id === recommendationProperty.property_id ? '#49A84C' : 'white'}} onPress={() => setSelectedRealEstateProperty(recommendationProperty)}>
+                    <View style={{ display: 'flex', flexDirection: 'row', gap: 10 }}>
+                      <Image source={{ uri: recommendationProperty.img_url }} style={{ width: 100, objectFit: 'cover', borderRadius: 6 }} />
+                      <View style={{ gap: 4, display: 'flex', flexDirection: 'column' }}>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: selectedRealEstateProperty?.property_id === recommendationProperty.property_id ? 'white' : 'black' }}>{recommendationProperty.address_line}</Text>
+                        <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === recommendationProperty.property_id ? 'white' : 'black' }}>Property: {recommendationProperty.property_type.split('_').join(' ').toUpperCase()}</Text>
+                        {recommendationProperty.size_sqft && <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === recommendationProperty.property_id ? 'white' : 'black' }}>Size: {recommendationProperty.size_sqft} ft²</Text>}
+                        <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === recommendationProperty.property_id ? 'white' : 'black' }}>{recommendationProperty.price}</Text>
+                        <Text style={{ fontSize: 12, color: selectedRealEstateProperty?.property_id === recommendationProperty.property_id ? 'white' : 'black' }}>{recommendationProperty.status}</Text>
+                      </View>
+                    </View>
+                  </Pressable>
+                )
+              })
+            }
+          </ScrollView>
+
         )
       }
     </View>
@@ -354,6 +403,20 @@ const styles = StyleSheet.create({
     right: 0,
     height: '50%',
     width: '50%',
+    backgroundColor: 'white',
+    padding: 16,
+    borderRadius: 8,
+    marginVertical: 'auto',
+    marginHorizontal: 'auto',
+  },
+  sideModal: {
+    position: 'absolute',
+    display: 'flex',
+    flexDirection: 'column',
+    top: 110,
+    left: 10,
+    height: '50%',
+    width: '30%',
     backgroundColor: 'white',
     padding: 16,
     borderRadius: 8,
@@ -485,5 +548,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center'
+  },
+  recommendedPropertiesCard: {
+    gap: 8,
+    flexDirection: 'column',
+    backgroundColor: '#fefefe',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   }
 });

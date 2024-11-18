@@ -244,7 +244,7 @@ export default function index() {
                 </Text>
               </View>
 
-              {showNeighbourhoodInsights && (
+              {showNeighbourhoodInsights && ('population' in selectedRealEstateProperty) && (
                 <View style={{ gap: 6, display: 'flex', flexDirection: 'column' }}>
                   <Text style={{ fontSize: 14 }}><b>Population:</b> {selectedRealEstateProperty.population}</Text>
                   <Text style={{ fontSize: 14 }}><b>Median Age:</b> {selectedRealEstateProperty.median_age}</Text>
@@ -260,7 +260,7 @@ export default function index() {
                 </View>
               )}
 
-              {!showNeighbourhoodInsights && (
+              {!showNeighbourhoodInsights && ('population' in selectedRealEstateProperty) && (
                 <Pressable
                   style={{
                     backgroundColor: '#4285F4',
