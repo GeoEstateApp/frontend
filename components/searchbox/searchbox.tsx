@@ -228,6 +228,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
+    marginLeft: 30,
     elevation: 3,
     ...(Platform.OS === 'web' && {
       cursor: 'pointer',

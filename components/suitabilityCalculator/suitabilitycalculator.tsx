@@ -58,7 +58,7 @@ const MAX_PRICE = 9999999
 
 const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps = 6, onStepClick }) => {
   return (
-    <View style={styles.stepContainer}>
+    <View style={styles.stepContainer }>
       {Array.from({ length: totalSteps }).map((_, index) => (
         <Pressable 
           key={`step-${index}`} 
@@ -954,7 +954,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   primaryButton: {
-    backgroundColor: '#49a84c',
+    backgroundColor: '#49a84c',   
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 12,
