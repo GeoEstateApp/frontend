@@ -9,6 +9,7 @@ import { useSuitability } from '@/states/suitability'
 import Toast from 'react-native-toast-message'
 import { useBucketListPanelStore } from '@/states/bucketlistpanel'
 import { useFavoritesPanelStore } from '@/states/favoritespanel'
+import { useZipcodeInsights } from '@/states/zipcode_insights'
 
 const MIN_SEARCH_LENGTH = 3
 
@@ -24,6 +25,7 @@ export default function SearchBox() {
   const { setShowPanel, setSidePanelPlace } = useSidePanelStore()
   const { setShowBucketListPanel } = useBucketListPanelStore()
   const { setShowFavPanel } = useFavoritesPanelStore()
+  const { setShowZipcodePanel } = useZipcodeInsights()
 
   useEffect(() => {
     if (!places) return
@@ -92,8 +94,13 @@ export default function SearchBox() {
       <Pressable 
         style={styles.calculatorButton} 
         onPress={() => {
-          if (getAuth().currentUser) setIsModalOpen(!isModalOpen)
-          else {
+          if (getAuth().currentUser) {
+            setIsModalOpen(!isModalOpen)
+            setShowPanel(false)
+            setShowBucketListPanel(false)
+            setShowFavPanel(false)
+            setShowZipcodePanel(false)
+          } else {
             Toast.show({
               type: 'info',
               text1: 'Please login to use this feature.',
