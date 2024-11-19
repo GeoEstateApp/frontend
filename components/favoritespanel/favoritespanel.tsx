@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     borderRadius: 8,
     marginBottom: 8,
     shadowColor: '#000',
@@ -165,10 +165,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
+    color: '#374151',
   },
   favoriteAddress: {
     fontSize: 14,
-    color: '#666',
+    color: '#6b7280',
   },
   emptyMessage: {
     textAlign: 'center',
@@ -195,9 +196,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   travelButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#10b981',
   },
   removeButton: {
-    backgroundColor: '#ff4444',
+    backgroundColor: '#f43f5e',
   },
 });

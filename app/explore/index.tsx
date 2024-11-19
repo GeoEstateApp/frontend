@@ -1,4 +1,4 @@
-import { AIChat, Earth, SearchBox, SidePanel, SuitabilityCalculator, ZipPanel } from '@/components'
+import { AICommentsSummary, Earth, SearchBox, SidePanel, SuitabilityCalculator, ZipPanel } from '@/components'
 import { APIProvider } from '@vis.gl/react-google-maps'
 import { ActivityIndicator, Button, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useEffect, useState } from 'react'
@@ -56,7 +56,6 @@ function HeaderButton() {
 
 export default function index() {
   const [isZipcodePanelOpen, setIsZipcodePanelOpen] = useState(false)
-  const [showAIChat, setShowAIChat] = useState(false)
 
   const [showNeighbourhoodInsights, setNeighbourhoodInsights] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -167,7 +166,6 @@ export default function index() {
       setShowFavPanel(!showFavPanel)
       setShowBucketListPanel(false)
       setShowPanel(false)
-      setShowAIChat(false)
       setIsZipcodePanelOpen(false)
   }
 
@@ -175,7 +173,6 @@ export default function index() {
       setShowBucketListPanel(!showBucketListPanel)
       setShowFavPanel(false)
       setShowPanel(false)
-      setShowAIChat(false)
       setIsZipcodePanelOpen(false)
   }
 
@@ -189,7 +186,6 @@ export default function index() {
         <SearchBox />
         {showPanel && <SidePanel />}
         {isZipcodePanelOpen && <ZipPanel />}
-        {showAIChat && <AIChat />}
         {showBucketListPanel && <BucketListPanel />}
         {showFavPanel && <FavoritesPanel />}
        
@@ -199,7 +195,6 @@ export default function index() {
         <View style={{ ...styles.toggleButtonGroup, left: showPanel || isZipcodePanelOpen || showAIChat || showBucketListPanel || showFavPanel ? 420 : 20 }}>
           <Pressable style={{ ...styles.toggleButton, backgroundColor: showPanel ? '#49A84C' : 'white' }} onPress={() => {
             setIsZipcodePanelOpen(false)
-            setShowAIChat(false)
             setShowPanel(!showPanel)
             setShowFavPanel(false)
             setShowBucketListPanel(false)
@@ -209,22 +204,11 @@ export default function index() {
 
           <Pressable style={{ ...styles.toggleButton, backgroundColor: isZipcodePanelOpen ? '#49A84C' : 'white' }} onPress={() => {
             setShowPanel(false)
-            setShowAIChat(false)
             setIsZipcodePanelOpen(!isZipcodePanelOpen)
             setShowFavPanel(false)
             setShowBucketListPanel(false)
           }}>
             <IconZip size={20} strokeWidth={2} color={isZipcodePanelOpen ? 'white' : 'black'} />
-          </Pressable>
-
-          <Pressable style={{ ...styles.toggleButton, backgroundColor: showAIChat ? '#49A84C' : 'white' }} onPress={() => {
-            setIsZipcodePanelOpen(false)
-            setShowPanel(false)
-            setShowAIChat(!showAIChat)
-            setShowFavPanel(false)
-            setShowBucketListPanel(false)
-          }}>
-            <IconSparkles size={20} strokeWidth={2} color={showAIChat ? 'white' : 'black'} />
           </Pressable>
           <Pressable
             style={{ ...styles.toggleButton, backgroundColor: showFavPanel ? '#49A84C' : 'white' }}

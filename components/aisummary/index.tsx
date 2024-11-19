@@ -1,12 +1,13 @@
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, ScrollView, StyleSheet, View, TouchableOpacity, Text, Platform } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { model } from '@/lib/firebase'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useZipcodeInsights } from '@/states/zipcode_insights'
 import Toast from 'react-native-toast-message'
 import Markdown from 'react-native-markdown-display'
+import { IconX } from '@tabler/icons-react'
 
-export default function AIChat() {
+export default function AICommentsSummary({ onClose, insights }: { onClose: (string: string) => void, insights: string }) {
   const [summary, setSummary] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const { zipcode } = useZipcodeInsights()
@@ -16,6 +17,11 @@ export default function AIChat() {
   }, [])
 
   const summarizeTheZipcode = async () => {
+    if (insights !== "") {
+      setSummary(insights)
+      return
+    } 
+
     const { idToken, uid } = await getAuthTokens()
     if (idToken === null || uid === null) return
     if (zipcode === null || zipcode === "") {
@@ -68,28 +74,48 @@ export default function AIChat() {
   }
 
   return (
-    <View style={styles.container}>
-          <View style={styles.panel}>
-            { isLoading && <ActivityIndicator style={{flex: 1}} size='large' /> }
+    <View style={styles.overlay}>
+      <View style={styles.container}>
+        <View style={styles.panel}>
+          <TouchableOpacity style={styles.closeButton} onPress={() => onClose(summary)}>
+            <Text style={styles.commentSummaryHeading}>Comments Summary</Text>
+            <Text style={styles.closeButtonText}>
+              <IconX size={24} />
+            </Text>
+          </TouchableOpacity>
 
-            { !isLoading && (
-                <ScrollView showsVerticalScrollIndicator={false}>
-                  { summary !== "" && <Markdown>{summary}</Markdown> }
-                </ScrollView>
-              ) 
-            }
-          </View>
+          {isLoading && <ActivityIndicator style={{flex: 1}} size='large' />}
+
+          {!isLoading && (
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {summary !== "" && <Markdown>{summary}</Markdown>}
+            </ScrollView>
+          )}
+        </View>
+      </View>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    height: '100%',
+  overlay: {
+    ...(Platform.OS === 'web' ? { position: 'fixed' as any } : { position: 'absolute' }),
+    top: 0,
     left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  container: {
+    position: 'relative',
     display: 'flex',
-    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100%',
+    width: '100%',
   },
   panel: {
     display: 'flex',
@@ -97,20 +123,35 @@ const styles = StyleSheet.create({
     gap: 20,
     backgroundColor: '#ffffff',
     width: 400,
-    height: '100%',
+    maxHeight: '80%',
     padding: 20,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  input: {
-    backgroundColor: '#fff',
-    padding: 10,
-    borderRadius: 5,
-    color: '#27272a',
-  },
-  zipcodeButton: {
+  closeButton: {
     display: 'flex',
-    flexDirection: 'column',
-    backgroundColor: '#fff',
-    padding: 10,
-    borderRadius: 5,
+    justifyContent: 'space-between',
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 1,
+    padding: 6,
+    marginBottom: 10,
   },
+  closeButtonText: {
+    fontSize: 24,
+    color: '#666',
+    padding: 4,
+  },
+  commentSummaryHeading: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  }
 })

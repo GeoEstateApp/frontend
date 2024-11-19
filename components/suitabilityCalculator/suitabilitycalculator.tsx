@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Button, TextInput, ScrollView, Pressable, Image, ActivityIndicator, RefreshControl, FlatList, ImageStyle } from 'react-native'
+import { View, Text, StyleSheet, Button, TextInput, ScrollView, Pressable, Image, ActivityIndicator, RefreshControl, FlatList, ImageStyle, Platform } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { Picker } from '@react-native-picker/picker'
 import { Slider } from '@miblanchard/react-native-slider';
@@ -629,7 +629,7 @@ export default function SuitabilityCalculator() {
                               key={`prediction-${index}`}
                               style={styles.predictionsItem}
                               onPress={() => handleSelectPlace(prediction.place_id || "")}>
-                              <Text style={styles.predictionText}>{prediction.description}</Text>
+                              <Text style={styles.predictionsText}>{prediction.description}</Text>
                             </Pressable>
                           ))}
                         </View>
@@ -807,16 +807,17 @@ const styles = StyleSheet.create({
     top: '50%',
     left: '50%',
     transform: [{ translateX: '-50%' }, { translateY: '-50%' }],
-    width: '60%',
+    width: '65%',
     maxWidth: 800,
     backgroundColor: '#ffffff',
-    borderRadius: 24,
+    borderRadius: 16,
     padding: 32,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.2,
     shadowRadius: 24,
-    elevation: 8,
+    elevation: 12,
+    zIndex: 9999999999
   },
   sideModal: {
     position: 'absolute',
@@ -825,13 +826,13 @@ const styles = StyleSheet.create({
     width: '35%',
     maxWidth: 480,
     backgroundColor: '#ffffff',
-    borderRadius: 24,
+    borderRadius: 16,
     padding: 32,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.2,
     shadowRadius: 24,
-    elevation: 8,
+    elevation: 12,
     maxHeight: '80%',
   },
   welcomeTitle: {
@@ -868,11 +869,23 @@ const styles = StyleSheet.create({
   choiceCard: {
     flex: 1,
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 16,
+    padding: 24,
     borderWidth: 2,
     borderColor: '#e5e7eb',
-    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+    ...(Platform.OS === 'web' && {
+      cursor: 'pointer',
+      transition: 'all 0.2s ease-in-out',
+      ':hover': {
+        transform: [{ translateY: -2 }],
+        borderColor: '#49a84c',
+      },
+    }),
   },
   choiceCardActive: {
     backgroundColor: '#49a84c',
@@ -931,7 +944,14 @@ const styles = StyleSheet.create({
   modernPicker: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
-    padding: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   primaryButton: {
     backgroundColor: '#49a84c',
@@ -944,6 +964,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
+    ...(Platform.OS === 'web' && {
+      cursor: 'pointer',
+      transition: 'all 0.2s ease-in-out',
+      ':hover': {
+        transform: [{ translateY: -2 }],
+        backgroundColor: '#3b8c3e',
+      },
+    }),
   },
   primaryButtonText: {
     color: '#ffffff',
@@ -1084,12 +1112,23 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    right: -10,
-    top: -10,
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: '#49A84C',
+    right: -12,
+    top: -12,
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
     zIndex: 10,
+    ...(Platform.OS === 'web' && {
+      cursor: 'pointer',
+      ':hover': {
+        backgroundColor: '#F9FAFB',
+      },
+    }),
   },
   stepClickable: {
     cursor: 'pointer',
@@ -1223,17 +1262,24 @@ const styles = StyleSheet.create({
   },
   recommendedPropertyCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
-    marginBottom: 12,
+    borderRadius: 16,
+    marginBottom: 16,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 12,
+    elevation: 4,
     borderWidth: 1,
     borderColor: '#e5e7eb',
     minHeight: 420,
+    ...(Platform.OS === 'web' && {
+      transition: 'all 0.2s ease-in-out',
+      ':hover': {
+        transform: [{ translateY: -4 }],
+        shadowOpacity: 0.15,
+      },
+    }),
   },
   recommendedPropertyCardSelected: {
     borderColor: '#49a84c',
@@ -1353,9 +1399,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     backgroundColor: '#49a84c',
-    paddingVertical: 14,
-    borderRadius: 8,
+    paddingVertical: 16,
+    borderRadius: 12,
     marginTop: 'auto',
+    shadowColor: '#49a84c',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+    ...(Platform.OS === 'web' && {
+      cursor: 'pointer',
+      transition: 'all 0.2s ease-in-out',
+      ':hover': {
+        backgroundColor: '#3b8c3e',
+      },
+    }),
   },
   viewOnMapButtonSelected: {
     backgroundColor: '#3b8c3e',
@@ -1414,42 +1472,62 @@ const styles = StyleSheet.create({
   searchBoxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  input: {
-    flex: 1,
-    marginLeft: 8,
-    fontSize: 16,
-    color: '#111827',
-  },
-  predictionsContainer: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    marginTop: 4,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    zIndex: 10,
+    padding: 14,
+    gap: 12,
+    backgroundColor: 'white',
+    borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  input: {
+    flex: 1,
+    fontSize: 15,
+    color: '#1F2937',
+    fontWeight: '500',
+    ...(Platform.OS === 'web' && {
+      outlineWidth: 0,
+    }),
+  },
+  predictionsContainer: {
+    marginTop: 8,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
   },
   predictionsItem: {
-    padding: 12,
+    padding: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: '#F3F4F6',
+    ...(Platform.OS === 'web' && {
+      cursor: 'pointer',
+      ':hover': {
+        backgroundColor: '#F9FAFB',
+      },
+    }),
   },
-  predictionText: {
-    fontSize: 14,
+  predictionsText: {
+    fontSize: 15,
     color: '#374151',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    ...(Platform.OS === 'web' && {
+      cursor: 'pointer',
+      ':hover': {
+        backgroundColor: '#F9FAFB',
+      },
+    }),
   },
   recommendedPlacesContainer: {
     marginTop: 24,

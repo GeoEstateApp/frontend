@@ -1,4 +1,4 @@
-import { View, StyleSheet, TextInput, Text, Platform } from 'react-native'
+import { View, StyleSheet, TextInput, Text, Platform, Pressable } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { IconSearch, IconSum } from '@tabler/icons-react'
 import { useMapsLibrary } from '@vis.gl/react-google-maps'
@@ -9,7 +9,6 @@ import { useSuitability } from '@/states/suitability'
 import Toast from 'react-native-toast-message'
 import { useBucketListPanelStore } from '@/states/bucketlistpanel'
 import { useFavoritesPanelStore } from '@/states/favoritespanel'
-import { useZipcodeInsights } from '@/states/zipcode_insights'
 
 const MIN_SEARCH_LENGTH = 3
 
@@ -17,7 +16,7 @@ export default function SearchBox() {
   const [placeAutocompleteService, setPlaceAutocompleteService] = useState<google.maps.places.AutocompleteService | null>(null)
   const [predictions, setPredictions] = useState<Array<google.maps.places.AutocompletePrediction>>([])
   const [searchText, setSearchText] = useState("")
-  const { toggleModal } = useSuitability()
+  const { isModalOpen, setIsModalOpen } = useSuitability()
 
   const places = useMapsLibrary('places')
 
@@ -35,7 +34,10 @@ export default function SearchBox() {
   const handleSearchTextChange = (searchText: string) => {
     setSearchText(searchText)
 
-    if (searchText.length < MIN_SEARCH_LENGTH) return
+    if (searchText.length < MIN_SEARCH_LENGTH) {
+      setPredictions([])
+      return
+    }
 
     setSelectedPlace(null)
     setPredictions([])
@@ -87,43 +89,58 @@ export default function SearchBox() {
   
   return (
     <View style={styles.container}>
-      <IconSum style={styles.calculatorButton} size={22} stroke="#e4e4e7" onClick={() => {
-        if (getAuth().currentUser) toggleModal()
-        else {
-          Toast.show({
-            type: 'info',
-            text1: 'Please login to use this feature.',
-            visibilityTime: 3000,
-            text1Style: { fontSize: 14 },
-            autoHide: true
-          }) 
-        }
-      }} />
-      <View style={{ flexDirection: 'column' }}>
+      <Pressable 
+        style={styles.calculatorButton} 
+        onPress={() => {
+          if (getAuth().currentUser) setIsModalOpen(!isModalOpen)
+          else {
+            Toast.show({
+              type: 'info',
+              text1: 'Please login to use this feature.',
+              visibilityTime: 3000,
+              text1Style: { fontSize: 14 },
+              autoHide: true
+            }) 
+          }
+        }}
+      >
+        <IconSum size={20} strokeWidth={2} stroke="#374151" />
+      </Pressable>
+      
+      <View style={styles.searchWrapper}>
         <View style={styles.searchBoxContainer}>
-          <IconSearch size={16} stroke="#e4e4e7" />
+          <IconSearch size={16} stroke="#6B7280" />
           <TextInput
             style={styles.input}
             value={searchText}
-            placeholder="Search for any place"
-            onChangeText={(searchText) => handleSearchTextChange(searchText)}
-            placeholderTextColor="#666" />
+            placeholder="Search for any place..."
+            onChangeText={handleSearchTextChange}
+            placeholderTextColor="#9CA3AF"
+          />
         </View>
 
-        {
-          predictions.length > 0 && (
-            <View style={styles.predictionsContainer}>
-              {predictions.map((prediction, index) => (
+        {predictions.length > 0 && (
+          <View style={styles.predictionsContainer}>
+            {predictions.map((prediction, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.predictionsItem,
+                  index === predictions.length - 1 && { borderBottomWidth: 0 }
+                ]}
+              >
                 <Text
-                  key={index}
-                  style={styles.predictionsItem}
-                  onPress={() => handleSelectPlace(prediction.place_id || "")}>
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  style={styles.predictionsText}
+                  onPress={() => handleSelectPlace(prediction.place_id || "")}
+                >
                   {prediction.description}
                 </Text>
-              ))}
-            </View>
-          )
-        }
+              </View>
+            ))}
+          </View>
+        )}
       </View>
     </View>
   )
@@ -132,70 +149,91 @@ export default function SearchBox() {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: Platform.OS === 'web' ? 10 : 30,
+    top: Platform.OS === 'web' ? 20 : 40,
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'center',
-    maxWidth: 400,
-    minWidth: 400,
+    alignItems: 'flex-start',
+    width: '90%',
+    maxWidth: 600,
     zIndex: 999,
+    paddingHorizontal: 16,
+  },
+  searchWrapper: {
+    flex: 1,
+    flexDirection: 'column',
+    marginLeft: 12,
   },
   searchBoxContainer: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    gap: 8,
-    backgroundColor: '#f4f4f5',
-    borderRadius: 8,
-    marginHorizontal: 16,
-    borderColor: '#e4e4e7',
+    gap: 10,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   input: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    fontSize: 16,
-    color: '#27272a',
-    borderWidth: 0,
-    borderColor: 'transparent',
+    fontSize: 15,
+    color: '#1F2937',
+    fontWeight: '500',
+    ...(Platform.OS === 'web' && {
+      outlineWidth: 0
+    })
   },
   predictionsContainer: {
     marginTop: 8,
-    marginHorizontal: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 8,
-    padding: 8,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+    ...(Platform.OS === 'web' && {
+      transform: [{ translateY: 4 }],
+      opacity: 1,
+    }),
   },
   predictionsItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e4e4e7',
+    borderBottomColor: '#F3F4F6',
   },
   predictionsText: {
-    fontSize: 16,
-    color: '#27272a',
+    fontSize: 15,
+    color: '#374151',
+    flex: 1,
+    ...(Platform.OS === 'web' && {
+      cursor: 'pointer',
+      ':hover': {
+        backgroundColor: '#F9FAFB',
+      },
+    }),
   },
   calculatorButton: {
-    flexShrink: 0,
-    zIndex: 1000,
     backgroundColor: 'white',
-    padding: 10,
-    borderRadius: 8,
+    padding: 12,
+    borderRadius: 12,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    cursor: 'pointer'
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    ...(Platform.OS === 'web' && {
+      cursor: 'pointer',
+      ':hover': {
+        backgroundColor: '#F9FAFB',
+      },
+    }),
   },
 })
