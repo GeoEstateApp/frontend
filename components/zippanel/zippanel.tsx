@@ -6,13 +6,13 @@ import { useZipcodeInsights, ZipcodeData, ZipcodeInsight } from '@/states/zipcod
 import { convexHull, PolygonCoordinates } from '@/api/osm';
 import { addComment, Comment, getComments } from '@/api/comments';
 import Toast from 'react-native-toast-message';
-import { IconUser, IconSend, IconSparkles } from '@tabler/icons-react';
+import { IconUser, IconSend, IconSparkles, IconArrowLeft } from '@tabler/icons-react';
 import AICommentsSummary from '../aisummary';
 
 export default function ZipPanel() {
   const [searchingZipcodeText, setSearchingZipcodeText] = useState<string>('');
   const [zipcodeList, setZipcodeList] = useState<ZipcodeData[]>([]);
-  const [viewingZipcodeDetails, setViewingZipcodeDetails] = useState<string | null>(null); // New state to track details view
+  const [viewingZipcodeDetails, setViewingZipcodeDetails] = useState<string | null>(null); 
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState<string>('');
   const [isAddingComment, setIsAddingComment] = useState(false);
@@ -238,16 +238,21 @@ export default function ZipPanel() {
   return (
     <View style={styles.container}>
       <View style={styles.panel}>
-        <Text style={styles.title}>Zipcodes</Text>
         {viewingZipcodeDetails ? (
           <>
-            <Pressable onPress={handleBackToList} style={styles.backButton}>
-              <IconUser size={20} color="#666" />
-              <Text style={styles.backButtonText}>Back to Zipcode List</Text>
-            </Pressable>
-            
+            <View style={styles.header}>
+              <Pressable 
+                style={styles.backButton}
+                onPress={() => setViewingZipcodeDetails(null)}
+              >
+                <IconArrowLeft size={24} color="#000" />
+              </Pressable>
+              <Text style={styles.headerText}>
+                {zipcodeList.find(z => z.zipcode === viewingZipcodeDetails)?.name || `Zipcode ${viewingZipcodeDetails}`}
+              </Text>
+            </View>
             <ScrollView style={styles.contentScroll} showsVerticalScrollIndicator={false}>
-              <ScrollView contentContainerStyle={{ gap: 16 }} showsVerticalScrollIndicator={false}>
+              <ScrollView contentContainerStyle={{ gap: 8 }} showsVerticalScrollIndicator={false}>
                 {/* Zipcode insights */}
                 <View style={styles.insightsSection}>
                   <View style={styles.insightsGrid}>
@@ -356,6 +361,9 @@ export default function ZipPanel() {
           </>
         ) : (
           <>
+            <View style={styles.header}>
+              <Text style={styles.headerText}>Explore Zipcodes</Text>
+            </View>
             <TextInput
               style={styles.searchInput}
               value={searchingZipcodeText}
@@ -395,11 +403,13 @@ export default function ZipPanel() {
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute', // change from absolute
+    position: 'absolute', 
     height: '100%',
     left: 0,
     display: 'flex',
     flexDirection: 'row',
+    flex: 1,
+    backgroundColor: '#fff',
   },
   panel: {
     position: 'absolute',
@@ -409,7 +419,7 @@ const styles = StyleSheet.create({
     width: 400,
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     padding: 20,
-    zIndex: 1, // change from 1000
+    zIndex: 1, 
     borderRightWidth: 1,
     borderColor: 'rgba(221, 221, 221, 0.5)',
   },
@@ -465,17 +475,18 @@ const styles = StyleSheet.create({
     color: '#6b7280',
   },
   backButton: {
+    marginRight: 8,
+    display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    marginBottom: 16,
+    gap: 4,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 6,
+    padding: 8,
   },
   backButtonText: {
-    marginLeft: 8,
-    fontSize: 14,
     color: '#666',
+    fontSize: 14,
   },
   zipcodeButton: {
     display: 'flex',
@@ -485,10 +496,10 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   insightsSection: {
+    marginTop: 0,
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 20,
-    marginTop: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -590,7 +601,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   addButtonDisabled: {
-    backgroundColor: '#93c5fd', // Light blue
+    backgroundColor: '#93c5fd', 
   },
   commentsContainer: {
     flex: 1,
@@ -657,5 +668,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: '#334155',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  headerText: {
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
