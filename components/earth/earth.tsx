@@ -2,8 +2,9 @@ import { StyleSheet, View, TouchableOpacity, Text } from 'react-native';
 import { Map3D, Map3DCameraProps } from './map-3d';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMapStore } from '@/states/map';
-import { fetchPolygonCoordinates } from '@/api/osm';
-import { favoritesData } from '@/api/favorites';  // Import your API function
+import { fetchPolygonCoordinates, polygonCentroid } from '@/api/osm';
+import { useZipcodeInsights } from '@/states/zipcode_insights';
+
 const INITIAL_VIEW_PROPS: Map3DCameraProps = {
   center: { lat: 40.7212803, lng: -74.0004602, altitude: 2500 },
   range: 0,
@@ -14,6 +15,7 @@ const INITIAL_VIEW_PROPS: Map3DCameraProps = {
 
 const HOVER_ROTATION_SPEED = 1.00; 
 const TARGET_ALTITUDE = 120; 
+const TARGET_ZIPCODE_ALTITUDE = 1200; 
 
 export default function Earth() {
   const { selectedPlace, setSelectedPlacePolygonCoordinates } = useMapStore();
@@ -21,7 +23,9 @@ export default function Earth() {
   const [isHovering, setIsHovering] = useState(false);
   const hoverAnimationRef = useRef<number | null>(null);
   
-    // Smooth camera transition
+  const { polygon } = useZipcodeInsights()
+
+  // Smooth camera transition
   const smoothTransportToLocation = (newProps: Map3DCameraProps) => {
     const startProps = { ...viewProps };
     let startTime = Date.now();
@@ -84,6 +88,22 @@ export default function Earth() {
 
     fetchData();
   }, [selectedPlace]);
+
+  useEffect(() => {
+    if (!polygon || !polygon[0]) return
+
+    const { lat, lng } = polygonCentroid(polygon)
+
+    const newProps: Map3DCameraProps = {
+      center: { lat, lng, altitude: TARGET_ZIPCODE_ALTITUDE },
+      range: 6000,
+      heading: 1200,
+      tilt: 50,
+      roll: 0
+    };
+
+    smoothTransportToLocation(newProps);
+  }, [polygon])
 
    // 360-degree hover rotation
   const rotateCamera = useCallback(() => {
