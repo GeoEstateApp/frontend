@@ -665,7 +665,7 @@ const Footer = () => (
                 </View>
             </View>
 
-            <Text style={styles.footerText}>© 2024 GeoEstate. All Rights Reserved.</Text>
+            <Text style={styles.footerText}> 2024 GeoEstate. All Rights Reserved.</Text>
         </View>
     </SafeAreaView>
 );
@@ -1013,6 +1013,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         paddingTop: 30,
+        paddingBottom: 80, 
         position: 'relative',
     },
     ReviewSubtitle: {

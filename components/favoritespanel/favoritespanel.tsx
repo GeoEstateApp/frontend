@@ -1,39 +1,87 @@
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import React, { useEffect, useState } from 'react';
-import { IconHeartFilled } from '@tabler/icons-react';
-import { getFavorites, FavoriteItem } from '@/api/favorites';
+import { IconHeartFilled, IconX, IconMapPin } from '@tabler/icons-react';
+import { getFavorites, FavoriteItem, removeFavorite } from '@/api/favorites';
 import Toast from 'react-native-toast-message';
 import { useFavoritesPanelStore } from '@/states/favoritespanel';
+import { useMapStore } from '@/states/map';
+import { useSidePanelStore } from '@/states/sidepanel';
 
 export default function FavoritesPanel() {
-  const { showPanel } = useFavoritesPanelStore();
+  const { showFavPanel } = useFavoritesPanelStore();
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const { setSelectedPlace } = useMapStore();
+  const { setShowPanel: setShowSidePanel } = useSidePanelStore();
+  const { setShowFavPanel } = useFavoritesPanelStore();
+
+  const loadFavorites = async () => {
+    setLoading(true);
+    try {
+      const userFavorites = await getFavorites();
+      setFavorites(userFavorites);
+    } catch (error) {
+      console.error('Error loading favorites:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Could not load favorites. Please try again.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadFavorites = async () => {
-      setLoading(true);
-      try {
-        const userFavorites = await getFavorites();
-        setFavorites(userFavorites);
-      } catch (error) {
-        console.error('Error loading favorites:', error);
-        Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: 'Could not load favorites. Please try again.',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (showPanel) {
+    if (showFavPanel) {
       loadFavorites();
     }
-  }, [showPanel]);
+  }, [showFavPanel]);
 
-  if (!showPanel) return null;
+  const handleRemoveFavorite = async (place_id: string, name: string) => {
+    try {
+      await removeFavorite(place_id);
+      await loadFavorites(); // Reload the list after removal
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: `Removed ${name} from favorites`,
+      });
+    } catch (error) {
+      console.error('Error removing favorite:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Could not remove from favorites. Please try again.',
+      });
+    }
+  };
+
+  const handleTravelTo = (favorite: FavoriteItem) => {
+    setSelectedPlace({
+      place_id: favorite.place_id,
+      name: favorite.name,
+      formatted_address: favorite.address,
+      geometry: {
+        location: {
+          lat: () => favorite.latitude,
+          lng: () => favorite.longitude
+        }
+      }
+    } as google.maps.places.PlaceResult);
+
+    setShowSidePanel(false);
+    setShowFavPanel(false);
+
+    Toast.show({
+      type: 'success',
+      text1: 'Navigating to location',
+      text2: favorite.name,
+      visibilityTime: 2000,
+    });
+  };
+
+  if (!showFavPanel) return null;
 
   return (
     <View style={styles.panel}>
@@ -50,7 +98,20 @@ export default function FavoritesPanel() {
                 <Text style={styles.favoriteName}>{favorite.name}</Text>
                 <Text style={styles.favoriteAddress}>{favorite.address}</Text>
               </View>
-              <IconHeartFilled size={24} color="#ff4444" />
+              <View style={styles.favoriteActions}>
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.travelButton]}
+                  onPress={() => handleTravelTo(favorite)}
+                >
+                  <IconMapPin size={20} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.removeButton]}
+                  onPress={() => handleRemoveFavorite(favorite.place_id, favorite.name)}
+                >
+                  <IconX size={20} color="#fff" />
+                </TouchableOpacity>
+              </View>
             </View>
           ))
         )}
@@ -102,7 +163,7 @@ const styles = StyleSheet.create({
   },
   favoriteName: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
     marginBottom: 4,
   },
   favoriteAddress: {
@@ -110,9 +171,33 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   emptyMessage: {
-    fontSize: 16,
-    color: '#666',
     textAlign: 'center',
-    padding: 16,
+    color: '#666',
+    marginTop: 20,
+  },
+  favoriteActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
+  },
+  travelButton: {
+    backgroundColor: '#4CAF50',
+  },
+  removeButton: {
+    backgroundColor: '#ff4444',
   },
 });

@@ -43,11 +43,7 @@ export interface SimilarUser {
   common_places: number;
   total_places: number;
   common_locations: string[];
-}
-
-export interface NearbyLocation extends BucketListItem {
-  popularity: number;
-  distance: number;
+  similarity_score: number;
 }
 
 export const getBucketList = async (targetUsername?: string): Promise<BucketListItem[]> => {
@@ -73,8 +69,7 @@ export const getBucketList = async (targetUsername?: string): Promise<BucketList
       throw new Error(errorData.error || `Error: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    return data;
+    return response.json();
   } catch (error) {
     console.error('Error fetching bucket list:', error);
     throw error;
@@ -180,10 +175,7 @@ export const getSimilarUsers = async (): Promise<SimilarUser[]> => {
       throw new Error('Authentication required');
     }
 
-    const url = `${API_URL}/bucket-list/similar/${uid}`;
-    console.log('Fetching similar users from:', url);
-
-    const response = await fetch(url, {
+    const response = await fetch(`${API_URL}/bucket-list/similar/${uid}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${idToken}`,
@@ -192,13 +184,10 @@ export const getSimilarUsers = async (): Promise<SimilarUser[]> => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('Server error response:', errorData);
       throw new Error(errorData.error || `Error: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    console.log('Similar users response:', data);
-    return data;
+    return response.json();
   } catch (error) {
     console.error('Error fetching similar users:', error);
     throw error;
@@ -209,7 +198,7 @@ export const getNearbyBucketList = async (
   latitude: number,
   longitude: number,
   radius?: number
-): Promise<NearbyLocation[]> => {
+): Promise<BucketListItem[]> => {
   try {
     const { idToken } = await getAuthTokens();
     if (!idToken) {
@@ -219,7 +208,7 @@ export const getNearbyBucketList = async (
     const params = new URLSearchParams({
       latitude: latitude.toString(),
       longitude: longitude.toString(),
-      ...(radius && { radius: radius.toString() }),
+      ...(radius && { radius: radius.toString() })
     });
 
     const response = await fetch(`${API_URL}/bucket-list/nearby?${params}`, {
@@ -236,7 +225,7 @@ export const getNearbyBucketList = async (
 
     return response.json();
   } catch (error) {
-    console.error('Error fetching nearby locations:', error);
+    console.error('Error fetching nearby bucket list items:', error);
     throw error;
   }
 };

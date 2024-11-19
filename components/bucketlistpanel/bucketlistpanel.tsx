@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { getBucketList, removeFromBucketList, BucketListItem } from '../../api/bucketlist';
-import { IconList, IconSearch, IconTrash, IconUser, IconUsers } from '@tabler/icons-react';
+import { IconList, IconSearch, IconTrash, IconUser, IconUsers, IconMapPin, IconX } from '@tabler/icons-react';
 import Toast from 'react-native-toast-message';
 import { useBucketListPanelStore } from '@/states/bucketlistpanel';
 import { useMapStore } from '@/states/map';
@@ -11,10 +11,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import DiscoveryFeed from './discoveryfeed';
 
 export default function BucketListPanel() {
-  const { showPanel, setShowPanel } = useBucketListPanelStore();
+  const { showBucketListPanel, setShowBucketListPanel } = useBucketListPanelStore();
   const { setSelectedPlace } = useMapStore();
   const { setShowPanel: setShowSidePanel } = useSidePanelStore();
-  const { setShowPanel: setShowFavoritesPanel } = useFavoritesPanelStore();
+  const { setShowFavPanel } = useFavoritesPanelStore();
   const [searchUsername, setSearchUsername] = useState('');
   const [bucketList, setBucketList] = useState<BucketListItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -117,7 +117,7 @@ export default function BucketListPanel() {
     setSearchUsername('');
   };
 
-  if (!showPanel) return null;
+  if (!showBucketListPanel) return null;
 
   return (
     <View style={styles.panel}>
@@ -158,47 +158,54 @@ export default function BucketListPanel() {
           ) : (
             <>
               {bucketList.map((item) => (
-                <TouchableOpacity
+                <View
                   key={`${item.place_id}-${item.userid}`}
                   style={styles.listItem}
-                  onPress={() => {
-                    // Close all panels
-                    setShowPanel(false);
-                    setShowSidePanel(false);
-                    setShowFavoritesPanel(false);
-                    
-                    // Navigate to location
-                    setSelectedPlace({
-                      place_id: item.place_id,
-                      name: item.name,
-                      formatted_address: item.address,
-                      geometry: {
-                        location: {
-                          lat: () => item.latitude,
-                          lng: () => item.longitude
-                        }
-                      }
-                    } as google.maps.places.PlaceResult);
-
-                    Toast.show({
-                      type: 'success',
-                      text1: 'Navigating to location',
-                      text2: item.name,
-                      visibilityTime: 2000,
-                    });
-                  }}
                 >
                   <View style={styles.itemContent}>
                     <Text style={styles.itemName}>{item.name}</Text>
                     <Text style={styles.itemAddress}>{item.address}</Text>
                   </View>
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => handleRemove(item.place_id)}
-                  >
-                    <IconTrash size={20} color="#ff4444" />
-                  </TouchableOpacity>
-                </TouchableOpacity>
+                  <View style={styles.itemActions}>
+                    <TouchableOpacity
+                      style={[styles.actionButton, styles.travelButton]}
+                      onPress={() => {
+                        // Close all panels
+                        setShowBucketListPanel(false);
+                        setShowSidePanel(false);
+                        setShowFavPanel(false);
+                        
+                        // Navigate to location
+                        setSelectedPlace({
+                          place_id: item.place_id,
+                          name: item.name,
+                          formatted_address: item.address,
+                          geometry: {
+                            location: {
+                              lat: () => item.latitude,
+                              lng: () => item.longitude
+                            }
+                          }
+                        } as google.maps.places.PlaceResult);
+
+                        Toast.show({
+                          type: 'success',
+                          text1: 'Navigating to location',
+                          text2: item.name,
+                          visibilityTime: 2000,
+                        });
+                      }}
+                    >
+                      <IconMapPin size={20} color="#fff" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.actionButton, styles.removeButton]}
+                      onPress={() => handleRemove(item.place_id)}
+                    >
+                      <IconX size={20} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
               ))}
             </>
           )}
@@ -297,23 +304,55 @@ const styles = StyleSheet.create({
   listItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    padding: 16,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   itemContent: {
     flex: 1,
+    marginRight: 16,
   },
   itemName: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
+    marginBottom: 4,
   },
   itemAddress: {
     fontSize: 14,
     color: '#666',
-    marginTop: 4,
+  },
+  itemActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
+  },
+  travelButton: {
+    backgroundColor: '#4CAF50',
   },
   removeButton: {
-    padding: 8,
+    backgroundColor: '#ff4444',
   },
 });

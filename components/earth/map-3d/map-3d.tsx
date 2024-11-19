@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useImperativeHandle,
   useMemo,
+  useRef,
   useState
 } from 'react'
 import {useMap3DCameraEvents} from './use-map-3d-camera-events'
@@ -15,11 +16,13 @@ import { useMapStore } from '@/states/map'
 
 type LatLngLiteralWithAltitude = google.maps.LatLngLiteral & { altitude: number };
 
-import { fetchPolygonCoordinates } from '@/api/osm'
+import { convexHull, fetchPolygonCoordinates, PolygonCoordinates } from '@/api/osm'
 import { getPlaceId } from '@/api/geocoding'
 import { useSidePanelStore } from '@/states/sidepanel'
 import { useInsightsStore } from '@/states/insights'
 import { SUPPORTED_FILTERS_MAP } from '@/const/filters'
+import { useZipcodeInsights } from '@/states/zipcode_insights'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export type Map3DProps = google.maps.maps3d.Map3DElementOptions & {
   onCameraChange?: (cameraProps: Map3DCameraProps) => void
@@ -42,10 +45,14 @@ declare global {
   }
 }
 
+const emptyPolygonCoordinates: PolygonCoordinates[] = [{ lat: 0, lng: 0, altitude: 0 }]
+
 export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<google.maps.maps3d.Map3DElement | null>) => {
-  const { selectedPlacePolygonCoordinates, setSelectedPlacePolygonCoordinates } = useMapStore()
-  const { setShowPanel, setSelectedPlace } = useSidePanelStore()
+  const { selectedPlacePolygonCoordinates, setSelectedPlacePolygonCoordinates, selectedPlace } = useMapStore()
+  const { setSidePanelPlace, setShowPanel, setRealEstateProperties, selectedRealEstateProperty } = useSidePanelStore()
   const { insights } = useInsightsStore()
+  const { polygon, setPolygon } = useZipcodeInsights()
+
   const [markers, setMarkers] = useState<Array<{id: string, position: LatLngLiteralWithAltitude, pin?: any}>>([])
 
   useMapsLibrary('maps3d')
@@ -55,11 +62,35 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
 
   const [map3DElement, map3dRef] = useCallbackRef<google.maps.maps3d.Map3DElement>()
 
+  const zipcodePolygonRef = useRef()
+
   useMap3DCameraEvents(map3DElement, p => {
     if (!props.onCameraChange) return
 
     props.onCameraChange(p)
   });
+
+  useEffect(() => {
+    if (!map3DElement) return
+    if (!polygon) {
+      try {
+        (zipcodePolygonRef.current as any).outerCoordinates = emptyPolygonCoordinates
+      } catch (e) {}
+
+      return
+    }
+    if (!zipcodePolygonRef.current) return
+
+    customElements.whenDefined((zipcodePolygonRef.current as any).localName).then(() => {
+      try {
+        (zipcodePolygonRef.current as any).outerCoordinates = convexHull(polygon);
+      } catch (e) {}
+
+      (zipcodePolygonRef.current as any).addEventListener('click', (event: any) => {
+        console.log("Polygon Clicked", event)
+      })
+    })
+  }, [zipcodePolygonRef.current, polygon, map3DElement])
 
   useEffect(() => {
     if (!map3DElement) return;
@@ -90,9 +121,9 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
         const types = place.types || []
         const url = place.url || ""
 
-        setSelectedPlace({ 
-          placeId: place.place_id,
-          name: place.name,
+        setSidePanelPlace({ 
+          placeId: place.place_id || '',
+          name: place.name || '',
           address, 
           photosUrl, 
           rating, 
@@ -104,6 +135,49 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
       })
     });
   }, [map3DElement]);
+
+  useEffect(() => {
+    handleRealEstatePropertyRender()
+  }, [selectedRealEstateProperty, map3DElement])
+
+  const handleRealEstatePropertyRender = async () => {
+    if (!map3DElement) return
+    if (!selectedRealEstateProperty) {
+      const polygon = map3DElement.querySelector('#real-estate') as any
+      if (polygon) map3DElement.removeChild(polygon)
+      return
+    }
+
+    const lat = selectedRealEstateProperty.coordinate_lat || 0
+    const lng = selectedRealEstateProperty.coordinate_lon || 0
+
+    const polygonCoordinates = await fetchPolygonCoordinates(lat, lng)
+    if (polygonCoordinates && polygonCoordinates.length <= 0) return
+
+    let polygon = map3DElement.querySelector('#real-estate') as any
+    try {
+      if (polygon) polygon.outerCoordinates = emptyPolygonCoordinates
+    } catch (e) {}
+
+    polygon = document.createElement('gmp-polygon-3d')
+    if (!polygon) return
+
+    const { fill, stroke } = SUPPORTED_FILTERS_MAP.real_estate
+
+    polygon.setAttribute('altitude-mode', 'relative-to-ground')
+    polygon.setAttribute('fill-color', fill)
+    polygon.setAttribute('stroke-color', stroke)
+    polygon.setAttribute('stroke-width', '3')
+    polygon.setAttribute('extruded', '')
+    polygon.setAttribute('id', 'real-estate')
+
+    customElements.whenDefined(polygon.localName).then(() => {
+      try {
+        (polygon as any).outerCoordinates = polygonCoordinates
+      } catch (e) {}
+      map3DElement.appendChild(polygon)
+    })
+  }
 
   useEffect(() => {
     if (!insights) return
@@ -131,7 +205,9 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
       polygon.setAttribute('id', `${insight.type}-${idx}`)
 
       customElements.whenDefined(polygon.localName).then(() => {
-        (polygon as any).outerCoordinates = coordinates
+        try {
+          (polygon as any).outerCoordinates = coordinates
+        } catch (e) {}
         map3DElement.appendChild(polygon)
       })
     })
@@ -149,16 +225,60 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
   }, []);
 
   useEffect(() => {
-    if (selectedPlacePolygonCoordinates.length <= 0) return
-    
     const polygon = document.querySelector('gmp-polygon-3d')
     if (!polygon) return
     if (!map3DElement) return
+    if (!selectedPlacePolygonCoordinates) return
+
+    setPolygon(null)
+
+    
+    if (selectedPlacePolygonCoordinates.length <= 0) {
+      customElements.whenDefined(polygon.localName).then(() => {
+        try {
+          (polygon as any).outerCoordinates = emptyPolygonCoordinates
+        } catch (e) {}
+      })
+      return
+    }
 
     customElements.whenDefined(polygon.localName).then(() => {
-      (polygon as any).outerCoordinates = selectedPlacePolygonCoordinates
+      try {
+        (polygon as any).outerCoordinates = selectedPlacePolygonCoordinates
+      } catch (e) {}
     })
+
+    // Fetch RealEstate data
+    fetchRealestateData()
   }, [selectedPlacePolygonCoordinates])
+
+  const fetchRealestateData = async () => {
+    if (!selectedPlace) return
+
+    const { idToken, uid } = await getAuthTokens()
+    if (!idToken || !uid) {
+      console.log("No auth tokens found.")
+      return
+    }
+
+    try {
+      const response = await fetch(`https://photo-gateway-7fw1yavc.ue.gateway.dev/api/properties?target_lat=${selectedPlace.geometry?.location?.lat()}&target_lon=${selectedPlace.geometry?.location?.lng()}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${idToken}`
+        }
+      })
+      if (!response.ok) {
+        console.log(response)
+        return
+      }
+
+      const data = await response.json()
+      setRealEstateProperties(data)
+    } catch (error) {
+      console.info(error)
+    }
+  }
 
   const {center, heading, tilt, range, roll, ...map3dOptions} = props
 
@@ -169,10 +289,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
     Object.assign(map3DElement, map3dOptions)
   }, [map3DElement, map3dOptions])
 
-  useImperativeHandle<
-    google.maps.maps3d.Map3DElement | null,
-    google.maps.maps3d.Map3DElement | null
-  >(forwardedRef, () => map3DElement, [map3DElement])
+  useImperativeHandle<google.maps.maps3d.Map3DElement | null, google.maps.maps3d.Map3DElement | null>(forwardedRef, () => map3DElement, [map3DElement])
 
   const centerString = useMemo(() => {
     const lat = center?.lat ?? 0.0
@@ -221,7 +338,16 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
       tilt={String(props.tilt)}
       roll={String(props.roll)}>
       
+      <gmp-polygon-3d
+        altitude-mode="relative-to-ground" 
+        fill-color={SUPPORTED_FILTERS_MAP.manual.fill} 
+        stroke-color={SUPPORTED_FILTERS_MAP.manual.stroke} 
+        stroke-width="3" 
+        extruded>
+      </gmp-polygon-3d>
+
       <gmp-polygon-3d 
+        ref={zipcodePolygonRef}
         altitude-mode="relative-to-ground" 
         fill-color={SUPPORTED_FILTERS_MAP.manual.fill} 
         stroke-color={SUPPORTED_FILTERS_MAP.manual.stroke} 
@@ -251,3 +377,14 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
     </gmp-map-3d>
   )
 })
+
+const getAuthTokens = async () => {
+  try {
+    const idToken = await AsyncStorage.getItem("idToken");
+    const uid = await AsyncStorage.getItem("uid");
+    return { idToken, uid };
+  } catch (error) {
+    console.error("Error retrieving auth tokens:", error);
+    throw error;
+  }
+};

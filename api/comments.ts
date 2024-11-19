@@ -1,18 +1,28 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+export interface Comment {
+  comment: string
+  created_at: string
+  is_residential: boolean
+  user_name: string
+}
+
 const getAuthTokens = async () => {
   try {
     const idToken = await AsyncStorage.getItem("idToken");
     const uid = await AsyncStorage.getItem("uid");
-    return { idToken, uid };
+    const userName = await AsyncStorage.getItem("username");
+
+    return { idToken, uid, userName };
   } catch (error) {
     console.error("Error retrieving auth tokens:", error);
     throw error;
   }
 };
 
-export const addComment = async () => {
-  const { idToken, uid } = await getAuthTokens();
+export const addComment = async (zipCode: string, newComment: string) => {
+  const { idToken, uid, userName } = await getAuthTokens();
+
   if (!idToken || !uid) {
     throw new Error("Authentication tokens are missing.");
   }
@@ -25,16 +35,16 @@ export const addComment = async () => {
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${idToken}`,  // Pass Firebase ID token as Bearer token
+        'Authorization': `Bearer ${idToken}`,
       },
       body: JSON.stringify({
         userId: uid,
-        userName: "test4",
+        userName: userName,
         location: {
-          zipCode: "10003"
+          zipCode: zipCode
         },
-        comment: "Great place to visit!",
-        zipCode: "10004"
+        comment: newComment,
+        zipCode: "10036"   //user's zipcode
       })
     });
 
@@ -51,20 +61,21 @@ export const addComment = async () => {
   }
 };
 
-export const getComments = async () => {
+export const getComments = async (zipcode: string) => {
   const { idToken, uid } = await getAuthTokens();
   if (!idToken || !uid) {
     throw new Error("Authentication tokens are missing.");
   }
 
-  const url = `https://photo-gateway-7fw1yavc.ue.gateway.dev/api/comments/${uid}`;
+
+  const url = `https://photo-gateway-7fw1yavc.ue.gateway.dev/api/comments/${zipcode}`;
 
   try {
     const response = await fetch(url, {
       method: 'GET',
       credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${idToken}`,  // Pass Firebase ID token as Bearer token
+        'Authorization': `Bearer ${idToken}`,
       }
     });
 

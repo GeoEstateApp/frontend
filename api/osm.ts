@@ -16,37 +16,67 @@ export interface LatLng {
 }
 
 const fetchPolygonCoordinates = async (lat: number, lng: number, isInsights?: boolean) => {
-  const query = `[out:json];(way["building"](around:${isInsights ? "8" : "1"}, ${lat}, ${lng}););out body;>;out skel qt;`
+  let radius = isInsights ? 8 : 1;
+  const maxAttempts = 3;
+  let attempt = 0;
 
-  try {
-    const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-    })
+  while (attempt < maxAttempts) {
+    const query = `[out:json];(way["building"](around:${radius}, ${lat}, ${lng}););out body;>;out skel qt;`;
 
-    if (!response.ok) return []
+    try {
+      const response = await fetch(
+        `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+        }
+      );
 
-    const data = await response.json()
-    if (!data.elements) return []
-    if (data.elements.length <= 0) {
-      console.log("No elements found... Try increasing the range")
-      return []
+      if (!response.ok) {
+        console.log("API response not OK. Exiting.");
+        return [];
+      }
+
+      const data = await response.json();
+      if (!data.elements || data.elements.length <= 0) {
+        console.log(`No elements found. Attempt ${attempt + 1} failed. Increasing radius...`);
+        radius += isInsights ? 8 : attempt >= 1 ? 4 : 8;
+        attempt++;
+        continue;
+      }
+
+      // Filter for the first `way` element
+      const wayElement = data.elements.find((element: any) => element.type === 'way');
+      if (!wayElement) {
+        console.log("No 'way' type elements found.");
+        radius += isInsights ? 8 : attempt >= 1 ? 4 : 8;
+        attempt++;
+        continue;
+      }
+
+      const height = Number(wayElement.tags?.height) || 22;
+      const postcode = wayElement.tags?.postcode || "";
+
+      const coordinates = data.elements
+        .filter((element: any) => element.type === 'node')
+        .map((element: any) => ({
+          lat: element.lat,
+          lng: element.lon,
+          altitude: height + 2
+        }));
+
+      return convexHull(coordinates);
+    } catch (err) {
+      console.log("Error fetching data:", err);
     }
-
-    const height = Number(data.elements[0].tags.height) || 22
-    const postcode = data.elements[0].tags.postcode || ""
-
-    const coordinates = data.elements.map((element: any) => {
-      if (element.type === 'node') return { lat: element.lat, lng: element.lon, altitude: height + 2 }
-    }).filter((coordinates: any) => coordinates)
-
-    return convexHull(coordinates)
-  } catch (err) {
-    console.log(err)
   }
-}
+
+  console.log("Max attempts reached. Returning empty array.");
+  return [];
+};
+
 
 const fetchInsightsPolygonCoordinates = async (insights: PlaceInsight[]) => {
   const newInsights: PlaceInsight[] = []
@@ -67,7 +97,7 @@ const fetchInsightsPolygonCoordinates = async (insights: PlaceInsight[]) => {
   return newInsights
 }
 
-const convexHull = (coordinates: PolygonCoordinates[]) => {
+export const convexHull = (coordinates: PolygonCoordinates[]) => {
   const sorted = coordinates.slice().sort((a, b) =>
     a.lat === b.lat ? a.lng - b.lng : a.lat - b.lat
   )

@@ -5,18 +5,20 @@ import { useSidePanelStore } from '@/states/sidepanel';
 import { useFavoritesPanelStore } from '@/states/favoritespanel';
 import { useBucketListPanelStore } from '@/states/bucketlistpanel';
 import { getPlaceInsights, PlaceInsight } from '@/api/insights';
-import { UI_FILTERS } from '@/const/filters';
+import { SUPPORTED_FILTERS_MAP, UI_FILTERS } from '@/const/filters';
 import { useInsightsStore } from '@/states/insights';
 import Toast from 'react-native-toast-message';
 import { addFavorite, getFavorites, removeFavorite, FavoriteItem } from '@/api/favorites';
 import { addToBucketList, removeFromBucketList, getBucketList } from '@/api/bucketlist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Animated } from 'react-native';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export default function SidePanel() {
-  const { togglePanel, showPanel, selectedPlace, setShowPanel } = useSidePanelStore()
-  const { togglePanel: toggleFavoritesPanel, showPanel: showFavoritesPanel, setShowPanel: setShowFavoritesPanel } = useFavoritesPanelStore()
-  const { togglePanel: toggleBucketListPanel, showPanel: showBucketListPanel, setShowPanel: setShowBucketListPanel } = useBucketListPanelStore()
+  const { toggleFavPanel, showFavPanel, setShowFavPanel } = useFavoritesPanelStore()
+  const { toggleBucketListPanel, showBucketListPanel, setShowBucketListPanel } = useBucketListPanelStore()
+  const { reset: resetSidePanel, selectedPlace, realEstateProperties, setSelectedRealEstateProperty, selectedRealEstateProperty } = useSidePanelStore()
  
   const { insights, setInsights } = useInsightsStore()
  
@@ -30,6 +32,28 @@ export default function SidePanel() {
   const [bucketList, setBucketList] = useState<any[]>([])
   const [username, setUsername] = useState<string>('');
   const [userid, setUserid] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        // User is signed out, so
+        // reset all panel states when logged out
+        resetSidePanel()
+        setShowFavPanel(false)
+        setShowBucketListPanel(false)
+        setSelectedFilters([])
+        setImageUri(null)
+        setIsFavorite(false)
+        setIsInBucketList(false)
+        setFavorites([])
+        setBucketList([])
+        setUsername('')
+        setUserid(null)
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (!selectedPlace) return
@@ -47,7 +71,7 @@ export default function SidePanel() {
     }, 5000)
 
     return () => clearInterval(interval)
-  }, [selectedPlace])
+  }, [selectedPlace, selectedPlace?.photosUrl])
 
   useEffect(() => {
     if (!callFilterAPI) return
@@ -56,8 +80,6 @@ export default function SidePanel() {
     const includingFilters = selectedFilters.map(filter => filter)
 
     const fetchInsights = async () => {
-      // TODO: move the camera to higher altitude (200) to see the insights
-
       const insights: PlaceInsight[] = await getPlaceInsights(selectedPlace.lat, selectedPlace.lng, includingFilters) || []
       setInsights(insights)
       setCallFilterAPI(false)
@@ -122,10 +144,10 @@ export default function SidePanel() {
     checkBucketListStatus();
   }, [selectedPlace]);
 
-  // Only load favorites when favorites panel is shown
+  // Load favorites when favorites panel is shown
   useEffect(() => {
     const loadFavorites = async () => {
-      if (!showFavoritesPanel) return;
+      if (!showFavPanel) return;
       try {
         const userFavorites = await getFavorites();
         setFavorites(userFavorites);
@@ -139,14 +161,27 @@ export default function SidePanel() {
       }
     };
     loadFavorites();
-  }, [showFavoritesPanel]);
+  }, [showFavPanel]);
 
   // Check if selected place is favorited
   useEffect(() => {
-    if (!selectedPlace || !favorites) return;
-    const isFav = favorites.some(fav => fav.place_id === selectedPlace.placeId);
-    setIsFavorite(isFav);
-  }, [selectedPlace, favorites]);
+    const checkFavoriteStatus = async () => {
+      if (!selectedPlace || !userid) {
+        setIsFavorite(false);
+        return;
+      }
+      try {
+        const userFavorites = await getFavorites();
+        const isFav = userFavorites.some((item: any) => item.place_id === selectedPlace.placeId);
+        console.log('Checking favorite status:', { placeId: selectedPlace.placeId, isFav, favoritesCount: userFavorites.length });
+        setIsFavorite(isFav);
+      } catch (error) {
+        console.error('Error checking favorite status:', error);
+        setIsFavorite(false);
+      }
+    };
+    checkFavoriteStatus();
+  }, [selectedPlace, userid]);
 
   const handleFavoriteToggle = async () => {
     try {
@@ -161,10 +196,20 @@ export default function SidePanel() {
       if (!selectedPlace.placeId) {
         throw new Error("Place ID is required");
       }
+
+      if (!userid) {
+        Toast.show({
+          type: 'error',
+          text1: 'Authentication required',
+          text2: 'Please log in to use the favorites feature',
+        });
+        return;
+      }
       
       if (isFavorite) {
         // Remove from favorites
         await removeFavorite(selectedPlace.placeId);
+        setIsFavorite(false);
       } else {
         // Add to favorites
         await addFavorite({
@@ -174,14 +219,12 @@ export default function SidePanel() {
           latitude: selectedPlace.lat || 0,
           longitude: selectedPlace.lng || 0,
         });
+        setIsFavorite(true);
       }
-      
-      // Refresh favorites list
+
+      // Always refresh favorites list to keep it in sync
       const updatedFavorites = await getFavorites();
       setFavorites(updatedFavorites);
-      
-      // Update UI state
-      setIsFavorite(!isFavorite);
       
       Toast.show({
         type: 'success',
@@ -261,7 +304,18 @@ export default function SidePanel() {
   };
 
   const handleOnFilterPress = async (filter: string) => {
-    if (!selectedPlace) return
+    if (!selectedPlace) {
+      Toast.show({
+        type: 'error',
+        text1: 'No place selected',
+        text2: 'Please select a place to see insights',
+        autoHide: true,
+        visibilityTime: 5000,
+        text1Style: { fontSize: 16, fontWeight: 'bold' },
+        text2Style: { fontSize: 14 },
+      })
+      return
+    }
 
     if (selectedFilters.includes(filter)) {
       const map3dElement = document.getElementsByTagName('gmp-map-3d')[0]
@@ -292,64 +346,58 @@ export default function SidePanel() {
   }
 
   const handleFilterClick = () => {
-    if (showFavoritesPanel) {
-      setShowFavoritesPanel(false)
-    }
-    if (showBucketListPanel) {
-      setShowBucketListPanel(false)
-    }
-    togglePanel()
+    if (showFavPanel) setShowFavPanel(false)
+    if (showBucketListPanel) setShowBucketListPanel(false)
   }
 
   const handleFavoritesClick = () => {
-    if (showPanel) {
-      setShowPanel(false)
-    }
-    if (showBucketListPanel) {
-      setShowBucketListPanel(false)
-    }
-    toggleFavoritesPanel()
+    if (showFavPanel) setShowFavPanel(false)
+    if (showBucketListPanel) setShowBucketListPanel(false)
   }
 
   const handleBucketListClick = () => {
     if (showBucketListPanel) {
       setShowBucketListPanel(false)
     } else {
-      setShowPanel(false)
-      setShowFavoritesPanel(false)
+      setShowFavPanel(false)
       setShowBucketListPanel(true)
     }
   }
 
   return (
     <View style={styles.container}>
-      {showPanel && (
         <View style={styles.panel}>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false} 
-            style={styles.filters}
-            contentContainerStyle={{gap: 8}}
-          >
-            {UI_FILTERS.map((filter, index) => {
-              const filterKey = filter.split(' ').join('_').toLowerCase()
+          {
+            selectedPlace && (
+              <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              style={{...styles.filters, flexGrow: 0, minHeight: 40 }}
+              contentContainerStyle={{ gap: 8, minHeight: 40 }}>
+                {UI_FILTERS.map((filter, index) => {
+                  const filterKey = filter.split(' ').join('_').toLowerCase()
 
-              return (
-                <Pressable
-                  key={index}
-                  onPress={() => handleOnFilterPress(filterKey)}
-                  style={[{
-                    padding: 10,
-                    borderRadius: 5,
-                    backgroundColor: selectedFilters.includes(filterKey) ? '#4CAF50' : 'white',
-                  }]}>
-                    <Text style={{ color: selectedFilters.includes(filterKey) ? 'white' : 'black' }}>
-                      {filter}
-                    </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+                  return (
+                    <Pressable
+                      key={index}
+                      onPress={() => handleOnFilterPress(filterKey)}
+                      style={[{
+                        flexShrink: 0,
+                        flexGrow: 0,
+                        height: 40,
+                        padding: 10,
+                        borderRadius: 5,
+                        backgroundColor: selectedFilters.includes(filterKey) ? `${SUPPORTED_FILTERS_MAP[filterKey as keyof typeof SUPPORTED_FILTERS_MAP]?.fill.substring(0, 7) || 'grey'}` : 'grey',
+                      }]}>
+                        <Text style={{ color: selectedFilters.includes(filterKey) ? 'white' : 'white' }}>
+                          {filter}
+                        </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            )
+          }
 
           {selectedPlace && (
             <View style={styles.selectedPlace}>
@@ -373,40 +421,38 @@ export default function SidePanel() {
                   </Pressable>
                 </View>
               </View>
-              { selectedPlace.rating !== 0 && <Text> {selectedPlace.rating}</Text> }
             </View>
-          )}
-        </View>
-      )}
+              )
+          }
 
-      <View style={[styles.buttonContainer, (showPanel || showFavoritesPanel || showBucketListPanel) && styles.buttonContainerMoved]}>
-        <Pressable 
-          style={[styles.toggleButton, showPanel && styles.toggleButtonActive]} 
-          onPress={handleFilterClick}
-        >
-          <IconFilter size={20} stroke={showPanel ? "#fff" : "#000"} />
-        </Pressable>
-        <Pressable 
-          style={[styles.toggleButton, showFavoritesPanel && styles.toggleButtonActive]} 
-          onPress={handleFavoritesClick}
-        >
-          <IconHeart 
-            size={20} 
-            stroke={showFavoritesPanel ? "#fff" : "#000"} 
-            fill={showFavoritesPanel ? "#ff4444" : "none"} 
-          />
-        </Pressable>
-        <Pressable 
-          style={[styles.toggleButton, showBucketListPanel && styles.toggleButtonActive]} 
-          onPress={handleBucketListClick}
-        >
-          <IconBookmark 
-            size={20} 
-            stroke={showBucketListPanel ? "#fff" : "#000"} 
-            fill={showBucketListPanel ? "#4444ff" : "none"} 
-          />
-        </Pressable>
-      </View>
+          { realEstateProperties && realEstateProperties.length > 0 && <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10, marginTop: 24 }}>Real Estate Properties</Text> }
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {
+              realEstateProperties && realEstateProperties.length > 0 && (
+                <View style={{ gap: 8, flexDirection: 'column' }}>
+                    {
+                      realEstateProperties.map((property, index) => {
+                        return <Pressable style={{...styles.realEstateProperty, backgroundColor: selectedRealEstateProperty?.property_id === property.property_id ? '#49A84C' : 'white'}} key={index} onPress={() => setSelectedRealEstateProperty(property)}>
+                          <Image source={{ uri: property.img_url }} style={{ width: 100, objectFit: 'cover', borderRadius: 6 }} />
+                          <View style={{ gap: 4, display: 'flex', flexDirection: 'column' }}>
+                            <Text style={{ fontSize: 16, fontWeight: 'bold', color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.address_line}</Text>
+                            <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>Property: {property.property_type.split('_').join(' ').toUpperCase()}</Text>
+                            { property.size_sqft && <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>Size: {property.size_sqft} ft²</Text> }
+                            <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.price}</Text>
+                            <Text style={{ fontSize: 12, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.status}</Text>
+                          </View>
+                        </Pressable>
+                      })
+                    }
+                </View>
+              )
+            }
+          </ScrollView>
+        
+        {
+          selectedPlace && selectedPlace.rating !== 0 && <Text> selectedPlace.rating </Text>
+        }
+    </View>
     </View>
   )
 }
@@ -437,7 +483,7 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'column',
     gap: 10,
-    backgroundColor: '#ffffff90',
+    backgroundColor: '#ffffff99',
     width: 400,
     height: '100%',
     padding: 20,
@@ -446,18 +492,7 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'row',
     gap: 8,
-    flexGrow: 0,
     flexWrap: 'nowrap',
-  },
-  filterButton: {
-    padding: 10,
-    borderRadius: 5,
-  },
-  filterButtonSelected: {
-    padding: 10,
-    borderRadius: 5,
-    backgroundColor: '#4CAF50',
-    color: 'white',
   },
   selectedPlace: {
     display: 'flex',
@@ -559,4 +594,13 @@ const styles = StyleSheet.create({
   toggleButtonActive: {
     backgroundColor: '#4CAF50',
   },
+  realEstateProperty: {
+    display: 'flex',
+    flexDirection: 'row',
+    gap: 10,
+    padding: 10,
+    backgroundColor: 'white',
+    borderRadius: 6,
+    cursor: 'pointer'
+  }
 })
