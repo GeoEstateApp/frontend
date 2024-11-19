@@ -14,6 +14,9 @@ interface ZipcodeInsights {
 
   zipcodeInsights: ZipcodeInsight
   setZipcodeInsights: (zipcodeInsights: ZipcodeInsight) => void
+
+  showZipcodePanel: boolean
+  setShowZipcodePanel: (show: boolean) => void
 }
 
 export interface ZipcodeInsight {
@@ -62,4 +65,7 @@ export const useZipcodeInsights = create<ZipcodeInsights>((set) => ({
 
   zipcodeInsights: {} as ZipcodeInsight,
   setZipcodeInsights: (zipcodeInsights: ZipcodeInsight) => set({ zipcodeInsights }),
+
+  showZipcodePanel: false,
+  setShowZipcodePanel: (show: boolean) => set({ showZipcodePanel: show })
 }))

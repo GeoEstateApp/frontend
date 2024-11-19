@@ -23,7 +23,7 @@ const getPlaceInsights = async (lat: number, lng: number, includingFilters: stri
           "location_filter": {
             "circle": {
               "lat_lng": { "latitude": lat, "longitude": lng },
-              "radius": 200
+              "radius": 300
             }
           },
           "type_filter": { "included_types": includingFilters }

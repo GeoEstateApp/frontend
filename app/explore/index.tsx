@@ -18,20 +18,13 @@ import { useBucketListPanelStore } from '@/states/bucketlistpanel'
 import { addToBucketList } from '@/api/bucketlist'
 import BucketListPanel from '@/components/bucketlistpanel/bucketlistpanel'
 import FavoritesPanel from '@/components/favoritespanel/favoritespanel'
+import { useZipcodeInsights } from '@/states/zipcode_insights'
 
 const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY
 const GOOGLE_MAP_VERSION = 'alpha'
 
-function HeaderButton() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+function HeaderButton({ isLoggedIn }: { isLoggedIn: boolean }) {
   const router = useRouter()
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setIsLoggedIn(!!user)
-    })
-    return () => unsubscribe()
-  }, [])
 
   const handlePress = () => {
     if (isLoggedIn) {
@@ -56,12 +49,13 @@ function HeaderButton() {
 }
 
 export default function index() {
-  const [isZipcodePanelOpen, setIsZipcodePanelOpen] = useState(false)
+  const { showZipcodePanel, setShowZipcodePanel } = useZipcodeInsights()
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   const [showNeighbourhoodInsights, setNeighbourhoodInsights] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  const { setShowPanel, showPanel, selectedRealEstateProperty, setSelectedRealEstateProperty } = useSidePanelStore()
+  const { setShowPanel, toggleShowPanel, showPanel, selectedRealEstateProperty, setSelectedRealEstateProperty } = useSidePanelStore()
   const { isModalOpen } = useSuitability()
 
   const { showFavPanel, setShowFavPanel } = useFavoritesPanelStore()
@@ -132,6 +126,14 @@ export default function index() {
   }
 
   useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsLoggedIn(!!user)
+    })
+    return () => unsubscribe()
+  }, [])
+
+
+  useEffect(() => {
     Toast.show({
       type: 'info',
       text1: 'Welcome to Explore!',
@@ -187,105 +189,76 @@ export default function index() {
     }
   };
 
+  const handleFilterClick = () => {
+    toggleShowPanel()
+    setShowZipcodePanel(false);
+    setShowFavPanel(false);
+    setShowBucketListPanel(false);
+  };
+
   const handleFavoritesClick = () => {
     setShowFavPanel(!showFavPanel)
     setShowBucketListPanel(false)
     setShowPanel(false)
-    setShowAIChat(false)
-    setIsZipcodePanelOpen(false)
+    setShowZipcodePanel(false)
   }
 
   const handleBucketListClick = () => {
     setShowBucketListPanel(!showBucketListPanel)
     setShowFavPanel(false)
     setShowPanel(false)
-    setShowAIChat(false)
-    setIsZipcodePanelOpen(false)
+    setShowZipcodePanel(false)
   }
 
 
   return (
     <View style={styles.container}>
-      <HeaderButton />
+      <HeaderButton isLoggedIn />
       <APIProvider apiKey={API_KEY} version={GOOGLE_MAP_VERSION}>
 
         <Earth />
         <SearchBox />
         {showPanel && <SidePanel />}
-        {isZipcodePanelOpen && <ZipPanel />}
+        {showZipcodePanel && <ZipPanel />}
         {showBucketListPanel && <BucketListPanel />}
         {showFavPanel && <FavoritesPanel />}
 
+        {
+          !isModalOpen && (
+            <View style={{ ...styles.toggleButtonGroup, left: showPanel || showZipcodePanel || showBucketListPanel || showFavPanel ? 420 : 20 }}>
+              <Pressable style={{ ...styles.toggleButton, backgroundColor: showPanel ? '#49A84C' : 'white' }} onPress={handleFilterClick}>
+                <IconFilter size={20} strokeWidth={2} color={showPanel ? 'white' : 'black'} />
+              </Pressable>
 
-
-
-        <View style={{ ...styles.toggleButtonGroup, left: showPanel || isZipcodePanelOpen || showAIChat || showBucketListPanel || showFavPanel ? 420 : 20 }}>
-          <Pressable style={{ ...styles.toggleButton, backgroundColor: showPanel ? '#49A84C' : 'white' }} onPress={() => {
-            setIsZipcodePanelOpen(false)
-            setShowPanel(!showPanel)
-            setShowFavPanel(false)
-            setShowAIChat(false)
-            setShowBucketListPanel(false)
-          }}>
-            <IconFilter size={20} strokeWidth={2} color={showPanel ? 'white' : 'black'} />
-          </Pressable>
-
-          <Pressable style={{ ...styles.toggleButton, backgroundColor: isZipcodePanelOpen ? '#49A84C' : 'white' }} onPress={() => {
-            setShowPanel(false)
-            setIsZipcodePanelOpen(!isZipcodePanelOpen)
-            setShowFavPanel(false)
-            setShowAIChat(false)
-            setShowBucketListPanel(false)
-          }}>
-            <IconZip size={20} strokeWidth={2} color={isZipcodePanelOpen ? 'white' : 'black'} />
-          </Pressable>
-
-          <Pressable
-            style={{ ...styles.toggleButton, backgroundColor: showFavPanel ? '#49A84C' : 'white' }}
-            onPress={handleFavoritesClick}
-          >
-            <IconHeart size={20} strokeWidth={2} color={showFavPanel ? 'white' : 'black'} />
-          </Pressable>
-          <Pressable
-            style={{ ...styles.toggleButton, backgroundColor: showBucketListPanel ? '#49A84C' : 'white' }}
-            onPress={handleBucketListClick}
-          >
-            <IconBookmark size={20} strokeWidth={2} color={showBucketListPanel ? 'white' : 'black'} />
-          </Pressable>
-          {/* start tour button */}
-          {isFirstTimeUser && (
-        <View style={styles.tourWrapper}>
-          <TouchableOpacity
-            style={styles.tourButton}
-            onPress={() => {
-              setShowPanel(false);
-              setIsZipcodePanelOpen(false);
-              setShowFavPanel(false);
-              setShowBucketListPanel(false);
-              setShowTourPrompt(false);
-              handleStartTour();
-            }}
-          >
-            <IconMapPin name="ios-map" size={20} color="#05A659" />
-          </TouchableOpacity>
-
-          {/* show prompt if it's the first time */}
-          {showTourPrompt && (
-            <TouchableOpacity
-              onPress={() => setShowTourPrompt(false)}
-              style={styles.tourPrompt}
-            >
-              <Animated.Text style={[styles.tourPromptText, { transform: [{ scale: pulseAnim }] }]}>
-                Take a quick tour to explore
-              </Animated.Text>
-            </TouchableOpacity>
-          )}
-    </View>
-  )}
-
-  {/* show walkthrough if it's the first time */}
-  {showWalkthrough && <Walkthrough onClose={() => setShowWalkthrough(false)} />}
-        </View>
+              <Pressable style={{ ...styles.toggleButton, backgroundColor: showZipcodePanel ? '#49A84C' : 'white' }} onPress={() => {
+                setShowPanel(false)
+                setShowZipcodePanel(!showZipcodePanel)
+                setShowFavPanel(false)
+                setShowBucketListPanel(false)
+              }}>
+                <IconZip size={20} strokeWidth={2} color={showZipcodePanel ? 'white' : 'black'} />
+              </Pressable>
+              {
+                isLoggedIn ? (
+                  <>
+                    <Pressable
+                      style={{ ...styles.toggleButton, backgroundColor: showFavPanel ? '#49A84C' : 'white' }}
+                      onPress={handleFavoritesClick}
+                    >
+                      <IconHeart size={20} strokeWidth={2} color={showFavPanel ? 'white' : 'black'} />
+                    </Pressable>
+                    <Pressable
+                      style={{ ...styles.toggleButton, backgroundColor: showBucketListPanel ? '#49A84C' : 'white' }}
+                      onPress={handleBucketListClick}
+                    >
+                      <IconBookmark size={20} strokeWidth={2} color={showBucketListPanel ? 'white' : 'black'} />
+                    </Pressable>
+                  </>
+                ) : null
+              }
+            </View>
+          )
+        }
 
         {selectedRealEstateProperty && (
           <View style={styles.modal}>
@@ -394,7 +367,6 @@ export default function index() {
         )
         }
         {isModalOpen && <SuitabilityCalculator />}
-
 
       </APIProvider>
 

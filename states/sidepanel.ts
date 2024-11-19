@@ -43,6 +43,7 @@ export interface RealEstateProperty {
 interface SidePanelStore {
   showPanel: boolean
   setShowPanel: (showPanel: boolean) => void
+  toggleShowPanel: () => void
 
   selectedPlace: SelectedPlace | null
   setSidePanelPlace: (selectedPlace: SelectedPlace | null) => void
@@ -59,6 +60,7 @@ interface SidePanelStore {
 export const useSidePanelStore = create<SidePanelStore>((set) => ({
   showPanel: false,
   setShowPanel: (showPanel) => set({ showPanel }),
+  toggleShowPanel: () => set((state) => ({ showPanel: !state.showPanel })),
 
   selectedPlace: null,
   setSidePanelPlace: (selectedPlace) => set({ selectedPlace }),

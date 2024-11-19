@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useDebouncedEffect } from '@/hooks/utility-hooks';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useZipcodeInsights, ZipcodeData, ZipcodeInsight } from '@/states/zipcode_insights';
-import { convexHull, PolygonCoordinates } from '@/api/osm';
+import { convexHull } from '@/api/osm';
 import { addComment, Comment, getComments } from '@/api/comments';
 import Toast from 'react-native-toast-message';
 import { IconUser, IconSend, IconSparkles, IconArrowLeft } from '@tabler/icons-react';
@@ -21,7 +21,8 @@ export default function ZipPanel() {
   const [summaryInsight, setSummaryInsight] = useState("")
 
   const { zipcode, zipcodes, setPolygon, setZipcode, setZipcodes, setZipcodeInsights, zipcodeInsights, setPolygons } = useZipcodeInsights();
-    
+  const [zipcodeName, setZipcodeName] = useState("")  
+
   const handleZipcodeFilter = (text: string) => {
     const filteredZipcodes = zipcodes.filter((zipcodeData) => zipcodeData.zipcode.includes(text) || zipcodeData.name.includes(text));
     setZipcodeList(filteredZipcodes);
@@ -40,6 +41,7 @@ export default function ZipPanel() {
     if (zipcode === '') return;
 
     handleZipcodeChange();
+    setSummaryInsight("")
   }, [zipcode]);
 
   useEffect(() => {
@@ -240,17 +242,12 @@ export default function ZipPanel() {
       <View style={styles.panel}>
         {viewingZipcodeDetails ? (
           <>
-            <View style={styles.header}>
-              <Pressable 
-                style={styles.backButton}
-                onPress={() => setViewingZipcodeDetails(null)}
-              >
-                <IconArrowLeft size={24} color="#000" />
-              </Pressable>
-              <Text style={styles.headerText}>
-                {zipcodeList.find(z => z.zipcode === viewingZipcodeDetails)?.name || `Zipcode ${viewingZipcodeDetails}`}
-              </Text>
-            </View>
+            <Pressable onPress={handleBackToList} style={styles.backButton}>
+              <IconArrowLeft size={20} color="#666" />
+              <Text style={styles.backButtonText}>Back to Zipcode List</Text>
+            </Pressable>
+
+            <Text style={{ fontSize: 20, fontWeight: 'bold' }}>{zipcodeName} {zipcode}</Text>
             <ScrollView style={styles.contentScroll} showsVerticalScrollIndicator={false}>
               <ScrollView contentContainerStyle={{ gap: 8 }} showsVerticalScrollIndicator={false}>
                 {/* Zipcode insights */}
@@ -378,6 +375,7 @@ export default function ZipPanel() {
                   style={styles.listItem}
                   onPress={() => {
                     setZipcode(zip.zipcode);
+                    setZipcodeName(zip.name)
                     setViewingZipcodeDetails(zip.zipcode); 
                   }}
                 >

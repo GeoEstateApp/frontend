@@ -9,6 +9,7 @@ import { useSuitability } from '@/states/suitability'
 import Toast from 'react-native-toast-message'
 import { useBucketListPanelStore } from '@/states/bucketlistpanel'
 import { useFavoritesPanelStore } from '@/states/favoritespanel'
+import { useZipcodeInsights } from '@/states/zipcode_insights'
 
 const MIN_SEARCH_LENGTH = 3
 
@@ -21,15 +22,25 @@ export default function SearchBox() {
   const places = useMapsLibrary('places')
 
   const { setSelectedPlace } = useMapStore()
-  const { setShowPanel, setSidePanelPlace } = useSidePanelStore()
-  const { setShowBucketListPanel } = useBucketListPanelStore()
-  const { setShowFavPanel } = useFavoritesPanelStore()
+  const { showPanel, setShowPanel, setSidePanelPlace } = useSidePanelStore()
+  const { showBucketListPanel, setShowBucketListPanel } = useBucketListPanelStore()
+  const { showFavPanel ,setShowFavPanel } = useFavoritesPanelStore()
+  const { showZipcodePanel, setShowZipcodePanel } = useZipcodeInsights()
+  const [showSuitablitiyCalculatorIcon, setShowSuitablitiyCalculatorIcon] = useState(true)
 
   useEffect(() => {
     if (!places) return
 
     setPlaceAutocompleteService(new places.AutocompleteService())
   }, [places]);
+
+  useEffect(() => {
+    if (showPanel || showBucketListPanel || showFavPanel || showZipcodePanel) {
+      setShowSuitablitiyCalculatorIcon(false)
+    } else {
+      setShowSuitablitiyCalculatorIcon(true)
+    }
+  }, [showPanel, showBucketListPanel, showFavPanel, showZipcodePanel])
 
   const handleSearchTextChange = (searchText: string) => {
     setSearchText(searchText)
@@ -89,23 +100,32 @@ export default function SearchBox() {
   
   return (
     <View style={styles.container}>
-      <Pressable 
-        style={styles.calculatorButton} 
-        onPress={() => {
-          if (getAuth().currentUser) setIsModalOpen(!isModalOpen)
-          else {
-            Toast.show({
-              type: 'info',
-              text1: 'Please login to use this feature.',
-              visibilityTime: 3000,
-              text1Style: { fontSize: 14 },
-              autoHide: true
-            }) 
-          }
-        }}
-      >
-        <IconSum size={20} strokeWidth={2} stroke="#374151" />
-      </Pressable>
+      {
+        showSuitablitiyCalculatorIcon && (
+          <Pressable 
+            style={styles.calculatorButton} 
+            onPress={() => {
+              if (getAuth().currentUser) {
+                setIsModalOpen(!isModalOpen)
+                setShowPanel(false)
+                setShowBucketListPanel(false)
+                setShowFavPanel(false)
+                setShowZipcodePanel(false)
+              } else {
+                Toast.show({
+                  type: 'info',
+                  text1: 'Please login to use this feature.',
+                  visibilityTime: 3000,
+                  text1Style: { fontSize: 14 },
+                  autoHide: true
+                }) 
+              }
+            }}
+          >
+            <IconSum size={20} strokeWidth={2} stroke="#374151" />
+          </Pressable>
+        )
+      }
       
       <View style={styles.searchWrapper}>
         <View style={styles.searchBoxContainer}>
@@ -154,7 +174,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'flex-start',
-    width: '90%',
+    width: '35%',
     maxWidth: 600,
     zIndex: 999,
     paddingHorizontal: 16,
