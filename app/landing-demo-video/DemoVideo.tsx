@@ -33,8 +33,9 @@ export default function VideoSection() {
     return (
         <View style={styles.container}>
             <View style={styles.textContainer}>
-                <Text style={styles.title}>Step into GeoEstate</Text>
-                <Text style={styles.subtitle}>
+            <Text style={styles.demoSubtitle}>VISUAL DEMO</Text>
+                <Text style={styles.demoTitle}>Step into GeoEstate</Text>
+                <Text style={styles.demoDescription}>
                     Discover the future of property exploration with GeoEstate — your gateway to smarter real estate.
                 </Text>
             </View>
@@ -74,23 +75,30 @@ const styles = StyleSheet.create({
         alignSelf: 'center', 
         marginVertical: 20, 
     },
+    demoSubtitle: {
+        fontSize: 18,
+        color: "#007AFF",
+        fontWeight: "600",
+        marginBottom: 5,
+        letterSpacing: 1,
+    },
     textContainer: {
         paddingTop: 20, 
         alignItems: 'center',
         zIndex: 1, 
     },
-    title: {
-        fontSize: 24,
+    demoTitle: {
+        fontSize: 28,
+        color: '#fff',
         fontWeight: 'bold',
-        color: 'white',
         textAlign: 'center',
+        marginBottom: 15,
     },
-    subtitle: {
+    demoDescription: {
+        color: '#ccc',
         fontSize: 16,
-        fontWeight: 'normal',
-        color: 'white',
         textAlign: 'center',
-        marginBottom: 20,
+        marginBottom: 30,
     },
     video: {
         width: '100%',

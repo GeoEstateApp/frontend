@@ -77,14 +77,14 @@ export default function Index() {
           type: 'info',
           text1: 'Welcome to GeoEstate!',
           text2: 'Discover your perfect property',
-          visibilityTime: 3000,
+          visibilityTime: 2000,
           autoHide: true,
           topOffset: 20,
           text1Style: { fontSize: 16, fontWeight: 'bold' },
           text2Style: { fontSize: 14 },
         });
       
-        const loadingTime = 3000; 
+        const loadingTime = 2000; 
         const timer = setTimeout(() => {
           setIsLoading(false);
         }, loadingTime);
@@ -524,7 +524,7 @@ const ReviewSection = () => {
 
     return (
         <View style={styles.mainContainer}>
-            <Text style={styles.ReviewSubtitle}>Reviews</Text>
+            <Text style={styles.ReviewSubtitle}>REVIEWS</Text>
             <Text style={styles.sectionLabel}>What Our Clients Say</Text>
             <Text style={styles.tagline}>Hear about the experiences of our happy clients!</Text>
 
@@ -842,7 +842,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     featuresTitle: {
-        fontSize: Platform.select({ web: 48, default: 36 }),
+        fontSize: Platform.select({ web: 28, default: 36 }),
         fontWeight: 'bold',
         color: '#fff',
         textAlign: 'center',
@@ -850,7 +850,7 @@ const styles = StyleSheet.create({
         maxWidth: 800,
     },
     featuresDescription: {
-        fontSize: Platform.select({ web: 18, default: 16 }),
+        fontSize: Platform.select({ web: 16, default: 16 }),
         color: '#fff',
         opacity: 0.8,
         textAlign: 'center',
@@ -1019,14 +1019,14 @@ const styles = StyleSheet.create({
         fontSize: 18,
         color: "#007AFF",
         fontWeight: "600",
-        marginBottom: 5,
+        marginBottom: 10,
         letterSpacing: 1,
     },
     sectionLabel: {
         fontSize: 24,
         color: "#fff",
         fontWeight: "bold",
-        marginVertical: 20,
+        marginBottom: 15,
         textAlign: "center",
     },
     tagline: {

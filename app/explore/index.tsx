@@ -1,4 +1,4 @@
-import { AIChat, Earth, SearchBox, SidePanel, SuitabilityCalculator, ZipPanel } from '@/components'
+import {  Earth, SearchBox, SidePanel, SuitabilityCalculator, ZipPanel } from '@/components'
 import { AICommentsSummary } from '@/components'
 import { APIProvider } from '@vis.gl/react-google-maps'
 import { ActivityIndicator, Button, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
@@ -190,7 +190,6 @@ export default function index() {
         <SearchBox />
         {showPanel && <SidePanel />}
         {isZipcodePanelOpen && <ZipPanel />}
-        {showAIChat && <AIChat />}
         {showBucketListPanel && <BucketListPanel />}
         {showFavPanel && <FavoritesPanel />}
        
@@ -253,7 +252,7 @@ export default function index() {
         </View>
 
         {selectedRealEstateProperty && (
-          <View style={styles.modal}>
+          <View style={styles.modal}> 
             <IconX
               style={{
                 position: 'absolute',

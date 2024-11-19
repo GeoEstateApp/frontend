@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions, Animated }
 const Walkthrough: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const steps = [
     { key: 'search-bar', text: 'Use the search bar to find places.', x: 800, y: 10 },
-    { key: 'neighborhood', text: 'Explore neighborhoods with detailed views.', x: 800, y: 15 },
+    { key: 'neighborhood', text: 'Explore neighborhoods with detailed views.', x: 20, y: 15 },
     { key: 'sidebar', text: 'Open the side panel to explore additional features.', x: 100, y: 30 },
     { key: 'filters', text: 'Use filters to narrow down your options.', x: 50, y: 1 },
     { key: 'zip-comments', text: 'Leave comments for specific zip codes.', x: 50, y: 40 },
