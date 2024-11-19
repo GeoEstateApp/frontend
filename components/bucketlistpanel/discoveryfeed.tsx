@@ -220,19 +220,23 @@ export default function DiscoveryFeed() {
                 onPress={() => handlePlaceClick(place)}
               >
                 <View style={styles.placeInfo}>
-                  <Text style={styles.placeName}>{place.name}</Text>
-                  <Text style={styles.placeAddress}>{place.address}</Text>
-                  <View style={styles.statsContainer}>
-                    <View style={styles.stat}>
-                      <IconTrendingUp size={16} />
-                      <Text style={styles.statText}>
-                        {place.popularity} saves
-                      </Text>
+                  <View style={styles.placeHeader}>
+                    <Text style={styles.placeName} numberOfLines={1}>{place.name}</Text>
+                    <View style={styles.popularityBadge}>
+                      <IconTrendingUp size={14} color="#fff" />
+                      <Text style={styles.popularityText}>{place.popularity}</Text>
                     </View>
                   </View>
+                  <Text style={styles.placeAddress} numberOfLines={2}>{place.address}</Text>
                 </View>
               </TouchableOpacity>
             ))}
+            {popularLocations.length === 0 && (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No trending places yet</Text>
+                <Text style={styles.emptyStateSubtext}>Be the first to add places to your bucket list!</Text>
+              </View>
+            )}
           </ScrollView>
         );
 
@@ -243,34 +247,75 @@ export default function DiscoveryFeed() {
               <TouchableOpacity
                 key={user.userid}
                 style={styles.userCard}
-                onPress={() => {
-                  setViewMode('explore');
+                onPress={async () => {
                   setSearchQuery(user.username);
-                  handleSearch();
+                  setViewMode('explore');
+                  setLoading(true);
+                  try {
+                    const places = await getBucketList(user.username);
+                    setDiscoveredPlaces(places);
+                    
+                    if (places.length === 0) {
+                      Toast.show({
+                        type: 'info',
+                        text1: 'No places found',
+                        text2: `${user.username} hasn't saved any places yet`,
+                      });
+                    }
+                  } catch (error) {
+                    console.error('Error discovering places:', error);
+                    Toast.show({
+                      type: 'error',
+                      text1: 'Error',
+                      text2: 'Could not load places',
+                    });
+                  } finally {
+                    setLoading(false);
+                  }
                 }}
               >
                 <View style={styles.userInfo}>
-                  <Text style={styles.userName}>{user.username}</Text>
-                  <View style={styles.userStatsContainer}>
-                    <View style={styles.userStat}>
-                      <IconPercentage size={16} color="#007AFF" />
-                      <Text style={styles.userStats}>
-                        {Math.round((user.common_places / user.total_places) * 100)}% similar
-                      </Text>
+                  <View style={styles.userHeader}>
+                    <View style={styles.userAvatar}>
+                      <IconUser size={20} color="#666" />
                     </View>
-                    <View style={styles.userStat}>
-                      <IconMapPin size={16} color="#666" />
-                      <Text style={styles.userBio}>
-                        {user.total_places} places saved
-                      </Text>
+                    <View style={styles.userDetails}>
+                      <Text style={styles.userName}>{user.username}</Text>
+                      <View style={styles.similarityBadge}>
+                        <IconPercentage size={14} color="#fff" />
+                        <Text style={styles.similarityText}>
+                          {Math.round((user.common_places / user.total_places) * 100)}% Match
+                        </Text>
+                      </View>
                     </View>
                   </View>
-                  <Text style={styles.commonPlaces}>
-                    Common places: {user.common_locations.join(', ')}
-                  </Text>
+                  <View style={styles.userStats}>
+                    <View style={styles.statBadge}>
+                      <IconMapPin size={14} color="#666" />
+                      <Text style={styles.statText}>{user.total_places} saved</Text>
+                    </View>
+                    <View style={styles.statBadge}>
+                      <IconUsers size={14} color="#666" />
+                      <Text style={styles.statText}>{user.common_places} in common</Text>
+                    </View>
+                  </View>
+                  {user.common_locations.length > 0 && (
+                    <View style={styles.commonPlacesContainer}>
+                      <Text style={styles.commonPlacesLabel}>Common interests:</Text>
+                      <Text style={styles.commonPlaces} numberOfLines={2}>
+                        {user.common_locations.join(' • ')}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </TouchableOpacity>
             ))}
+            {similarUsers.length === 0 && (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No similar users found</Text>
+                <Text style={styles.emptyStateSubtext}>Add more places to your bucket list to find users with similar interests!</Text>
+              </View>
+            )}
           </ScrollView>
         );
 
@@ -401,88 +446,134 @@ const styles = StyleSheet.create({
   },
   placeCard: {
     backgroundColor: '#fff',
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   placeInfo: {
-    flex: 1,
+    gap: 8,
+  },
+  placeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   placeName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    flex: 1,
   },
   placeAddress: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
+    color: '#6B7280',
   },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  stat: {
+  popularityBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#10B981',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
     gap: 4,
   },
-  statText: {
-    fontSize: 14,
-    color: '#666',
+  popularityText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   userCard: {
     backgroundColor: '#fff',
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   userInfo: {
+    gap: 12,
+  },
+  userHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  userAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  userDetails: {
     flex: 1,
   },
   userName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
   },
-  userStatsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  userStat: {
+  similarityBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#6366F1',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginTop: 4,
     gap: 4,
   },
-  userStats: {
-    fontSize: 14,
-    color: '#007AFF',
+  similarityText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
-  userBio: {
-    fontSize: 14,
-    color: '#666',
+  userStats: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  statBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+  },
+  statText: {
+    color: '#374151',
+    fontSize: 12,
+  },
+  commonPlacesContainer: {
+    gap: 4,
+  },
+  commonPlacesLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#6B7280',
   },
   commonPlaces: {
+    fontSize: 12,
+    color: '#374151',
+  },
+  emptyState: {
+    padding: 24,
+    alignItems: 'center',
+    gap: 8,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  emptyStateSubtext: {
     fontSize: 14,
-    color: '#666',
-    fontStyle: 'italic',
+    color: '#6B7280',
+    textAlign: 'center',
   },
 });
