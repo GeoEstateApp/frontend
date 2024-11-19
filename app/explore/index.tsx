@@ -83,15 +83,15 @@ export default function index() {
   }, [])
 
   // uncomment when developing
-  // useEffect(() => {
-  //   const isNewUser = localStorage.getItem('isFirstTimeUser') === null;
-  //   if (isNewUser || process.env.NODE_ENV === 'development') {
-  //     setIsFirstTimeUser(true);
-  //     if (isNewUser) {
-  //       localStorage.setItem('isFirstTimeUser', 'false');
-  //     }
-  //   }
-  // }, []);
+  useEffect(() => {
+    const isNewUser = localStorage.getItem('isFirstTimeUser') === null;
+    if (isNewUser || process.env.NODE_ENV === 'development') {
+      setIsFirstTimeUser(true);
+      if (isNewUser) {
+        localStorage.setItem('isFirstTimeUser', 'false');
+      }
+    }
+  }, []);
 
 
   const handleStartTour = () => {
