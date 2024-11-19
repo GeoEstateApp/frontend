@@ -121,10 +121,7 @@ function TeamDetail({ teamMembers }) {
 
   return (
     <View style={styles.Tcontainer}>
-      <LinearGradient
-        colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.9)', '#000']}
-        style={StyleSheet.absoluteFill}
-      />
+      
       <View style={styles.particlesBackground}>{generateParticles()}</View> 
       
       <Animated.View style={[styles.headerContainer, {
@@ -132,7 +129,7 @@ function TeamDetail({ teamMembers }) {
         transform: [{ translateY }]
       }]}>
         <Text style={styles.headerSubtitle}>MEET OUR TEAM</Text>
-        <Text style={styles.headerTitle}>The Faces Behind GeoEstate</Text>
+        <Text style={styles.headerTitle}>The People Behind GeoEstate</Text>
       </Animated.View>
 
       <View style={styles.contentContainer}>
@@ -278,14 +275,14 @@ const styles = StyleSheet.create({
       right: 0,
       bottom: 0,
       zIndex: -1,
-      backgroundColor: 'rgba(0, 0, 0, 0.02)',
+      backgroundColor: 'rgba(0, 0, 0, 0.1)',
     },
     particle: {
       position: "relative",
       width: 4,
       height: 4,
       borderRadius: 2,
-      backgroundColor: "rgba(0, 122, 255, 0.4)",
+      backgroundColor: "rgba(0, 122, 255, 0.8)",
     },
     teamContainer: {
       minHeight: "80vh",
@@ -310,8 +307,8 @@ const styles = StyleSheet.create({
       borderColor: "rgba(0, 122, 255, 0.3)",
     },
     logoImage: {
-      width: 90,
-      height: 90,
+      width: 110,
+      height: 110,
       borderRadius: 45,
     },
     profilePosition: {
@@ -320,9 +317,9 @@ const styles = StyleSheet.create({
       justifyContent: "center",
     },
     profileImage: {
-      width: 70,
-      height: 70,
-      borderRadius: 35,
+      width: 80,
+      height: 80,
+      borderRadius: 55,
       borderWidth: 3,
       borderColor: "#007AFF",
       backgroundColor: 'rgba(255, 255, 255, 0.05)',

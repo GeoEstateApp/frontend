@@ -4,9 +4,11 @@ import { ActivityIndicator, Button, Image, Linking, Pressable, StyleSheet, Text,
 import { useEffect, useState } from 'react'
 import { TouchableOpacity } from 'react-native'
 import { useRouter } from 'expo-router'
-import { IconUser, IconLogin, IconFilter, IconZip, IconSparkles, IconBed, IconBath, IconBuildingSkyscraper, IconAi, IconLiveView, IconGenderMale, IconGenderFemale, IconX, IconHeart, IconBookmark } from '@tabler/icons-react'
+import { IconUser, IconLogin, IconFilter, IconZip, IconSparkles, IconBed, IconBath, IconBuildingSkyscraper, IconAi, IconLiveView, IconGenderMale, IconGenderFemale, IconX, IconHeart, IconBookmark,IconMapPin } from '@tabler/icons-react'
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
+import Walkthrough from './walkthrough'
 import Toast from 'react-native-toast-message'
 import { useSidePanelStore } from '@/states/sidepanel'
 import { useSuitability } from '@/states/suitability'
@@ -64,6 +66,38 @@ export default function index() {
 
   const { showFavPanel, setShowFavPanel } = useFavoritesPanelStore()
   const { showBucketListPanel, setShowBucketListPanel } = useBucketListPanelStore()
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
+
+  useEffect(() => {
+    const checkFirstTimeUser = async () => {
+      const isNewUser = await AsyncStorage.getItem('isFirstTimeUser')
+      if (isNewUser === null || isNewUser === 'true') {
+        setIsFirstTimeUser(true)
+        await AsyncStorage.setItem('isFirstTimeUser', 'false')
+      }
+    }
+
+    checkFirstTimeUser()
+  }, [])
+
+  // uncomment when developing
+  // useEffect(() => {
+  //   const isNewUser = localStorage.getItem('isFirstTimeUser') === null;
+  //   if (isNewUser || process.env.NODE_ENV === 'development') {
+  //     setIsFirstTimeUser(true);
+  //     if (isNewUser) {
+  //       localStorage.setItem('isFirstTimeUser', 'false');
+  //     }
+  //   }
+  // }, []);
+
+
+  const handleStartTour = () => {
+    setShowWalkthrough(true);
+  };
+
+
 
   if (!API_KEY) {
     return (
@@ -145,10 +179,12 @@ export default function index() {
       setIsZipcodePanelOpen(false)
   }
 
+  
   return (
     <View style={styles.container}>
       <HeaderButton />
       <APIProvider apiKey={API_KEY} version={GOOGLE_MAP_VERSION}>
+        
         <Earth />
         <SearchBox />
         {showPanel && <SidePanel />}
@@ -156,6 +192,9 @@ export default function index() {
         {showAIChat && <AIChat />}
         {showBucketListPanel && <BucketListPanel />}
         {showFavPanel && <FavoritesPanel />}
+       
+
+
 
         <View style={{ ...styles.toggleButtonGroup, left: showPanel || isZipcodePanelOpen || showAIChat || showBucketListPanel || showFavPanel ? 420 : 20 }}>
           <Pressable style={{ ...styles.toggleButton, backgroundColor: showPanel ? '#49A84C' : 'white' }} onPress={() => {
@@ -199,6 +238,15 @@ export default function index() {
           >
             <IconBookmark size={20} strokeWidth={2} color={showBucketListPanel ? 'white' : 'black'} />
           </Pressable>
+          {/* start tour button */}
+          {isFirstTimeUser && (
+        <TouchableOpacity style={styles.tourButton} onPress={handleStartTour}>
+          <IconMapPin name="ios-map" size={20} color="#05A659" />
+        </TouchableOpacity>
+      )}
+
+      {/* show walkthrough if it's the first time */}
+      {showWalkthrough && <Walkthrough onClose={() => setShowWalkthrough(false)} />}
         </View>
 
         {selectedRealEstateProperty && (
@@ -308,7 +356,10 @@ export default function index() {
         )
         }
         {isModalOpen && <SuitabilityCalculator />}
+       
+
       </APIProvider>
+      
       <Toast position='bottom' bottomOffset={20} />
     </View>
   )
@@ -368,5 +419,13 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 10,
     width: 300,
-  }
+  },
+  tourButton: {
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: 'white',
+    borderColor: '#05A659',
+    borderWidth: 1,
+    marginTop: 10,
+  },
 })
