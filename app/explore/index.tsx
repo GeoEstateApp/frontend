@@ -340,9 +340,11 @@ const styles = StyleSheet.create({
   toggleButtonGroup: {
     position: 'absolute',
     top: 10,
+    left: 20,
     display: 'flex',
     flexDirection: 'column',
-    gap: 10
+    gap: 10,
+    zIndex: 1000
   },
   toggleButton: {
     padding: 10,
@@ -352,6 +354,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   modal: {
     position: 'absolute',
