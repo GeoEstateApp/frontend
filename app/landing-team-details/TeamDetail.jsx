@@ -1,14 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import {
-  View,
-  Image,
-  Animated,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  Platform,
-  Easing,
-} from "react-native";
+import {View,Image,Animated,StyleSheet,Text,TouchableOpacity,Platform,Easing,} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import logoImage from "../../assets/images/favicon.png";
 
@@ -285,6 +276,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: "100%",
     minHeight: 600,
+    flexWrap: "wrap", 
+    paddingHorizontal: 40,
   },
   particlesBackground: {
     position: "absolute",
@@ -310,6 +303,7 @@ const styles = StyleSheet.create({
     position: "relative",
     marginRight: 240,
     padding: 60,
+    flexDirection: "row", 
   },
   logoContainer: {
     position: "absolute",
@@ -412,6 +406,85 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
     borderRadius: 1,
   },
+
+ // Responsive styles
+ "@media (max-width: 1024px)": {
+  teamContainer: {
+    marginRight: 0, 
+    padding: 40,
+    minWidth: "80vw", 
+  },
+  logoContainer: {
+    width: 100,
+    height: 100,
+  },
+  logoImage: {
+    width: 90,
+    height: 90,
+  },
+  profileImage: {
+    width: 70,
+    height: 70,
+  },
+  namesList: {
+    paddingLeft: 20, 
+    alignItems: "center", 
+  },
+},
+
+
+"@media (max-width: 767px)": {
+  contentContainer: {
+    flexDirection: "column", 
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  teamContainer: {
+    marginRight: 0,
+    padding: 20,
+    minHeight: "auto", 
+    flexDirection: "column", 
+  },
+  logoContainer: {
+    width: 100,
+    height: 100,
+    marginBottom: 20,
+    position: "relative",
+    left: "50%",
+    transform: [{ translateX: "-50%" }], 
+  },
+  logoImage: {
+    width: 90,
+    height: 90,
+  },
+  profilePosition: {
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  nameContainer: {
+    display: "flex",
+    flexDirection: "column", 
+    marginBottom: 20, 
+  },
+  namesList: {
+    marginTop: 10, 
+    marginBottom: 20, 
+  },
+  profileImage: {
+    width: 60,
+    height: 60,
+  },
+  underline: {
+    backgroundColor: "#C9F4BD", 
+    height: 1,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    transform: [{ scaleX: 1 }],
+  },
+},
 });
+
 
 export default TeamDetail;

@@ -674,10 +674,10 @@ const styles = StyleSheet.create({
     //team section styles 
     teamSection: { alignItems: 'center', paddingVertical: 40 },
     teamsectionTitle: {
-        fontSize: 48,
         fontWeight: 'bold',
         color: '#fff',
         textAlign: 'center',
+        fontSize: Platform.select({ web: 56, default: 48 }),
     },
 
 
@@ -700,7 +700,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
     },
     headerTitle: {
-        fontSize: 24,
+        fontSize: Platform.select({ web: 28, default: 24 }),
         fontWeight: 'bold',
         color: '#fff',
     },
@@ -711,7 +711,7 @@ const styles = StyleSheet.create({
     },
     headerLink: {
         color: '#fff',
-        fontSize: 16
+         fontSize: Platform.select({ web: 18, default: 16 }),
     },
     headerButton: {
         flexDirection: 'row',

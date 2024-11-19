@@ -3,17 +3,17 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions, Animated }
 
 const Walkthrough: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const steps = [
-    { key: 'search-bar', text: 'Use the search bar to find places.', x: 800, y: 10 },
-    { key: 'neighborhood', text: 'Explore neighborhoods with detailed views.', x: 20, y: 15 },
-    { key: 'sidebar', text: 'Open the side panel to explore additional features.', x: 100, y: 30 },
-    { key: 'filters', text: 'Use filters to narrow down your options.', x: 50, y: 1 },
-    { key: 'zip-comments', text: 'Leave comments for specific zip codes.', x: 50, y: 40 },
-    { key: 'ai-summary', text: 'Get AI-powered surroundings insights.', x: 50, y: 80 },
-    { key: 'wishlist', text: 'Add your favorite places to the wishlist.', x: 50, y: 140 },
-    { key: 'bucket-list', text: 'Track your bucket list of must-visit places.', x: 50, y: 180 },
-    { key: 'sustainability', text: 'Calculate sustainability for properties here.', x: 640, y: 5 },
-    { key: 'three60-view', text: 'Explore properties virtually with immersive 360 views.', x: 830, y: 490 },
-    { key: 'sign-in', text: 'Sign in to unlock personalized features.', x: 1200, y: 8 },
+    { key: 'search-bar', text: 'Use the search bar to find places.', x: 800, y: 16, width: 512, height: 44, manualX: 540, manualY: 18 },
+    { key: 'neighborhood', text: 'Explore neighborhoods with detailed views.', x: 600, y: 200, width: Dimensions.get('window').width, height: Dimensions.get('window').height, manualX: 0, manualY: 0 }, 
+    { key: 'sidebar', text: 'Open the side panel to explore additional features.', x: 100, y: 30, width: 47, height: 238, manualX: 20, manualY: 12 }, 
+    { key: 'filters', text: 'Use filters to narrow down your options.', x: 70, y: 1, width: 45.6, height: 41,manualX: 20, manualY: 10 },
+    { key: 'zip-comments', text: 'Leave comments for specific zip codes.', x: 70, y: 40, width: 45.6, height: 41,manualX: 20, manualY: 59 },
+    { key: 'ai-summary', text: 'Get AI-powered surroundings insights.', x: 70, y: 80, width: 45.6, height: 40,manualX: 20, manualY: 111 },
+    { key: 'wishlist', text: 'Add your favorite places to the wishlist.', x:70, y: 140, width: 45.6, height: 40,manualX: 20, manualY: 161 },
+    { key: 'bucket-list', text: 'Track your bucket list of must-visit places.', x: 70, y: 180, width: 45.6, height: 40,manualX: 20, manualY: 211 },
+    { key: 'sustainability', text: 'Calculate sustainability for properties here.', x: 500, y: 15, width: 45, height: 45,manualX: 483, manualY: 18 },
+    { key: 'three60-view', text: 'Explore properties virtually with immersive 360 views.', x: 830, y: 450, width: 129.54, height: 41.6,manualX: 701, manualY: 670 },
+    { key: 'sign-in', text: 'Sign in to unlock personalized features.', x: 1200, y: 8, width: 42, height: 42, manualX: 1475, manualY: 18 },
   ];
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -33,8 +33,11 @@ const Walkthrough: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     }
   };
 
-  const { x, y, text } = steps[currentStep];
-  const { width, height } = Dimensions.get('window');
+  const { x, y, text, width, height, manualX, manualY } = steps[currentStep];
+  const highlightX = manualX ?? x;
+  const highlightY = manualY ?? y;
+
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
   React.useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -50,7 +53,11 @@ const Walkthrough: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         <Animated.View
           style={[ 
             styles.modalContent,
-            { top: Math.min(y + 50, height - 120), left: Math.min(x, width - 260), opacity: fadeAnim },
+            { 
+              top: Math.min(y + 50, screenHeight - 120), 
+              left: Math.min(x, screenWidth - 260), 
+              opacity: fadeAnim 
+            },
           ]}
         >
           <Text style={styles.text}>{text}</Text>
@@ -80,6 +87,18 @@ const Walkthrough: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             ))}
           </View>
         </Animated.View>
+        <View
+          style={[ 
+            styles.highlightMask,
+            { 
+              top: highlightY, 
+              left: highlightX, 
+              width: width, 
+              height: height, 
+              borderRadius: 8 
+            },
+          ]}
+        />
       </View>
     </Modal>
   );
@@ -171,5 +190,11 @@ const styles = StyleSheet.create({
   },
   activeStepIndicator: {
     backgroundColor: '#4CAF50',
+  },
+  highlightMask: {
+    position: 'absolute',
+    backgroundColor: 'rgba(0, 255, 0, 0.3)', 
+    borderRadius: 8, 
+    zIndex: 5, 
   },
 });
