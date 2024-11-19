@@ -1,5 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initializeApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence, onIdTokenChanged } from 'firebase/auth';
 import { getVertexAI, getGenerativeModel } from "firebase/vertexai";
 
 const firebaseConfig = {
@@ -14,6 +15,13 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 const auth = getAuth();
 setPersistence(auth, browserLocalPersistence)
+
+onIdTokenChanged(auth, async (user) => {
+    if (user) {
+        const token = await user.getIdToken()
+        await AsyncStorage.setItem("idToken", token)
+    }
+})
 
 const vertexAI = getVertexAI(app);
 

@@ -128,4 +128,28 @@ const crossProduct = (o: PolygonCoordinates, a: PolygonCoordinates, b: PolygonCo
   return (a.lat - o.lat) * (b.lng - o.lng) - (a.lng - o.lng) * (b.lat - o.lat)
 }
 
+export const polygonCentroid = (coordinates: PolygonCoordinates[]) => {
+  let signedArea = 0;
+  let centroidX = 0;
+  let centroidY = 0;
+
+  const n = coordinates.length;
+
+  for (let i = 0; i < n; i++) {
+    const { lat: x0, lng: y0 } = coordinates[i];
+    const { lat: x1, lng: y1 } = coordinates[(i + 1) % n]; // Wrap around to the first vertex
+
+    const a = x0 * y1 - x1 * y0;
+    signedArea += a;
+    centroidX += (x0 + x1) * a;
+    centroidY += (y0 + y1) * a;
+  }
+
+  signedArea *= 0.5;
+  centroidX /= 6 * signedArea;
+  centroidY /= 6 * signedArea;
+
+  return { lat: centroidX, lng: centroidY };
+}
+
 export { fetchPolygonCoordinates, fetchInsightsPolygonCoordinates }
