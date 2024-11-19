@@ -43,11 +43,7 @@ export interface SimilarUser {
   common_places: number;
   total_places: number;
   common_locations: string[];
-}
-
-export interface NearbyLocation extends BucketListItem {
-  popularity: number;
-  distance: number;
+  similarity_score: number;
 }
 
 export const getBucketList = async (targetUsername?: string): Promise<BucketListItem[]> => {
@@ -153,7 +149,7 @@ export const getPopularLocations = async (): Promise<PopularLocation[]> => {
       throw new Error('Authentication required');
     }
 
-    const response = await fetch(`${API_URL}/bucket-list/popular`, {
+    const response = await fetch(`${API_URL}/bucket-list/popular/locations`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${idToken}`,
@@ -174,12 +170,12 @@ export const getPopularLocations = async (): Promise<PopularLocation[]> => {
 
 export const getSimilarUsers = async (): Promise<SimilarUser[]> => {
   try {
-    const { idToken, username } = await getAuthTokens();
-    if (!idToken || !username) {
+    const { idToken, uid } = await getAuthTokens();
+    if (!idToken || !uid) {
       throw new Error('Authentication required');
     }
 
-    const response = await fetch(`${API_URL}/bucket-list/similar/${username}`, {
+    const response = await fetch(`${API_URL}/bucket-list/similar/${uid}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${idToken}`,
@@ -202,24 +198,24 @@ export const getNearbyBucketList = async (
   latitude: number,
   longitude: number,
   radius?: number
-): Promise<NearbyLocation[]> => {
+): Promise<BucketListItem[]> => {
   try {
     const { idToken } = await getAuthTokens();
     if (!idToken) {
       throw new Error('Authentication required');
     }
 
-    const response = await fetch(`${API_URL}/bucket-list/nearby`, {
-      method: 'POST',
+    const params = new URLSearchParams({
+      latitude: latitude.toString(),
+      longitude: longitude.toString(),
+      ...(radius && { radius: radius.toString() })
+    });
+
+    const response = await fetch(`${API_URL}/bucket-list/nearby?${params}`, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${idToken}`,
       },
-      body: JSON.stringify({
-        latitude,
-        longitude,
-        radius: radius || 5000, // Default 5km radius
-      }),
     });
 
     if (!response.ok) {
