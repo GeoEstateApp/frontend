@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { Picker } from '@react-native-picker/picker'
 import { Slider } from '@miblanchard/react-native-slider';
 import { useMapsLibrary } from '@vis.gl/react-google-maps';
-import { IconSearch, IconX, IconHome, IconKey, IconBed, IconBath, IconArrowLeft, IconArrowRight } from '@tabler/icons-react';
+import { IconSearch, IconX, IconHome, IconKey, IconBed, IconBath, IconArrowLeft, IconArrowRight, IconMap, IconRuler } from '@tabler/icons-react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSidePanelStore } from '@/states/sidepanel';
 
@@ -308,62 +308,58 @@ export default function SuitabilityCalculator() {
         />
         <View style={styles.propertyBadge}>
           <Text style={styles.propertyStatus}>
-            {property.status}
+            {property.status === 'for_rent' ? 'FOR RENT' : 'FOR SALE'}
+          </Text>
+        </View>
+        <View style={styles.propertyPriceBadge}>
+          <Text style={styles.propertyPriceText}>
+            {property.price}
           </Text>
         </View>
       </View>
-      <View style={styles.propertyDetails}>
-        <Text style={[
-          styles.propertyPrice,
-          selectedRealEstateProperty?.property_id === property.property_id && styles.selectedText
-        ]}>
-          {property.price}
-        </Text>
-        <Text style={[
-          styles.propertyAddress,
-          selectedRealEstateProperty?.property_id === property.property_id && styles.selectedText
-        ]}>
-          {property.address_line}
-        </Text>
-        <View style={styles.propertyFeatures}>
-          <Text style={[
-            styles.propertyType,
-            selectedRealEstateProperty?.property_id === property.property_id && styles.selectedText
-          ]}>
-            {property.property_type.split('_').join(' ').toUpperCase()}
-          </Text>
-          {property.size_sqft && (
-            <>
-              <Text style={styles.bulletSeparator}>•</Text>
-              <Text style={[
-                styles.propertySize,
-                selectedRealEstateProperty?.property_id === property.property_id && styles.selectedText
-              ]}>
-                {property.size_sqft.toLocaleString()} ft²
-              </Text>
-            </>
-          )}
+      <View style={styles.propertyContent}>
+        <View style={styles.propertyHeader}>
+          <View style={styles.propertyTitleSection}>
+            <Text style={styles.propertyType}>
+              {property.property_type.split('_').join(' ').toUpperCase()}
+            </Text>
+            <Text style={styles.propertyAddress}>
+              {property.address_line}
+            </Text>
+          </View>
         </View>
-        <View style={styles.propertySpecs}>
-          <View style={styles.specItem}>
-            <IconBed size={16} color={selectedRealEstateProperty?.property_id === property.property_id ? '#fff' : '#6B7280'} />
-            <Text style={[
-              styles.specText,
-              selectedRealEstateProperty?.property_id === property.property_id && styles.selectedText
-            ]}>
+
+        <View style={styles.propertyFeatureGrid}>
+          <View style={styles.featureItem}>
+            <IconBed size={20} color="#374151" />
+            <Text style={styles.featureText}>
               {property.num_beds} {property.num_beds === 1 ? 'Bed' : 'Beds'}
             </Text>
           </View>
-          <View style={styles.specItem}>
-            <IconBath size={16} color={selectedRealEstateProperty?.property_id === property.property_id ? '#fff' : '#6B7280'} />
-            <Text style={[
-              styles.specText,
-              selectedRealEstateProperty?.property_id === property.property_id && styles.selectedText
-            ]}>
+          <View style={styles.featureItem}>
+            <IconBath size={20} color="#374151" />
+            <Text style={styles.featureText}>
               {property.num_baths} {property.num_baths === 1 ? 'Bath' : 'Baths'}
             </Text>
           </View>
+          {property.size_sqft && (
+            <View style={styles.featureItem}>
+              <IconRuler size={20} color="#374151" />
+              <Text style={styles.featureText}>
+                {property.size_sqft.toLocaleString()} ft²
+              </Text>
+            </View>
+          )}
         </View>
+
+        <Pressable 
+          style={styles.viewOnMapButton}
+          onPress={() => {
+            setSelectedRealEstateProperty(property);
+          }}>
+          <IconMap size={18} color="#fff" />
+          <Text style={styles.viewOnMapText}>View on Map</Text>
+        </Pressable>
       </View>
     </Pressable>
   );
@@ -958,21 +954,25 @@ const styles = StyleSheet.create({
   recommendedPropertyCard: {
     backgroundColor: '#ffffff',
     borderRadius: 16,
+    marginBottom: 16,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
     borderWidth: 1,
     borderColor: '#e5e7eb',
-    marginBottom: 16,
   },
   recommendedPropertyCardSelected: {
-    backgroundColor: '#49a84c',
     borderColor: '#49a84c',
+    borderWidth: 2,
     transform: [{ scale: 1.02 }],
   },
   propertyImageContainer: {
     position: 'relative',
-    width: '100%',
     height: 200,
-    overflow: 'hidden',
+    width: '100%',
   },
   propertyImage: {
     width: '100%',
@@ -981,63 +981,86 @@ const styles = StyleSheet.create({
   propertyBadge: {
     position: 'absolute',
     top: 12,
-    right: 12,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 12,
+    left: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
   },
-  propertyDetails: {
+  propertyPriceBadge: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    backgroundColor: '#49a84c',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  propertyStatus: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  propertyPriceText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  propertyContent: {
     padding: 16,
   },
-  propertyPrice: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#111827',
+  propertyHeader: {
+    marginBottom: 16,
+  },
+  propertyTitleSection: {
+    gap: 4,
+  },
+  propertyType: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#49a84c',
     marginBottom: 4,
   },
   propertyAddress: {
     fontSize: 16,
-    color: '#374151',
-    marginBottom: 8,
-  },
-  propertyFeatures: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  propertyType: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-  bulletSeparator: {
-    marginHorizontal: 8,
-    color: '#6B7280',
-  },
-  propertySize: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-  propertySpecs: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  specItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  specText: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-  propertyStatus: {
-    fontSize: 12,
     fontWeight: '500',
-    color: '#ffffff',
+    color: '#111827',
+    lineHeight: 24,
   },
-  selectedText: {
+  propertyFeatureGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    marginBottom: 16,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  featureText: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  viewOnMapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#49a84c',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  viewOnMapText: {
     color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   stepContainer: {
     flexDirection: 'row',
