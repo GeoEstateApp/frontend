@@ -11,6 +11,7 @@ import { IconUser, IconLogin } from '@tabler/icons-react'
 import { Image } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message'
+import LoadingPage from "@/components/loading/LoadingPage";
 import TeamDetail from "./landing-team-details/TeamDetail";
 import DemoVideo from './landing-demo-video/DemoVideo';
 
@@ -19,7 +20,6 @@ const teamMembers = [
     { name: "Robert Bui", role: "CEO, Backend Lead", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
     { name: "Humera", role: "Backend Developer, DB Developer", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
     { name: "Yaseen (Ace)", role: "Backend Developer", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
-    { name: "John", role: "AI Engineer", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
     { name: "Aditya Sengupta", role: "Frontend Lead, Full Stack Developer", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
     { name: "Dip", role: "Backend, Full Stack Developer", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
     { name: "Zainab Rashid", role: "Frontend Developer, UI/UX Lead", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
@@ -70,98 +70,116 @@ export default function Index() {
     const scrollY = useRef(new Animated.Value(0)).current;
     const heroHeight = Platform.select({ web: 900, default: 700 });
     const scrollViewRef = useRef<ScrollView>(null);
-
+    const [isLoading, setIsLoading] = useState(true);
+  
     useEffect(() => {
         Toast.show({
-            type: 'info',
-            text1: 'Welcome to GeoEstate!',
-            text2: 'Discover your perfect property',
-            visibilityTime: 5000,
-            autoHide: true,
-            topOffset: 20,
-            text1Style: { fontSize: 16, fontWeight: 'bold' },
-            text2Style: { fontSize: 14 },
-        })
-    }, [])
-
+          type: 'info',
+          text1: 'Welcome to GeoEstate!',
+          text2: 'Discover your perfect property',
+          visibilityTime: 3000,
+          autoHide: true,
+          topOffset: 20,
+          text1Style: { fontSize: 16, fontWeight: 'bold' },
+          text2Style: { fontSize: 14 },
+        });
+      
+        const loadingTime = 3000; 
+        const timer = setTimeout(() => {
+          setIsLoading(false);
+        }, loadingTime);
+      
+        return () => clearTimeout(timer);
+      }, []);
+      
+  
     const headerOpacity = scrollY.interpolate({
-        inputRange: [0, heroHeight / 3],
-        outputRange: [0, 1],
-        extrapolate: 'clamp',
+      inputRange: [0, heroHeight / 3],
+      outputRange: [0, 1],
+      extrapolate: 'clamp',
     });
-
+  
     const scrollIndicatorOpacity = scrollY.interpolate({
-        inputRange: [0, heroHeight / 4],
-        outputRange: [1, 0],
-        extrapolate: 'clamp',
+      inputRange: [0, heroHeight / 4],
+      outputRange: [1, 0],
+      extrapolate: 'clamp',
     });
-
+  
     const scrollToAbout = () => {
-        scrollViewRef.current?.scrollTo({ y: heroHeight, animated: true });
+      scrollViewRef.current?.scrollTo({ y: heroHeight, animated: true });
     };
-
+  
     return (
-        <View style={styles.container}>
+      <View style={styles.container}>
+        {/* display loading screen if isLoading is true */}
+        {isLoading ? (
+          <LoadingPage />
+        ) : (
+          <>
             {/* Floating Header */}
             <Animated.View style={[styles.header, { opacity: headerOpacity, paddingTop: insets.top }]}>
-                <LinearGradient
-                    colors={['rgba(0,0,0,0.9)', 'rgba(0,0,0,0.7)']}
-                    style={StyleSheet.absoluteFill}
-                />
-                <View style={styles.headerContent}>
-                    <View style={styles.logoContainer}>
-                        <Image
-                            source={require('../assets/images/favicon.png')}
-                            style={styles.logo}
-                        />
-                        <Text style={styles.headerTitle}>GeoEstate</Text>
-                    </View>
-                    <HeaderNav />
+              <LinearGradient
+                colors={['rgba(0,0,0,0.9)', 'rgba(0,0,0,0.7)']}
+                style={StyleSheet.absoluteFill}
+              />
+              <View style={styles.headerContent}>
+                <View style={styles.logoContainer}>
+                  <Image
+                    source={require('../assets/images/favicon.png')}
+                    style={styles.logo}
+                  />
+                  <Text style={styles.headerTitle}>GeoEstate</Text>
                 </View>
+                <HeaderNav />
+              </View>
             </Animated.View>
+  
             <Animated.ScrollView
-                ref={scrollViewRef}
-                style={styles.scrollView}
-                onScroll={Animated.event(
-                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                    { useNativeDriver: true }
-                )}
-                scrollEventThrottle={16}
+              ref={scrollViewRef}
+              style={styles.scrollView}
+              onScroll={Animated.event(
+                [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                { useNativeDriver: true }
+              )}
+              scrollEventThrottle={16}
             >
-                <View style={[styles.heroSection, { height: heroHeight }]}>
-                    <View style={styles.globeContainer}>
-                        <Globe />
-                    </View>
-                    <LinearGradient
-                        colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.8)']}
-                        style={styles.gradient}
-                    />
-                    <HeroContent scrollToAbout={scrollToAbout} />
-
-                    <Animated.View style={[styles.scrollIndicator, { opacity: scrollIndicatorOpacity }]}>
-                        <Text style={styles.scrollText}>Scroll to explore</Text>
-                        <ChevronDown color="white" size={24} />
-                    </Animated.View>
+              <View style={[styles.heroSection, { height: heroHeight }]}>
+                <View style={styles.globeContainer}>
+                  <Globe />
                 </View>
-                {/* Features Section  */}
-                <FeaturesSection />
-
-                {/* Video Demo Section */}
-                <DemoVideo />
-                <WhyUsSection />
-                {/* Team Section */}
-                <View style={styles.teamSection}>
-                    <Text style={styles.teamsectionTitle}>Meet the Team</Text>
-                    <TeamDetail teamMembers={teamMembers} />
-                </View>
-                <ReviewSection />
-                {/* Footer Section */}
-                <Footer />
-                <Toast position="top" topOffset={20} />
+                <LinearGradient
+                  colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.8)']}
+                  style={styles.gradient}
+                />
+                <HeroContent scrollToAbout={scrollToAbout} />
+  
+                <Animated.View style={[styles.scrollIndicator, { opacity: scrollIndicatorOpacity }]}>
+                  <Text style={styles.scrollText}>Scroll to explore</Text>
+                  <ChevronDown color="white" size={24} />
+                </Animated.View>
+              </View>
+  
+              {/* Features Section */}
+              <FeaturesSection />
+  
+              {/* Video Demo Section */}
+              <DemoVideo />
+              <WhyUsSection />
+              {/* Team Section */}
+              <View style={styles.teamSection}>
+                <Text style={styles.teamsectionTitle}>Meet the Team</Text>
+                <TeamDetail teamMembers={teamMembers} />
+              </View>
+              <ReviewSection />
+              {/* Footer Section */}
+              <Footer />
+              <Toast position="top" topOffset={20} />
             </Animated.ScrollView>
-        </View>
+          </>
+        )}
+      </View>
     );
-}
+  }
 
 const HeroContent = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
