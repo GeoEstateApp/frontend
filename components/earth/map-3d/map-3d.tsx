@@ -1,4 +1,4 @@
-import {useMapsLibrary} from '@vis.gl/react-google-maps'
+import { useMapsLibrary } from '@vis.gl/react-google-maps'
 import React, {
   ForwardedRef,
   forwardRef,
@@ -8,8 +8,8 @@ import React, {
   useRef,
   useState
 } from 'react'
-import {useMap3DCameraEvents} from './use-map-3d-camera-events'
-import {useCallbackRef, useDeepCompareEffect} from '@/hooks/utility-hooks'
+import { useMap3DCameraEvents } from './use-map-3d-camera-events'
+import { useCallbackRef, useDeepCompareEffect } from '@/hooks/utility-hooks'
 
 import './map-3d-types'
 import { useMapStore } from '@/states/map'
@@ -20,7 +20,7 @@ import { convexHull, fetchPolygonCoordinates, PolygonCoordinates } from '@/api/o
 import { getPlaceId } from '@/api/geocoding'
 import { useSidePanelStore } from '@/states/sidepanel'
 import { useInsightsStore } from '@/states/insights'
-import { SUPPORTED_FILTERS_MAP } from '@/const/filters'
+import { SUPPORTED_FILTERS_MAP, UI_FILTERS } from '@/const/filters'
 import { useZipcodeInsights } from '@/states/zipcode_insights'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
@@ -49,11 +49,11 @@ const emptyPolygonCoordinates: PolygonCoordinates[] = [{ lat: 0, lng: 0, altitud
 
 export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<google.maps.maps3d.Map3DElement | null>) => {
   const { selectedPlacePolygonCoordinates, setSelectedPlacePolygonCoordinates, selectedPlace } = useMapStore()
-  const { setSidePanelPlace, setShowPanel, setRealEstateProperties, selectedRealEstateProperty } = useSidePanelStore()
+  const { setSidePanelPlace, showPanel, setShowPanel, setRealEstateProperties, selectedRealEstateProperty } = useSidePanelStore()
   const { insights } = useInsightsStore()
   const { polygon, setPolygon } = useZipcodeInsights()
 
-  const [markers, setMarkers] = useState<Array<{id: string, position: LatLngLiteralWithAltitude, pin?: any}>>([])
+  const [markers, setMarkers] = useState<Array<{ id: string, position: LatLngLiteralWithAltitude, pin?: any }>>([])
 
   useMapsLibrary('maps3d')
   const places = useMapsLibrary('places')
@@ -75,7 +75,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
     if (!polygon) {
       try {
         (zipcodePolygonRef.current as any).outerCoordinates = emptyPolygonCoordinates
-      } catch (e) {}
+      } catch (e) { }
 
       return
     }
@@ -84,7 +84,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
     customElements.whenDefined((zipcodePolygonRef.current as any).localName).then(() => {
       try {
         (zipcodePolygonRef.current as any).outerCoordinates = convexHull(polygon);
-      } catch (e) {}
+      } catch (e) { }
 
       (zipcodePolygonRef.current as any).addEventListener('click', (event: any) => {
         console.log("Polygon Clicked", event)
@@ -94,7 +94,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
 
   useEffect(() => {
     if (!map3DElement) return;
-  
+
     map3DElement.addEventListener('dblclick', async (event: any) => {
       setSelectedPlacePolygonCoordinates([])
 
@@ -106,7 +106,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
       setSelectedPlacePolygonCoordinates(coordinates || [])
 
       const placeId = await getPlaceId(lat, lng)
-      
+
       if (!places) return
       const placesService = new places.PlacesService(document.createElement('div'))
       placesService.getDetails({ placeId }, (place, status) => {
@@ -121,15 +121,15 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
         const types = place.types || []
         const url = place.url || ""
 
-        setSidePanelPlace({ 
+        setSidePanelPlace({
           placeId: place.place_id || '',
           name: place.name || '',
-          address, 
-          photosUrl, 
-          rating, 
-          types, 
-          lat, 
-          lng 
+          address,
+          photosUrl,
+          rating,
+          types,
+          lat,
+          lng
         })
         setShowPanel(true)
       })
@@ -157,7 +157,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
     let polygon = map3DElement.querySelector('#real-estate') as any
     try {
       if (polygon) polygon.outerCoordinates = emptyPolygonCoordinates
-    } catch (e) {}
+    } catch (e) { }
 
     polygon = document.createElement('gmp-polygon-3d')
     if (!polygon) return
@@ -174,15 +174,25 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
     customElements.whenDefined(polygon.localName).then(() => {
       try {
         (polygon as any).outerCoordinates = polygonCoordinates
-      } catch (e) {}
+      } catch (e) { }
       map3DElement.appendChild(polygon)
     })
   }
 
   useEffect(() => {
-    if (!insights) return
-    if (insights.length <= 0) return
     if (!map3DElement) return
+    if (!insights) return
+    if (insights.length <= 0) {
+      const filters = UI_FILTERS
+      filters.forEach(filter => {
+        const children = Array.from(map3DElement.children);
+        children.forEach(child => {
+          const type = child.id.split('-')[0];
+          if (type === filter.split(' ').join('_').toLowerCase()) map3DElement.removeChild(child);
+        });
+      });
+      setMarkers([]);
+    }
 
     const existingPolygons = map3DElement.querySelectorAll('gmp-polygon-3d')
     const existingTypes = new Set(Array.from(existingPolygons).map(polygon => polygon.id.split('-')[0]))
@@ -207,7 +217,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
       customElements.whenDefined(polygon.localName).then(() => {
         try {
           (polygon as any).outerCoordinates = coordinates
-        } catch (e) {}
+        } catch (e) { }
         map3DElement.appendChild(polygon)
       })
     })
@@ -232,12 +242,12 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
 
     setPolygon(null)
 
-    
+
     if (selectedPlacePolygonCoordinates.length <= 0) {
       customElements.whenDefined(polygon.localName).then(() => {
         try {
           (polygon as any).outerCoordinates = emptyPolygonCoordinates
-        } catch (e) {}
+        } catch (e) { }
       })
       return
     }
@@ -245,7 +255,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
     customElements.whenDefined(polygon.localName).then(() => {
       try {
         (polygon as any).outerCoordinates = selectedPlacePolygonCoordinates
-      } catch (e) {}
+      } catch (e) { }
     })
 
     // Fetch RealEstate data
@@ -280,7 +290,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
     }
   }
 
-  const {center, heading, tilt, range, roll, ...map3dOptions} = props
+  const { center, heading, tilt, range, roll, ...map3dOptions } = props
 
   useDeepCompareEffect(() => {
     if (!map3DElement) return
@@ -337,21 +347,21 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
       heading={String(props.heading)}
       tilt={String(props.tilt)}
       roll={String(props.roll)}>
-      
+
       <gmp-polygon-3d
-        altitude-mode="relative-to-ground" 
-        fill-color={SUPPORTED_FILTERS_MAP.manual.fill} 
-        stroke-color={SUPPORTED_FILTERS_MAP.manual.stroke} 
-        stroke-width="3" 
+        altitude-mode="relative-to-ground"
+        fill-color={SUPPORTED_FILTERS_MAP.manual.fill}
+        stroke-color={SUPPORTED_FILTERS_MAP.manual.stroke}
+        stroke-width="3"
         extruded>
       </gmp-polygon-3d>
 
-      <gmp-polygon-3d 
+      <gmp-polygon-3d
         ref={zipcodePolygonRef}
-        altitude-mode="relative-to-ground" 
-        fill-color={SUPPORTED_FILTERS_MAP.manual.fill} 
-        stroke-color={SUPPORTED_FILTERS_MAP.manual.stroke} 
-        stroke-width="3" 
+        altitude-mode="relative-to-ground"
+        fill-color={SUPPORTED_FILTERS_MAP.manual.fill}
+        stroke-color={SUPPORTED_FILTERS_MAP.manual.stroke}
+        stroke-width="3"
         extruded>
       </gmp-polygon-3d>
 

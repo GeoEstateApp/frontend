@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Image, ActivityIndicator } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { IconFilter, IconHeart, IconHeartFilled, IconBookmark, IconBookmarkFilled } from '@tabler/icons-react';
+import { IconFilter, IconHeart, IconHeartFilled, IconBookmark, IconBookmarkFilled, IconRowRemove, IconTrashX } from '@tabler/icons-react';
 import { useSidePanelStore } from '@/states/sidepanel';
 import { useFavoritesPanelStore } from '@/states/favoritespanel';
 import { useBucketListPanelStore } from '@/states/bucketlistpanel';
@@ -14,16 +14,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Animated } from 'react-native';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { useFilterStore } from '@/states/filterstore';
 
 export default function SidePanel() {
   const { toggleFavPanel, showFavPanel, setShowFavPanel } = useFavoritesPanelStore()
   const { toggleBucketListPanel, showBucketListPanel, setShowBucketListPanel } = useBucketListPanelStore()
   const { reset: resetSidePanel, selectedPlace, realEstateProperties, setSelectedRealEstateProperty, selectedRealEstateProperty } = useSidePanelStore()
- 
+
   const { insights, setInsights } = useInsightsStore()
- 
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([])
+
+  const { selectedFilters, setSelectedFilters } = useFilterStore()
   const [callFilterAPI, setCallFilterAPI] = useState(false)
+  const [loadingFilters, setLoadingFilters] = useState<string[]>([])
 
   const [imageUri, setImageUri] = useState<string | null>(null)
   const [isFavorite, setIsFavorite] = useState(false)
@@ -38,7 +40,6 @@ export default function SidePanel() {
       if (!user) {
         // User is signed out, so
         // reset all panel states when logged out
-        resetSidePanel()
         setShowFavPanel(false)
         setShowBucketListPanel(false)
         setSelectedFilters([])
@@ -75,14 +76,23 @@ export default function SidePanel() {
 
   useEffect(() => {
     if (!callFilterAPI) return
-
     if (!selectedPlace) return
-    const includingFilters = selectedFilters.map(filter => filter)
 
     const fetchInsights = async () => {
-      const insights: PlaceInsight[] = await getPlaceInsights(selectedPlace.lat, selectedPlace.lng, includingFilters) || []
-      setInsights(insights)
-      setCallFilterAPI(false)
+      try {
+        const insights: PlaceInsight[] = await getPlaceInsights(selectedPlace.lat, selectedPlace.lng, selectedFilters) || []
+        setInsights(insights)
+      } catch (error) {
+        console.error('Error fetching insights:', error)
+        Toast.show({
+          type: 'error',
+          text1: 'Error loading insights',
+          text2: 'Please try again',
+        })
+      } finally {
+        setLoadingFilters([])
+        setCallFilterAPI(false)
+      }
     }
 
     fetchInsights()
@@ -205,7 +215,7 @@ export default function SidePanel() {
         });
         return;
       }
-      
+
       if (isFavorite) {
         // Remove from favorites
         await removeFavorite(selectedPlace.placeId);
@@ -225,7 +235,7 @@ export default function SidePanel() {
       // Always refresh favorites list to keep it in sync
       const updatedFavorites = await getFavorites();
       setFavorites(updatedFavorites);
-      
+
       Toast.show({
         type: 'success',
         text1: 'Success',
@@ -317,22 +327,27 @@ export default function SidePanel() {
       return
     }
 
-    if (selectedFilters.includes(filter)) {
-      const map3dElement = document.getElementsByTagName('gmp-map-3d')[0]
-      if (!map3dElement) return
+    // Prevent any filter selection if any filter is loading
+    if (loadingFilters.length > 0) return
 
+    if (loadingFilters.includes(filter)) return // Prevent selecting a filter that's already loading
+
+    const map3dElement = document.getElementsByTagName('gmp-map-3d')[0]
+    if (!map3dElement) return
+
+    if (selectedFilters.includes(filter)) {
       const children = Array.from(map3dElement.children)
       children.forEach(child => {
         const type = child.id.split('-')[0]
         if (type === filter) map3dElement.removeChild(child)
       })
-
       setSelectedFilters(selectedFilters.filter(f => f !== filter))
       if (insights && insights.length > 0) setInsights(insights.filter(insight => insight.type !== filter))
     } else {
+      setLoadingFilters([...loadingFilters, filter])
       setSelectedFilters([...selectedFilters, filter])
       setCallFilterAPI(true)
-      
+
       Toast.show({
         type: 'info',
         text1: 'Loading insights...',
@@ -364,113 +379,122 @@ export default function SidePanel() {
     }
   }
 
+  const handleRemoveInsights = () => {
+    setSelectedFilters([])
+    setInsights([])
+  }
+
   return (
     <View style={styles.container}>
-        <View style={styles.panel}>
-          {
-            selectedPlace && (
-              <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false} 
-              style={{...styles.filters, flexGrow: 0, minHeight: 40 }}
-              contentContainerStyle={{ gap: 8, minHeight: 40 }}>
+      <View style={styles.panel}>
+        {
+          !selectedPlace ? (
+            <View style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={styles.noPlaceHeading}>
+                No place selected
+                </Text>
+
+                <Text style={styles.noPlaceSubHeading}>
+                Select a place on the map to view insights and the details
+                </Text>
+            </View>
+
+          ) : (
+            <View style={{ display: 'flex', flexDirection: 'column' }}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ ...styles.filters, flexGrow: 0, minHeight: 40 }}
+                contentContainerStyle={{ gap: 8, minHeight: 40 }}>
                 {UI_FILTERS.map((filter, index) => {
                   const filterKey = filter.split(' ').join('_').toLowerCase()
+                  const isSelected = selectedFilters.includes(filterKey)
+                  const isLoading = loadingFilters.includes(filterKey)
+                  const isDisabled = loadingFilters.length > 0 && !isLoading
 
                   return (
                     <Pressable
                       key={index}
                       onPress={() => handleOnFilterPress(filterKey)}
-                      style={[{
-                        flexShrink: 0,
-                        flexGrow: 0,
-                        height: 40,
-                        paddingHorizontal: 16,
-                        paddingVertical: 8,
-                        borderRadius: 20,
-                        backgroundColor: selectedFilters.includes(filterKey) 
-                          ? `${SUPPORTED_FILTERS_MAP[filterKey as keyof typeof SUPPORTED_FILTERS_MAP]?.fill.substring(0, 7) || '#E5E7EB'}`
-                          : '#F3F4F6',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 2,
-                        elevation: 2,
-                        borderWidth: 1,
-                        borderColor: selectedFilters.includes(filterKey) 
-                          ? 'transparent'
-                          : '#E5E7EB',
-                      }]}>
-                        <Text style={{ 
-                          color: selectedFilters.includes(filterKey) ? 'white' : '#4B5563',
-                          fontWeight: '500',
-                          fontSize: 14
-                        }}>
+                      style={[styles.filterButton,
+                      isSelected && styles.filterButtonSelected,
+                      (isLoading || isDisabled) && styles.filterButtonDisabled
+                      ]}>
+                      {isLoading ? (
+                        <ActivityIndicator size="small" color={isSelected ? "white" : "#4B5563"} />
+                      ) : (
+                        <Text style={[
+                          styles.filterText,
+                          isSelected && styles.filterTextSelected,
+                          isDisabled && styles.filterTextDisabled
+                        ]}>
                           {filter}
                         </Text>
+                      )}
                     </Pressable>
                   );
                 })}
               </ScrollView>
-            )
-          }
 
-          {selectedPlace && (
-            <View style={styles.selectedPlace}>
-              <Image source={{ uri: imageUri || selectedPlace.photosUrl[0] }} style={{ width: 400, height: 300, objectFit: 'cover' }} />
-              <View style={styles.placeHeader}>
-                <Text style={styles.placeTitle}>{selectedPlace.address}</Text>
-                <View style={styles.actionButtons}>
-                  <Pressable onPress={handleFavoriteToggle}>
-                    {isFavorite ? (
-                      <IconHeartFilled size={24} color="#ff4444" />
-                    ) : (
-                      <IconHeart size={24} color="#000" />
-                    )}
+              {
+                selectedFilters.length > 0 && (
+                  <Pressable style={{ ...styles.toggleButton, width: 'auto', backgroundColor: '#ff4444' }} onPress={handleRemoveInsights}>
+                    <IconTrashX size={24} color="#fff" />
                   </Pressable>
-                  <Pressable onPress={handleBucketList} style={{ marginLeft: 10 }}>
-                    {isInBucketList ? (
-                      <IconBookmarkFilled size={24} color="#4444ff" />
-                    ) : (
-                      <IconBookmark size={24} color="#000" />
-                    )}
-                  </Pressable>
+                )
+              }
+
+              <View style={styles.selectedPlace}>
+                <Image source={{ uri: imageUri || selectedPlace.photosUrl[0] }} style={{ width: 400, height: 300, objectFit: 'cover' }} />
+                <View style={styles.placeHeader}>
+                  <Text style={styles.placeTitle}>{selectedPlace.address}</Text>
+                  <View style={styles.actionButtons}>
+                    <Pressable onPress={handleFavoriteToggle}>
+                      {isFavorite ? (
+                        <IconHeartFilled size={24} color="#ff4444" />
+                      ) : (
+                        <IconHeart size={24} color="#000" />
+                      )}
+                    </Pressable>
+                    <Pressable onPress={handleBucketList} style={{ marginLeft: 10 }}>
+                      {isInBucketList ? (
+                        <IconBookmarkFilled size={24} color="#4444ff" />
+                      ) : (
+                        <IconBookmark size={24} color="#000" />
+                      )}
+                    </Pressable>
+                  </View>
                 </View>
               </View>
-            </View>
-              )
-          }
 
-          { realEstateProperties && realEstateProperties.length > 0 && <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10, marginTop: 24 }}>Real Estate Properties</Text> }
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {
-              realEstateProperties && realEstateProperties.length > 0 && (
-                <View style={{ gap: 8, flexDirection: 'column' }}>
-                    {
-                      realEstateProperties.map((property, index) => {
-                        return <Pressable style={{...styles.realEstateProperty, backgroundColor: selectedRealEstateProperty?.property_id === property.property_id ? '#49A84C' : 'white'}} key={index} onPress={() => setSelectedRealEstateProperty(property)}>
-                          <Image source={{ uri: property.img_url }} style={{ width: 100, objectFit: 'cover', borderRadius: 6 }} />
-                          <View style={{ gap: 4, display: 'flex', flexDirection: 'column' }}>
-                            <Text style={{ fontSize: 16, fontWeight: 'bold', color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.address_line}</Text>
-                            <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>Property: {property.property_type.split('_').join(' ').toUpperCase()}</Text>
-                            { property.size_sqft && <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>Size: {property.size_sqft} ft²</Text> }
-                            <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.price}</Text>
-                            <Text style={{ fontSize: 12, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.status}</Text>
-                          </View>
-                        </Pressable>
-                      })
-                    }
-                </View>
-              )
-            }
-          </ScrollView>
-        
-        {
-          selectedPlace && selectedPlace.rating !== 0 && <Text> selectedPlace.rating </Text>
+              {realEstateProperties && realEstateProperties.length > 0 && <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10, marginTop: 24 }}>Real Estate Properties</Text>}
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {
+                  realEstateProperties && realEstateProperties.length > 0 && (
+                    <View style={{ gap: 8, flexDirection: 'column' }}>
+                      {
+                        realEstateProperties.map((property, index) => {
+                          return <Pressable style={{ ...styles.realEstateProperty, backgroundColor: selectedRealEstateProperty?.property_id === property.property_id ? '#49A84C' : 'white' }} key={index} onPress={() => setSelectedRealEstateProperty(property)}>
+                            <Image source={{ uri: property.img_url }} style={{ width: 100, objectFit: 'cover', borderRadius: 6 }} />
+                            <View style={{ gap: 4, display: 'flex', flexDirection: 'column' }}>
+                              <Text style={{ fontSize: 16, fontWeight: 'bold', color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.address_line}</Text>
+                              <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>Property: {property.property_type.split('_').join(' ').toUpperCase()}</Text>
+                              {property.size_sqft && <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>Size: {property.size_sqft} ft²</Text>}
+                              <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.price}</Text>
+                              <Text style={{ fontSize: 12, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.status}</Text>
+                            </View>
+                          </Pressable>
+                        })
+                      }
+                    </View>
+                  )
+                }
+              </ScrollView>
+            </View>
+          )
         }
-    </View>
+
+      </View>
     </View>
   )
 }
@@ -535,6 +559,17 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
+  noPlaceHeading: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    textAlign: 'center'
+  },
+  noPlaceSubHeading: {
+    fontSize: 16,
+    textAlign: 'center',
+    color: '#4B5563',
+  },
   placeHeader: {
     width: '100%',
     display: 'flex',
@@ -574,6 +609,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'white',
+    flexDirection: 'row',
     padding: 12,
     borderRadius: 12,
     width: 48,
@@ -637,4 +673,40 @@ const styles = StyleSheet.create({
   removeFavoriteButton: {
     padding: 8,
   },
+  filterButton: {
+    flexShrink: 0,
+    flexGrow: 0,
+    height: 40,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  filterButtonSelected: {
+    backgroundColor: '#49A84C',
+    borderColor: 'transparent',
+  },
+  filterButtonDisabled: {
+    opacity: 0.7,
+  },
+  filterText: {
+    color: '#4B5563',
+    fontWeight: '500',
+    fontSize: 14,
+  },
+  filterTextSelected: {
+    color: 'white',
+  },
+  filterTextDisabled: {
+    opacity: 0.5,
+  }
 })

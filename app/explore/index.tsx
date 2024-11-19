@@ -20,16 +20,8 @@ import { useZipcodeInsights } from '@/states/zipcode_insights'
 const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY
 const GOOGLE_MAP_VERSION = 'alpha'
 
-function HeaderButton() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+function HeaderButton({ isLoggedIn }: { isLoggedIn: boolean }) {
   const router = useRouter()
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setIsLoggedIn(!!user)
-    })
-    return () => unsubscribe()
-  }, [])
 
   const handlePress = () => {
     if (isLoggedIn) {
@@ -55,17 +47,16 @@ function HeaderButton() {
 
 export default function index() {
   const { showZipcodePanel, setShowZipcodePanel } = useZipcodeInsights()
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   const [showNeighbourhoodInsights, setNeighbourhoodInsights] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  const { setShowPanel, showPanel, selectedRealEstateProperty, setSelectedRealEstateProperty } = useSidePanelStore()
+  const { setShowPanel, toggleShowPanel, showPanel, selectedRealEstateProperty, setSelectedRealEstateProperty } = useSidePanelStore()
   const { isModalOpen } = useSuitability()
 
   const { showFavPanel, setShowFavPanel } = useFavoritesPanelStore()
   const { showBucketListPanel, setShowBucketListPanel } = useBucketListPanelStore()
-
-  const isLoggedIn = auth.currentUser !== null
 
   if (!API_KEY) {
     return (
@@ -74,6 +65,14 @@ export default function index() {
       </View>
     )
   }
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsLoggedIn(!!user)
+    })
+    return () => unsubscribe()
+  }, [])
+
 
   useEffect(() => {
     Toast.show({
@@ -131,6 +130,13 @@ export default function index() {
     }
   };
 
+  const handleFilterClick = () => {
+    toggleShowPanel()
+    setShowZipcodePanel(false);
+    setShowFavPanel(false);
+    setShowBucketListPanel(false);
+  };
+
   const handleFavoritesClick = () => {
     setShowFavPanel(!showFavPanel)
     setShowBucketListPanel(false)
@@ -147,7 +153,7 @@ export default function index() {
 
   return (
     <View style={styles.container}>
-      <HeaderButton />
+      <HeaderButton isLoggedIn />
       <APIProvider apiKey={API_KEY} version={GOOGLE_MAP_VERSION}>
         <Earth />
         <SearchBox />
@@ -159,12 +165,7 @@ export default function index() {
         {
           !isModalOpen && (
             <View style={{ ...styles.toggleButtonGroup, left: showPanel || showZipcodePanel || showBucketListPanel || showFavPanel ? 420 : 20 }}>
-              <Pressable style={{ ...styles.toggleButton, backgroundColor: showPanel ? '#49A84C' : 'white' }} onPress={() => {
-                setShowZipcodePanel(false)
-                setShowPanel(!showPanel)
-                setShowFavPanel(false)
-                setShowBucketListPanel(false)
-              }}>
+              <Pressable style={{ ...styles.toggleButton, backgroundColor: showPanel ? '#49A84C' : 'white' }} onPress={handleFilterClick}>
                 <IconFilter size={20} strokeWidth={2} color={showPanel ? 'white' : 'black'} />
               </Pressable>
 
@@ -177,7 +178,7 @@ export default function index() {
                 <IconZip size={20} strokeWidth={2} color={showZipcodePanel ? 'white' : 'black'} />
               </Pressable>
               {
-                isLoggedIn && (
+                isLoggedIn ? (
                   <>
                     <Pressable
                       style={{ ...styles.toggleButton, backgroundColor: showFavPanel ? '#49A84C' : 'white' }}
@@ -192,7 +193,7 @@ export default function index() {
                       <IconBookmark size={20} strokeWidth={2} color={showBucketListPanel ? 'white' : 'black'} />
                     </Pressable>
                   </>
-                )
+                ) : null
               }
             </View>
           )
@@ -304,7 +305,7 @@ export default function index() {
           </View>
         )
         }
-        { isModalOpen && <SuitabilityCalculator /> }
+        {isModalOpen && <SuitabilityCalculator />}
       </APIProvider>
       <Toast position='bottom' bottomOffset={20} />
     </View>

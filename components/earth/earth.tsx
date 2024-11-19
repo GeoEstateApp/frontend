@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMapStore } from '@/states/map';
 import { fetchPolygonCoordinates, polygonCentroid } from '@/api/osm';
 import { useZipcodeInsights } from '@/states/zipcode_insights';
+import { useSidePanelStore } from '@/states/sidepanel';
 
 const INITIAL_VIEW_PROPS: Map3DCameraProps = {
   center: { lat: 40.7212803, lng: -74.0004602, altitude: 12000 },
@@ -28,6 +29,7 @@ export default function Earth() {
   const { selectedPlace, setSelectedPlacePolygonCoordinates } = useMapStore();
   const [viewProps, setViewProps] = useState(INITIAL_VIEW_PROPS);
   const { polygon } = useZipcodeInsights();
+  const { selectedRealEstateProperty } = useSidePanelStore()
 
   const smoothTransportToLocation = (newProps: Map3DCameraProps) => {
     const startProps = { ...viewProps };
@@ -50,7 +52,7 @@ export default function Earth() {
         range: startProps.range + (newProps.range - startProps.range) * easeProgress,
         heading: 0,
         tilt: 45,
-        roll: 0
+        roll: 0     // Keep roll fixed
       };
 
       setViewProps(interpolated);
@@ -86,6 +88,23 @@ export default function Earth() {
 
     fetchData();
   }, [selectedPlace]);
+
+  useEffect(() => {
+    if (!selectedRealEstateProperty) return;
+
+      const lat = selectedRealEstateProperty.coordinate_lat || 0;
+      const lng = selectedRealEstateProperty.coordinate_lon || 0;
+
+      const newProps: Map3DCameraProps = {
+        center: { lat, lng, altitude: TARGET_ALTITUDE },
+        range: 300,
+        heading: 0,
+        tilt: 45,
+        roll: 0
+      };
+
+      smoothTransportToLocation(newProps);
+  }, [selectedRealEstateProperty]);
 
   useEffect(() => {
     if (!polygon || !polygon[0]) return
