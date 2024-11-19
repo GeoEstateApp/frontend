@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { useDebouncedEffect } from '@/hooks/utility-hooks';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -6,7 +6,8 @@ import { useZipcodeInsights, ZipcodeData, ZipcodeInsight } from '@/states/zipcod
 import { convexHull, PolygonCoordinates } from '@/api/osm';
 import { addComment, Comment, getComments } from '@/api/comments';
 import Toast from 'react-native-toast-message';
-import { IconUser, IconSend } from '@tabler/icons-react';
+import { IconUser, IconSend, IconSparkles } from '@tabler/icons-react';
+import AICommentsSummary from '../aisummary';
 
 export default function ZipPanel() {
   const [searchingZipcodeText, setSearchingZipcodeText] = useState<string>('');
@@ -16,9 +17,10 @@ export default function ZipPanel() {
   const [newComment, setNewComment] = useState<string>('');
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [showAICommentSummary, setShowAICommentSummary] = useState(false);
+  const [summaryInsight, setSummaryInsight] = useState("")
 
   const { zipcode, zipcodes, setPolygon, setZipcode, setZipcodes, setZipcodeInsights, zipcodeInsights, setPolygons } = useZipcodeInsights();
-  
     
   const handleZipcodeFilter = (text: string) => {
     const filteredZipcodes = zipcodes.filter((zipcodeData) => zipcodeData.zipcode.includes(text) || zipcodeData.name.includes(text));
@@ -236,139 +238,144 @@ export default function ZipPanel() {
   return (
     <View style={styles.container}>
       <View style={styles.panel}>
+        <Text style={styles.title}>Zipcodes</Text>
         {viewingZipcodeDetails ? (
           <>
-            {/* Back button */}
             <Pressable onPress={handleBackToList} style={styles.backButton}>
               <IconUser size={20} color="#666" />
-              <Text>Back to Zipcode List</Text>
+              <Text style={styles.backButtonText}>Back to Zipcode List</Text>
             </Pressable>
-
-            <ScrollView contentContainerStyle={{ gap: 16 }} showsVerticalScrollIndicator={false}>
-              {/* Zipcode insights */}
-              <View style={styles.insightsSection}>
-                <Text style={styles.sectionTitle}>Zipcode Insights</Text>
-                <View style={styles.insightsGrid}>
-                  <View style={styles.insightCard}>
-                    <Text style={styles.insightLabel}>Population</Text>
-                    <Text style={styles.insightValue}>{zipcodeInsights.population.toLocaleString()}</Text>
-                  </View>
-                  <View style={styles.insightCard}>
-                    <Text style={styles.insightLabel}>Median Age</Text>
-                    <Text style={styles.insightValue}>{zipcodeInsights.medianAge}</Text>
-                  </View>
-                  <View style={styles.insightCard}>
-                    <Text style={styles.insightLabel}>Rent Vacancies</Text>
-                    <Text style={styles.insightValue}>{zipcodeInsights.vacanciesForRentPercent}%</Text>
-                  </View>
-                  <View style={styles.insightCard}>
-                    <Text style={styles.insightLabel}>Sale Vacancies</Text>
-                    <Text style={styles.insightValue}>{zipcodeInsights.vacanciesForSalePercent}%</Text>
-                  </View>
-                  <View style={[styles.insightCard, styles.insightCardWide]}>
-                    <Text style={styles.insightLabel}>Home Value Forecast</Text>
-                    <Text style={[styles.insightValue, { color: zipcodeInsights.homeValueForecast > 0 ? '#22c55e' : '#ef4444' }]}>
-                      {zipcodeInsights.homeValueForecast > 0 ? '+' : ''}{zipcodeInsights.homeValueForecast}%
-                    </Text>
+            
+            <ScrollView style={styles.contentScroll} showsVerticalScrollIndicator={false}>
+              <ScrollView contentContainerStyle={{ gap: 16 }} showsVerticalScrollIndicator={false}>
+                {/* Zipcode insights */}
+                <View style={styles.insightsSection}>
+                  <View style={styles.insightsGrid}>
+                    <View style={styles.insightCard}>
+                      <Text style={styles.insightLabel}>Population</Text>
+                      <Text style={styles.insightValue}>{zipcodeInsights.population}</Text>
+                    </View>
+                    <View style={styles.insightCard}>
+                      <Text style={styles.insightLabel}>Median Age</Text>
+                      <Text style={styles.insightValue}>{zipcodeInsights.medianAge}</Text>
+                    </View>
+                    <View style={styles.insightCard}>
+                      <Text style={styles.insightLabel}>Rent Vacancies</Text>
+                      <Text style={styles.insightValue}>{zipcodeInsights.vacanciesForRentPercent}%</Text>
+                    </View>
+                    <View style={styles.insightCard}>
+                      <Text style={styles.insightLabel}>Sale Vacancies</Text>
+                      <Text style={styles.insightValue}>{zipcodeInsights.vacanciesForSalePercent}%</Text>
+                    </View>
+                    <View style={[styles.insightCard, styles.insightCardWide]}>
+                      <Text style={styles.insightLabel}>Home Value Forecast</Text>
+                      <Text style={[styles.insightValue, { color: zipcodeInsights.homeValueForecast > 0 ? '#22c55e' : '#ef4444' }]}>
+                        {zipcodeInsights.homeValueForecast > 0 ? '+' : ''}{zipcodeInsights.homeValueForecast}%
+                      </Text>
+                    </View>
                   </View>
                 </View>
-              </View>
 
-              <View style={styles.commentSection}>
-                <Text style={styles.sectionTitle}>Community Discussion</Text>
-                
-                <View style={styles.commentInputContainer}>
-                  <View style={styles.inputWrapper}>
-                    <TextInput
-                      style={styles.inputComment}
-                      placeholder="Share your thoughts about this area..."
-                      value={newComment}
-                      onChangeText={setNewComment}
-                      multiline
-                      numberOfLines={3}
-                      placeholderTextColor="#666"
-                    />
-                    <Pressable 
-                      onPress={handleAddComment} 
-                      style={[styles.addButton, !newComment.trim() && styles.addButtonDisabled]}
-                      disabled={!newComment.trim() || isAddingComment}
+                <View style={styles.commentSection}>
+                  <View style={styles.commentSectionHeader}>
+                    <Text style={styles.sectionTitle}>Community Discussion</Text>
+                    <Pressable
+                      style={styles.aiSummaryButton}
+                      onPress={() => setShowAICommentSummary(!showAICommentSummary)}
                     >
-                      {isAddingComment ? (
-                        <ActivityIndicator color="#fff" size="small" />
-                      ) : (
-                        <IconSend size={20} color="#fff" />
-                      )}
+                      <IconSparkles size={20} color="#fff" />
                     </Pressable>
                   </View>
-                </View>
-
-                <View style={styles.commentsContainer}>
-                  {loadingComments ? (
-                    <View style={styles.centerContainer}>
-                      <ActivityIndicator size="large" color="#007bff" />
-                      <Text style={styles.loadingText}>Loading comments...</Text>
+                  
+                  <View style={styles.commentInputContainer}>
+                    <View style={styles.inputWrapper}>
+                      <TextInput
+                        style={styles.inputComment}
+                        placeholder="Share your thoughts..."
+                        value={newComment}
+                        onChangeText={setNewComment}
+                        multiline
+                        numberOfLines={3}
+                        placeholderTextColor="#666"
+                      />
+                      <Pressable 
+                        onPress={handleAddComment} 
+                        style={[styles.addButton, !newComment.trim() && styles.addButtonDisabled]}
+                        disabled={!newComment.trim() || isAddingComment}
+                      >
+                        {isAddingComment ? (
+                          <ActivityIndicator color="#fff" size="small" />
+                        ) : (
+                          <IconSend size={20} color="#fff" />
+                        )}
+                      </Pressable>
                     </View>
-                  ) : comments.length === 0 ? (
-                    <View style={styles.centerContainer}>
-                      <Text style={styles.noCommentsText}>No comments yet</Text>
-                      <Text style={styles.noCommentsSubtext}>Be the first to share your thoughts about this area!</Text>
-                    </View>
-                  ) : (
-                    <ScrollView 
-                      showsVerticalScrollIndicator={false} 
-                      contentContainerStyle={styles.commentsScrollContainer}
-                    >
-                      {comments.map((comment, idx) => {
-                        const date = new Date(comment.created_at);
-                        const timeAgo = getTimeAgo(date);
+                  </View>
 
-                        return (
-                          <View style={styles.commentCard} key={idx}>
-                            <View style={styles.commentHeader}>
-                              <View style={styles.userInfo}>
-                                <View style={styles.avatarContainer}>
-                                  <IconUser size={20} color="#666" />
+                  <View style={styles.commentsContainer}>
+                    {loadingComments ? (
+                      <View style={styles.centerContainer}>
+                        <ActivityIndicator size="large" color="#007bff" />
+                        <Text style={styles.loadingText}>Loading comments...</Text>
+                      </View>
+                    ) : comments.length === 0 ? (
+                      <View style={styles.centerContainer}>
+                        <Text style={styles.noCommentsText}>No comments yet</Text>
+                        <Text style={styles.noCommentsSubtext}>Be the first to share your thoughts about this area!</Text>
+                      </View>
+                    ) : (
+                      <ScrollView 
+                        showsVerticalScrollIndicator={false} 
+                        contentContainerStyle={styles.commentsScrollContainer}
+                      >
+                        {comments.map((comment, idx) => {
+                          const date = new Date(comment.created_at);
+                          const timeAgo = getTimeAgo(date);
+
+                          return (
+                            <View style={styles.commentCard} key={idx}>
+                              <View style={styles.commentHeader}>
+                                <View style={styles.userInfo}>
+                                  <View style={styles.avatarContainer}>
+                                    <IconUser size={20} color="#666" />
+                                  </View>
+                                  <Text style={styles.userName}>{comment.user_name}</Text>
                                 </View>
-                                <Text style={styles.userName}>{comment.user_name}</Text>
+                                <Text style={styles.timeAgo}>{timeAgo}</Text>
                               </View>
-                              <Text style={styles.timeAgo}>{timeAgo}</Text>
+                              <Text style={styles.commentText}>{comment.comment}</Text>
                             </View>
-                            <Text style={styles.commentText}>{comment.comment}</Text>
-                          </View>
-                        );
-                      })}
-                    </ScrollView>
-                  )}
+                          );
+                        })}
+                      </ScrollView>
+                    )}
+                  </View>
                 </View>
-              </View>
+              </ScrollView>
             </ScrollView>
           </>
         ) : (
           <>
             <TextInput
-              style={styles.input}
+              style={styles.searchInput}
               value={searchingZipcodeText}
               placeholder="Enter zipcode to search"
               onChangeText={(text) => setSearchingZipcodeText(text)}
             />
 
-            <ScrollView contentContainerStyle={{ gap: 10 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.contentScroll} showsVerticalScrollIndicator={false}>
               {zipcodeList.map((zip, idx) => (
                 <Pressable
                   key={idx}
-                  style={{
-                    ...styles.zipcodeButton,
-                    backgroundColor: zip.zipcode === zipcode ? '#e0e0e0' : '#fff',
-                    gap: 20,
-                  }}
+                  style={styles.listItem}
                   onPress={() => {
                     setZipcode(zip.zipcode);
                     setViewingZipcodeDetails(zip.zipcode); 
                   }}
                 >
-                  <View>
-                    <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{zip.zipcode}</Text>
-                    <Text>{zip.name}</Text>
+                  <View style={styles.itemContent}>
+                    <Text style={styles.itemTitle}>{zip.zipcode}</Text>
+                    <Text style={styles.itemSubtitle}>{zip.name}</Text>
                   </View>
                 </Pressable>
               ))}
@@ -376,31 +383,99 @@ export default function ZipPanel() {
           </>
         )}
       </View>
+
+      { showAICommentSummary && <AICommentsSummary insights={summaryInsight} onClose={(summaryInsights) => {
+        setShowAICommentSummary(false)
+        setSummaryInsight(summaryInsights)
+      }} /> }
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
+    position: 'absolute', // change from absolute
     height: '100%',
     left: 0,
     display: 'flex',
     flexDirection: 'row',
   },
   panel: {
-    display: 'flex',
-    flexDirection: 'column',
-    backgroundColor: '#f8fafc',
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
     width: 400,
-    height: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     padding: 20,
+    zIndex: 1, // change from 1000
+    borderRightWidth: 1,
+    borderColor: 'rgba(221, 221, 221, 0.5)',
   },
-  input: {
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  searchInput: {
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 16,
     backgroundColor: '#fff',
     padding: 10,
-    borderRadius: 5,
     color: '#27272a',
+    ...(Platform.OS === 'web' && {
+      outlineWidth: 0
+    })
+  },
+  contentScroll: {
+    flex: 1,
+  },
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  itemContent: {
+    flex: 1,
+  },
+  itemTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+    color: '#374151',
+  },
+  itemSubtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  backButtonText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#666',
   },
   zipcodeButton: {
     display: 'flex',
@@ -409,20 +484,11 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
   },
-  backButton: {
-    padding: 12,
-    backgroundColor: '#f1f5f9',
-    borderRadius: 8,
-    marginBottom: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    width: 'fit-content',
-  },
   insightsSection: {
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 20,
+    marginTop: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -433,7 +499,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#0f172a',
-    marginBottom: 16,
   },
   insightsGrid: {
     flexDirection: 'row',
@@ -443,7 +508,7 @@ const styles = StyleSheet.create({
   insightCard: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f3f4f6',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -453,14 +518,14 @@ const styles = StyleSheet.create({
   },
   insightLabel: {
     fontSize: 14,
-    color: '#64748b',
+    color: '#6b7280',
     marginBottom: 4,
     textAlign: 'center',
   },
   insightValue: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#374151',
   },
   commentSection: {
     backgroundColor: '#fff',
@@ -473,33 +538,59 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
+  commentSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  aiSummaryButton: {
+    backgroundColor: '#4f46e5',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  aiSummaryButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  commentInputContainer: {
+    marginTop: 20,
+    marginBottom: 20,
+  },
   inputWrapper: {
     backgroundColor: '#f8fafc',
     borderRadius: 12,
-    padding: 12,
+    padding: 8,
     flexDirection: 'row',
-    gap: 12,
-    alignItems: 'flex-start',
+    gap: 8,
+    alignItems: 'center',
+    minHeight: 60,
   },
   inputComment: {
     flex: 1,
     fontSize: 16,
     color: '#0f172a',
     textAlignVertical: 'top',
-    minHeight: 80,
-    padding: 0,
+    minHeight: 44,
+    padding: 8,
+    ...(Platform.OS === 'web' && {
+      outlineWidth: 0
+    })
   },
   addButton: {
-    backgroundColor: '#0284c7',
-    padding: 12,
+    backgroundColor: '#3b82f6',
+    padding: 8,
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     height: 44,
     width: 44,
+    alignSelf: 'flex-start',
   },
   addButtonDisabled: {
-    backgroundColor: '#94a3b8',
+    backgroundColor: '#93c5fd', // Light blue
   },
   commentsContainer: {
     flex: 1,

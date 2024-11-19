@@ -254,13 +254,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 10,
     gap: 8,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f3f4f6',
   },
   activeTab: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#3b82f6',
   },
   tabText: {
-    color: '#000',
+    color: '#4b5563',
     fontWeight: '500',
   },
   activeTabText: {
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     borderRadius: 8,
     marginBottom: 8,
     shadowColor: '#000',
@@ -325,10 +325,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
+    color: '#374151',
   },
   itemAddress: {
     fontSize: 14,
-    color: '#666',
+    color: '#6b7280',
   },
   itemActions: {
     flexDirection: 'row',
@@ -350,9 +351,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   travelButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#10b981',
   },
   removeButton: {
-    backgroundColor: '#ff4444',
+    backgroundColor: '#f43f5e',
   },
 });

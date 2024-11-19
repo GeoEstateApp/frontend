@@ -385,11 +385,29 @@ export default function SidePanel() {
                         flexShrink: 0,
                         flexGrow: 0,
                         height: 40,
-                        padding: 10,
-                        borderRadius: 5,
-                        backgroundColor: selectedFilters.includes(filterKey) ? `${SUPPORTED_FILTERS_MAP[filterKey as keyof typeof SUPPORTED_FILTERS_MAP]?.fill.substring(0, 7) || 'grey'}` : 'grey',
+                        paddingHorizontal: 16,
+                        paddingVertical: 8,
+                        borderRadius: 20,
+                        backgroundColor: selectedFilters.includes(filterKey) 
+                          ? `${SUPPORTED_FILTERS_MAP[filterKey as keyof typeof SUPPORTED_FILTERS_MAP]?.fill.substring(0, 7) || '#E5E7EB'}`
+                          : '#F3F4F6',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 2,
+                        elevation: 2,
+                        borderWidth: 1,
+                        borderColor: selectedFilters.includes(filterKey) 
+                          ? 'transparent'
+                          : '#E5E7EB',
                       }]}>
-                        <Text style={{ color: selectedFilters.includes(filterKey) ? 'white' : 'white' }}>
+                        <Text style={{ 
+                          color: selectedFilters.includes(filterKey) ? 'white' : '#4B5563',
+                          fontWeight: '500',
+                          fontSize: 14
+                        }}>
                           {filter}
                         </Text>
                     </Pressable>
@@ -482,11 +500,18 @@ const styles = StyleSheet.create({
     top: 0,
     display: 'flex',
     flexDirection: 'column',
-    gap: 10,
-    backgroundColor: '#ffffff99',
+    gap: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     width: 400,
     height: '100%',
     padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 2, height: 0 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderRightWidth: 1,
+    borderColor: 'rgba(221, 221, 221, 0.5)',
   },
   filters: {
     display: 'flex',
@@ -499,11 +524,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#f4f4f5',
+    backgroundColor: 'white',
     overflow: 'hidden',
-    borderRadius: 5,
+    borderRadius: 12,
     marginTop: 20,
     paddingBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   placeHeader: {
     width: '100%',
@@ -511,17 +541,51 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 10,
+    padding: 16,
+    gap: 10
   },
   placeTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1F2937',
   },
   actionButtons: {
     display: 'flex',
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  realEstateProperty: {
+    display: 'flex',
+    flexDirection: 'row',
+    gap: 12,
+    padding: 16,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    cursor: 'pointer',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    marginBottom: 8,
+  },
+  toggleButton: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    padding: 12,
+    borderRadius: 12,
+    width: 48,
+    height: 48,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  toggleButtonActive: {
+    backgroundColor: '#4CAF50',
   },
   favoriteButton: {
     padding: 8,
@@ -573,34 +637,4 @@ const styles = StyleSheet.create({
   removeFavoriteButton: {
     padding: 8,
   },
-  toggleButton: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    padding: 10,
-    borderRadius: 5,
-    width: 48,
-    height: 48,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  toggleButtonActive: {
-    backgroundColor: '#4CAF50',
-  },
-  realEstateProperty: {
-    display: 'flex',
-    flexDirection: 'row',
-    gap: 10,
-    padding: 10,
-    backgroundColor: 'white',
-    borderRadius: 6,
-    cursor: 'pointer'
-  }
 })

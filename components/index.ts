@@ -1,4 +1,4 @@
-import AIChat from "./aichat"
+import AICommentsSummary from "./aisummary"
 import Earth from "./earth/earth"
 import Globe from "./globe/Globe"
 import SearchBox from "./searchbox/searchbox"
@@ -7,4 +7,4 @@ import SuitabilityCalculator from "./suitabilityCalculator/suitabilitycalculator
 import ZipPanel from "./zippanel/zippanel"
 SuitabilityCalculator
 
-export { Earth, SearchBox, Globe, SidePanel, ZipPanel, AIChat, SuitabilityCalculator }
+export { Earth, SearchBox, Globe, SidePanel, ZipPanel, AICommentsSummary, SuitabilityCalculator }
