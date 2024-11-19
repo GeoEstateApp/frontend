@@ -1,11 +1,11 @@
-import {  Earth, SearchBox, SidePanel, SuitabilityCalculator, ZipPanel } from '@/components'
+import { Earth, SearchBox, SidePanel, SuitabilityCalculator, ZipPanel } from '@/components'
 import { AICommentsSummary } from '@/components'
 import { APIProvider } from '@vis.gl/react-google-maps'
-import { ActivityIndicator, Button, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Button, Image, Linking, Pressable, StyleSheet, Text, View, Animated } from 'react-native'
 import { useEffect, useState } from 'react'
 import { TouchableOpacity } from 'react-native'
 import { useRouter } from 'expo-router'
-import { IconUser, IconLogin, IconFilter, IconZip, IconSparkles, IconBed, IconBath, IconBuildingSkyscraper, IconAi, IconLiveView, IconGenderMale, IconGenderFemale, IconX, IconHeart, IconBookmark,IconMapPin } from '@tabler/icons-react'
+import { IconUser, IconLogin, IconFilter, IconZip, IconSparkles, IconBed, IconBath, IconBuildingSkyscraper, IconAi, IconLiveView, IconGenderMale, IconGenderFemale, IconX, IconHeart, IconBookmark, IconMapPin } from '@tabler/icons-react'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
@@ -69,7 +69,9 @@ export default function index() {
   const [showAIChat, setShowAIChat] = useState(false)
   const [showWalkthrough, setShowWalkthrough] = useState(false);
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
+  const [showTourPrompt, setShowTourPrompt] = useState(true);
 
+  //checking for first time users to display walkthrough feature
   useEffect(() => {
     const checkFirstTimeUser = async () => {
       const isNewUser = await AsyncStorage.getItem('isFirstTimeUser')
@@ -82,7 +84,7 @@ export default function index() {
     checkFirstTimeUser()
   }, [])
 
-  // uncomment when developing
+  // uncomment when developing for the walkthrough to show
   useEffect(() => {
     const isNewUser = localStorage.getItem('isFirstTimeUser') === null;
     if (isNewUser || process.env.NODE_ENV === 'development') {
@@ -93,10 +95,31 @@ export default function index() {
     }
   }, []);
 
-
+  // start walkthrough 
   const handleStartTour = () => {
     setShowWalkthrough(true);
   };
+
+  //animation for tour prompt for new users
+  const pulseAnim = useState(new Animated.Value(1))[0];   
+  useEffect(() => {
+    if (showTourPrompt) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1, 
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+  }, [showTourPrompt, pulseAnim]);
 
 
 
@@ -165,34 +188,34 @@ export default function index() {
   };
 
   const handleFavoritesClick = () => {
-      setShowFavPanel(!showFavPanel)
-      setShowBucketListPanel(false)
-      setShowPanel(false)
-      setShowAIChat(false)
-      setIsZipcodePanelOpen(false)
+    setShowFavPanel(!showFavPanel)
+    setShowBucketListPanel(false)
+    setShowPanel(false)
+    setShowAIChat(false)
+    setIsZipcodePanelOpen(false)
   }
 
   const handleBucketListClick = () => {
-      setShowBucketListPanel(!showBucketListPanel)
-      setShowFavPanel(false)
-      setShowPanel(false)
-      setShowAIChat(false)
-      setIsZipcodePanelOpen(false)
+    setShowBucketListPanel(!showBucketListPanel)
+    setShowFavPanel(false)
+    setShowPanel(false)
+    setShowAIChat(false)
+    setIsZipcodePanelOpen(false)
   }
 
-  
+
   return (
     <View style={styles.container}>
       <HeaderButton />
       <APIProvider apiKey={API_KEY} version={GOOGLE_MAP_VERSION}>
-        
+
         <Earth />
         <SearchBox />
         {showPanel && <SidePanel />}
         {isZipcodePanelOpen && <ZipPanel />}
         {showBucketListPanel && <BucketListPanel />}
         {showFavPanel && <FavoritesPanel />}
-       
+
 
 
 
@@ -231,17 +254,41 @@ export default function index() {
           </Pressable>
           {/* start tour button */}
           {isFirstTimeUser && (
-        <TouchableOpacity style={styles.tourButton} onPress={handleStartTour}>
-          <IconMapPin name="ios-map" size={20} color="#05A659" />
-        </TouchableOpacity>
-      )}
+        <View style={styles.tourWrapper}>
+          <TouchableOpacity
+            style={styles.tourButton}
+            onPress={() => {
+              setShowPanel(false);
+              setIsZipcodePanelOpen(false);
+              setShowFavPanel(false);
+              setShowBucketListPanel(false);
+              setShowTourPrompt(false);
+              handleStartTour();
+            }}
+          >
+            <IconMapPin name="ios-map" size={20} color="#05A659" />
+          </TouchableOpacity>
 
-      {/* show walkthrough if it's the first time */}
-      {showWalkthrough && <Walkthrough onClose={() => setShowWalkthrough(false)} />}
+          {/* show prompt if it's the first time */}
+          {showTourPrompt && (
+            <TouchableOpacity
+              onPress={() => setShowTourPrompt(false)}
+              style={styles.tourPrompt}
+            >
+              <Animated.Text style={[styles.tourPromptText, { transform: [{ scale: pulseAnim }] }]}>
+                Take a quick tour to explore
+              </Animated.Text>
+            </TouchableOpacity>
+          )}
+    </View>
+  )}
+
+  {/* show walkthrough if it's the first time */}
+  {showWalkthrough && <Walkthrough onClose={() => setShowWalkthrough(false)} />}
         </View>
 
         {selectedRealEstateProperty && (
-          <View style={styles.modal}> 
+          <View style={styles.modal}>
             <IconX
               style={{
                 position: 'absolute',
@@ -347,10 +394,10 @@ export default function index() {
         )
         }
         {isModalOpen && <SuitabilityCalculator />}
-       
+
 
       </APIProvider>
-      
+
       <Toast position='bottom' bottomOffset={20} />
     </View>
   )
@@ -418,5 +465,40 @@ const styles = StyleSheet.create({
     borderColor: '#05A659',
     borderWidth: 1,
     marginTop: 10,
+  },
+  tourWrapper: {
+    position: 'relative', 
+    alignItems: 'center',
+  },
+  tourPrompt: {
+    position: 'absolute',
+    top: 0, 
+    left: 55, 
+    backgroundColor: '#333',
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 25, 
+    zIndex: 10, 
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 5, 
+    opacity: 1, 
+    width: 220,
+    alignItems: 'center', 
+    justifyContent: 'center',
+  },
+  tourPromptText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500', 
+    textAlign: 'center', 
+    lineHeight: 18,
+    letterSpacing: 0.5, 
+  },
+  icon: {
+    fontSize: 20,
+    color: 'white',
   },
 })

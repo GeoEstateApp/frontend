@@ -336,6 +336,7 @@ const styles = StyleSheet.create({
     borderColor: "#007AFF",
     backgroundColor: "rgba(255, 255, 255, 0.05)",
     backdropFilter: "blur(8px)",
+    zIndex : 1
   },
   tooltip: {
     position: "absolute",
