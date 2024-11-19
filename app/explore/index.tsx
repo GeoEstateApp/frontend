@@ -217,9 +217,6 @@ export default function index() {
             <IconZip size={20} strokeWidth={2} color={isZipcodePanelOpen ? 'white' : 'black'} />
           </Pressable>
 
-  
-
-
           <Pressable
             style={{ ...styles.toggleButton, backgroundColor: showFavPanel ? '#49A84C' : 'white' }}
             onPress={handleFavoritesClick}
