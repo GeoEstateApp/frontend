@@ -1,12 +1,15 @@
-import { AICommentsSummary, Earth, SearchBox, SidePanel, SuitabilityCalculator, ZipPanel } from '@/components'
+import { Earth, SearchBox, SidePanel, SuitabilityCalculator, ZipPanel } from '@/components'
+import { AICommentsSummary } from '@/components'
 import { APIProvider } from '@vis.gl/react-google-maps'
-import { ActivityIndicator, Button, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Button, Image, Linking, Pressable, StyleSheet, Text, View, Animated } from 'react-native'
 import { useEffect, useState } from 'react'
 import { TouchableOpacity } from 'react-native'
 import { useRouter } from 'expo-router'
-import { IconUser, IconLogin, IconFilter, IconZip, IconSparkles, IconBed, IconBath, IconBuildingSkyscraper, IconAi, IconLiveView, IconGenderMale, IconGenderFemale, IconX, IconHeart, IconBookmark } from '@tabler/icons-react'
+import { IconUser, IconLogin, IconFilter, IconZip, IconSparkles, IconBed, IconBath, IconBuildingSkyscraper, IconAi, IconLiveView, IconGenderMale, IconGenderFemale, IconX, IconHeart, IconBookmark, IconMapPin } from '@tabler/icons-react'
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
+import Walkthrough from './walkthrough'
 import Toast from 'react-native-toast-message'
 import { useSidePanelStore } from '@/states/sidepanel'
 import { useSuitability } from '@/states/suitability'
@@ -57,6 +60,62 @@ export default function index() {
 
   const { showFavPanel, setShowFavPanel } = useFavoritesPanelStore()
   const { showBucketListPanel, setShowBucketListPanel } = useBucketListPanelStore()
+  const [showAIChat, setShowAIChat] = useState(false)
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
+  const [showTourPrompt, setShowTourPrompt] = useState(true);
+
+  //checking for first time users to display walkthrough feature
+  useEffect(() => {
+    const checkFirstTimeUser = async () => {
+      const isNewUser = await AsyncStorage.getItem('isFirstTimeUser')
+      if (isNewUser === null || isNewUser === 'true') {
+        setIsFirstTimeUser(true)
+        await AsyncStorage.setItem('isFirstTimeUser', 'false')
+      }
+    }
+
+    checkFirstTimeUser()
+  }, [])
+
+  // uncomment when developing for the walkthrough to show
+  useEffect(() => {
+    const isNewUser = localStorage.getItem('isFirstTimeUser') === null;
+    if (isNewUser || process.env.NODE_ENV === 'development') {
+      setIsFirstTimeUser(true);
+      if (isNewUser) {
+        localStorage.setItem('isFirstTimeUser', 'false');
+      }
+    }
+  }, []);
+
+  // start walkthrough 
+  const handleStartTour = () => {
+    setShowWalkthrough(true);
+  };
+
+  //animation for tour prompt for new users
+  const pulseAnim = useState(new Animated.Value(1))[0];   
+  useEffect(() => {
+    if (showTourPrompt) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1, 
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+  }, [showTourPrompt, pulseAnim]);
+
+
 
   if (!API_KEY) {
     return (
@@ -151,10 +210,12 @@ export default function index() {
     setShowZipcodePanel(false)
   }
 
+
   return (
     <View style={styles.container}>
       <HeaderButton isLoggedIn />
       <APIProvider apiKey={API_KEY} version={GOOGLE_MAP_VERSION}>
+
         <Earth />
         <SearchBox />
         {showPanel && <SidePanel />}
@@ -306,7 +367,9 @@ export default function index() {
         )
         }
         {isModalOpen && <SuitabilityCalculator />}
+
       </APIProvider>
+
       <Toast position='bottom' bottomOffset={20} />
     </View>
   )
@@ -366,5 +429,48 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 10,
     width: 300,
-  }
+  },
+  tourButton: {
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: 'white',
+    borderColor: '#05A659',
+    borderWidth: 1,
+    marginTop: 10,
+  },
+  tourWrapper: {
+    position: 'relative', 
+    alignItems: 'center',
+  },
+  tourPrompt: {
+    position: 'absolute',
+    top: 0, 
+    left: 55, 
+    backgroundColor: '#333',
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 25, 
+    zIndex: 10, 
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 5, 
+    opacity: 1, 
+    width: 220,
+    alignItems: 'center', 
+    justifyContent: 'center',
+  },
+  tourPromptText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500', 
+    textAlign: 'center', 
+    lineHeight: 18,
+    letterSpacing: 0.5, 
+  },
+  icon: {
+    fontSize: 20,
+    color: 'white',
+  },
 })

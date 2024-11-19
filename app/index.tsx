@@ -16,15 +16,15 @@ import TeamDetail from "./landing-team-details/TeamDetail";
 import DemoVideo from './landing-demo-video/DemoVideo';
 
 const teamMembers = [
-    { name: "Ayesha Virk", role: "Founder, Full Stack Developer", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
-    { name: "Robert Bui", role: "CEO, Backend Lead", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
-    { name: "Humera", role: "Backend Developer, DB Developer", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
-    { name: "Yaseen (Ace)", role: "Backend Developer", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
-    { name: "Aditya Sengupta", role: "Frontend Lead, Full Stack Developer", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
-    { name: "Dip", role: "Backend, Full Stack Developer", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
-    { name: "Zainab Rashid", role: "Frontend Developer, UI/UX Lead", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
-    { name: "Shelian Gladis", role: "Frontend Developer, Designer", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
-    { name: "Vikramaditya Dhumal", role: "Frontend Developer", image: "https://i.pinimg.com/736x/bf/e3/28/bfe328e7402b4da30ed9b2e7eabc188e.jpg" },
+    { name: "Ayesha Virk", role: "Founder, Full Stack Developer", image: "https://i.pinimg.com/736x/0a/7d/c3/0a7dc35b8155aba1008c563bbbe34441.jpg" },
+    { name: "Robert Bui", role: "CEO, Backend Lead", image: "https://i.pinimg.com/736x/c6/dd/02/c6dd02eef170fb8accaf180faf0fdea8.jpg" },
+    { name: "Vikramaditya Dhumal", role: "Frontend Lead, Full Stack Developer", image: "https://i.pinimg.com/736x/79/36/6a/79366a3b921eb0c283e19b28edc80e61.jpg" },
+    { name: "Humera", role: "Backend Developer, DB Developer", image: "https://i.pinimg.com/736x/9f/90/0f/9f900f10d2ffdfd34c95ae39487eff85.jpg" },
+    { name: "Yaseen", role: "Backend Developer", image: "https://i.pinimg.com/736x/d6/66/88/d66688f7a1f37ba4f0448d62876e028f.jpg" },
+    { name: "Aditya Sengupta", role: "Frontend, Full Stack Developer", image: "https://i.pinimg.com/736x/a0/9a/e4/a09ae493347c98b507b43e8e2bed85be.jpg" },
+    { name: "Dip", role: "Backend, Full Stack Developer", image: "https://i.pinimg.com/736x/e2/89/34/e2893485506bbf68ea7ac95c1dbb4bcd.jpg" },
+    { name: "Zainab Rashid", role: "Frontend Developer, UI/UX Lead", image: "https://i.pinimg.com/736x/af/c5/57/afc557911778f8935553c46f5898dd39.jpg" },
+    { name: "Shelian Gladis", role: "Frontend Developer, Designer", image: "https://i.pinimg.com/474x/ff/1c/d9/ff1cd938ef943a6af3b58ec33d39a81a.jpg" },
 ];
 
 
@@ -77,14 +77,14 @@ export default function Index() {
           type: 'info',
           text1: 'Welcome to GeoEstate!',
           text2: 'Discover your perfect property',
-          visibilityTime: 3000,
+          visibilityTime: 2000,
           autoHide: true,
           topOffset: 20,
           text1Style: { fontSize: 16, fontWeight: 'bold' },
           text2Style: { fontSize: 14 },
         });
       
-        const loadingTime = 3000; 
+        const loadingTime = 2000; 
         const timer = setTimeout(() => {
           setIsLoading(false);
         }, loadingTime);
@@ -167,7 +167,6 @@ export default function Index() {
               <WhyUsSection />
               {/* Team Section */}
               <View style={styles.teamSection}>
-                <Text style={styles.teamsectionTitle}>Meet the Team</Text>
                 <TeamDetail teamMembers={teamMembers} />
               </View>
               <ReviewSection />
@@ -525,7 +524,7 @@ const ReviewSection = () => {
 
     return (
         <View style={styles.mainContainer}>
-            <Text style={styles.ReviewSubtitle}>Reviews</Text>
+            <Text style={styles.ReviewSubtitle}>REVIEWS</Text>
             <Text style={styles.sectionLabel}>What Our Clients Say</Text>
             <Text style={styles.tagline}>Hear about the experiences of our happy clients!</Text>
 
@@ -675,10 +674,10 @@ const styles = StyleSheet.create({
     //team section styles 
     teamSection: { alignItems: 'center', paddingVertical: 40 },
     teamsectionTitle: {
-        fontSize: 48,
         fontWeight: 'bold',
         color: '#fff',
         textAlign: 'center',
+        fontSize: Platform.select({ web: 56, default: 48 }),
     },
 
 
@@ -701,7 +700,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
     },
     headerTitle: {
-        fontSize: 24,
+        fontSize: Platform.select({ web: 28, default: 24 }),
         fontWeight: 'bold',
         color: '#fff',
     },
@@ -712,7 +711,7 @@ const styles = StyleSheet.create({
     },
     headerLink: {
         color: '#fff',
-        fontSize: 16
+         fontSize: Platform.select({ web: 18, default: 16 }),
     },
     headerButton: {
         flexDirection: 'row',
@@ -843,7 +842,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     featuresTitle: {
-        fontSize: Platform.select({ web: 48, default: 36 }),
+        fontSize: Platform.select({ web: 28, default: 36 }),
         fontWeight: 'bold',
         color: '#fff',
         textAlign: 'center',
@@ -851,7 +850,7 @@ const styles = StyleSheet.create({
         maxWidth: 800,
     },
     featuresDescription: {
-        fontSize: Platform.select({ web: 18, default: 16 }),
+        fontSize: Platform.select({ web: 16, default: 16 }),
         color: '#fff',
         opacity: 0.8,
         textAlign: 'center',
@@ -1020,14 +1019,14 @@ const styles = StyleSheet.create({
         fontSize: 18,
         color: "#007AFF",
         fontWeight: "600",
-        marginBottom: 5,
+        marginBottom: 10,
         letterSpacing: 1,
     },
     sectionLabel: {
         fontSize: 24,
         color: "#fff",
         fontWeight: "bold",
-        marginVertical: 20,
+        marginBottom: 15,
         textAlign: "center",
     },
     tagline: {

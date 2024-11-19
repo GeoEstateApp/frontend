@@ -499,17 +499,20 @@ export default function SidePanel() {
   )
 }
 
+//const isSmallScreen = window.innerWidth <= 700;
+
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     height: '100%',
     left: 0,
-    top: 0,
+    top: 0, 
   },
+  
   buttonContainer: {
     position: 'absolute',
     left: 10,
-    top: 10,
+    top: 10 ,
     display: 'flex',
     flexDirection: 'column',
     gap: 10,

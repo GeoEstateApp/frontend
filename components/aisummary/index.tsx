@@ -50,7 +50,38 @@ export default function AICommentsSummary({ onClose, insights }: { onClose: (str
       if (!response.ok) throw new Error("Network response was not ok")
 
       const data = await response.json()
-      const result = await model.generateContent(JSON.stringify(data))
+      
+      const prompt = `Analyze the following community feedback for zipcode ${zipcode}. 
+Format the response in markdown using h2 headers (##).
+
+Comments:
+${data.map((comment: any, index: number) => `${index + 1}. "${comment.comment}"`).join('\n')}
+
+Provide a comprehensive analysis that includes:
+
+## Community Sentiment
+- Overall tone of feedback (positive/negative/mixed)
+- Key recurring themes in comments
+- Notable community concerns or praise
+
+## Neighborhood Characteristics
+- Lifestyle and atmosphere
+- Safety and security observations
+- Community amenities mentioned
+
+## Real Estate Insights
+- Housing market sentiment
+- Rental market observations
+- Property value trends mentioned
+
+## Recommendations
+- Potential opportunities
+- Areas for improvement
+- Key considerations for prospective residents
+
+Keep the analysis balanced, data-driven, and focused on actionable insights.`
+
+      const result = await model.generateContent(prompt)
   
       const aiResponse = result.response
       const text = aiResponse.text()
