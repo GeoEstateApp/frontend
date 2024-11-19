@@ -3,9 +3,11 @@ import React, { useEffect, useState } from 'react'
 import { Picker } from '@react-native-picker/picker'
 import { Slider } from '@miblanchard/react-native-slider';
 import { useMapsLibrary } from '@vis.gl/react-google-maps';
-import { IconSearch, IconX, IconHome, IconKey, IconBed, IconBath, IconArrowLeft, IconArrowRight, IconMap, IconRuler } from '@tabler/icons-react';
+import { IconX, IconSearch, IconArrowLeft, IconArrowRight, IconBed, IconBath, IconRuler, IconMap, IconHome, IconKey } from '@tabler/icons-react'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSidePanelStore } from '@/states/sidepanel';
+import { useMapStore } from '@/states/map';
+import { useSuitability } from '@/states/suitability';
 
 interface Prefs {
   minBeds: number,
@@ -96,6 +98,38 @@ export default function SuitabilityCalculator() {
   const [recommendationProperties, setRecommendationProperties] = useState<RecommendationProperties[]>([])
 
   const { setSelectedRealEstateProperty, selectedRealEstateProperty } = useSidePanelStore()
+  const { setSelectedPlace, setSelectedPlacePolygonCoordinates } = useMapStore()
+  const { isModalOpen, setIsModalOpen } = useSuitability()
+
+  useEffect(() => {
+    if (!isModalOpen) {
+      setSelectedRealEstateProperty(null);
+      setSelectedPlace(null);
+      setSelectedPlacePolygonCoordinates([]);
+    }
+  }, [isModalOpen]);
+
+  const handleClose = () => {
+    setIsModalOpen(false);
+  };
+
+  const handlePropertySelect = (property: RecommendationProperties) => {
+    setSelectedRealEstateProperty(property);
+  };
+
+  const handleViewOnMap = (property: RecommendationProperties) => {
+    const place = {
+      geometry: {
+        location: new google.maps.LatLng(property.coordinate_lat, property.coordinate_lon)
+      },
+      formatted_address: property.address_line,
+      name: property.address_line,
+      place_id: property.property_id.toString()
+    } as google.maps.places.PlaceResult;
+
+    setSelectedPlace(place);
+    setSelectedPlacePolygonCoordinates([]);
+  };
 
   // Page One
   const [rentOrBuy, setRentOrBuy] = useState<"rent" | "buy">("buy")
@@ -110,7 +144,7 @@ export default function SuitabilityCalculator() {
 
   // Page Four
   const [wantPropertyRecommendationAge, setWantPropertyRecommendationAge] = useState<boolean | null>(null)
-  const [propertyRecommendationAge, setPropertyRecommendationAge] = useState<number | null>(null)
+  const [propertyRecommendationAge, setPropertyRecommendationAge] = useState<number | string>('')
 
   // Page Five
   const [wantAnyRecommendedPlaces, setWantAnyRecommendedPlaces] = useState<boolean | null>(null)
@@ -201,7 +235,7 @@ export default function SuitabilityCalculator() {
         minBeds: noOfBedrooms,
         priceMin: minPrice,
         priceMax: maxPrice,
-        age: propertyRecommendationAge || 0, 
+        age: typeof propertyRecommendationAge === 'number' ? propertyRecommendationAge : null,
         propsToReturn: 50,
         homeValuePriority: wantPropertyRecommendationAge || false,
         filterByMedianAge: wantPropertyRecommendationAge || false
@@ -295,11 +329,12 @@ export default function SuitabilityCalculator() {
 
   const renderProperty = ({ item: property }: { item: RecommendationProperties }) => (
     <Pressable 
+      id={`property-${property.property_id}`}
       style={[
         styles.recommendedPropertyCard,
         selectedRealEstateProperty?.property_id === property.property_id && styles.recommendedPropertyCardSelected
       ]} 
-      onPress={() => setSelectedRealEstateProperty(property)}>
+      onPress={() => handlePropertySelect(property)}>
       <View style={styles.propertyImageContainer}>
         <Image 
           source={{ uri: property.img_url }} 
@@ -332,31 +367,28 @@ export default function SuitabilityCalculator() {
         <View style={styles.propertyFeatureGrid}>
           <View style={styles.featureItem}>
             <IconBed size={20} color="#374151" />
-            <Text style={styles.featureText}>
-              {property.num_beds} {property.num_beds === 1 ? 'Bed' : 'Beds'}
-            </Text>
+            <Text style={styles.featureText}>{property.num_beds || '-'} Beds</Text>
           </View>
-          <View style={styles.featureItem}>
-            <IconBath size={20} color="#374151" />
-            <Text style={styles.featureText}>
-              {property.num_baths} {property.num_baths === 1 ? 'Bath' : 'Baths'}
-            </Text>
-          </View>
+          {property.num_baths && (
+            <View style={styles.featureItem}>
+              <IconBath size={20} color="#374151" />
+              <Text style={styles.featureText}>{property.num_baths} Baths</Text>
+            </View>
+          )}
           {property.size_sqft && (
             <View style={styles.featureItem}>
               <IconRuler size={20} color="#374151" />
-              <Text style={styles.featureText}>
-                {property.size_sqft.toLocaleString()} ft²
-              </Text>
+              <Text style={styles.featureText}>{property.size_sqft} sqft</Text>
             </View>
           )}
         </View>
 
         <Pressable 
-          style={styles.viewOnMapButton}
-          onPress={() => {
-            setSelectedRealEstateProperty(property);
-          }}>
+          style={[
+            styles.viewOnMapButton,
+            selectedRealEstateProperty?.property_id === property.property_id && styles.viewOnMapButtonSelected
+          ]}
+          onPress={() => handleViewOnMap(property)}>
           <IconMap size={18} color="#fff" />
           <Text style={styles.viewOnMapText}>View on Map</Text>
         </Pressable>
@@ -366,6 +398,12 @@ export default function SuitabilityCalculator() {
 
   return (
     <View style={recommendationProperties && recommendationProperties.length > 0 ? styles.sideModal : styles.modal}>
+      <Pressable 
+        style={styles.closeButton} 
+        onPress={handleClose}
+      >
+        <IconX size={20} color="#6B7280" />
+      </Pressable>
       {error && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
@@ -374,12 +412,6 @@ export default function SuitabilityCalculator() {
       {
         recommendationProperties.length === 0 && (
           <View style={{ flex: 1 }}>
-            <View style={styles.header}>
-              <StepIndicator 
-                currentStep={currentPage} 
-                onStepClick={(step) => setCurrentPage(step)}
-              />
-            </View>
             <View style={styles.content}>
               {currentPage === 0 && (
                 <View style={styles.getStarted}>
@@ -533,7 +565,7 @@ export default function SuitabilityCalculator() {
                       style={[styles.choiceCard, wantPropertyRecommendationAge === false && styles.choiceCardActive]} 
                       onPress={() => {
                         setWantPropertyRecommendationAge(false)
-                        setPropertyRecommendationAge(null)
+                        setPropertyRecommendationAge('')
                       }}>
                       <View style={styles.choiceIconContainer}>
                         <IconHome size={24} color={wantPropertyRecommendationAge === false ? '#fff' : '#666'} />
@@ -554,7 +586,7 @@ export default function SuitabilityCalculator() {
                         style={styles.modernPicker}
                         selectedValue={propertyRecommendationAge}
                         onValueChange={(value) => setPropertyRecommendationAge(value)}>
-                        <Picker.Item label="Select your age" value={null} />
+                        <Picker.Item label="Select your age" value="" />
                         {Array.from({ length: 83 }, (_, i) => i + 18).map((age) => (
                           <Picker.Item 
                             key={`age-${age}`}
@@ -570,56 +602,58 @@ export default function SuitabilityCalculator() {
 
               {currentPage === 5 && (
                 <View style={styles.pageFive}>
-                  <Text style={styles.pageTitle}>Location Preferences</Text>
-                  <Text style={styles.pageSubtitle}>Where would you like to live? (Optional)</Text>
-                  
-                  <View style={styles.searchSection}>
-                    <View style={styles.searchBoxContainer}>
-                      <IconSearch size={20} color="#6B7280" />
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Search for a location..."
-                        value={searchText}
-                        onChangeText={handleSearchTextChange}
-                      />
-                      {searchText && (
-                        <Pressable onPress={() => setSearchText('')}>
-                          <IconX size={20} color="#6B7280" />
-                        </Pressable>
+                  <View style={styles.pageContent}>
+                    <Text style={styles.pageTitle}>Location Preferences</Text>
+                    <Text style={styles.pageSubtitle}>Where would you like to live? (Optional)</Text>
+                    
+                    <View style={styles.searchSection}>
+                      <View style={styles.searchBoxContainer}>
+                        <IconSearch size={20} color="#6B7280" />
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Search for a location..."
+                          value={searchText}
+                          onChangeText={handleSearchTextChange}
+                        />
+                        {searchText && (
+                          <Pressable onPress={() => setSearchText('')}>
+                            <IconX size={20} color="#6B7280" />
+                          </Pressable>
+                        )}
+                      </View>
+                      
+                      {predictions.length > 0 && (
+                        <View style={styles.predictionsContainer}>
+                          {predictions.map((prediction, index) => (
+                            <Pressable
+                              key={`prediction-${index}`}
+                              style={styles.predictionsItem}
+                              onPress={() => handleSelectPlace(prediction.place_id || "")}>
+                              <Text style={styles.predictionText}>{prediction.description}</Text>
+                            </Pressable>
+                          ))}
+                        </View>
                       )}
                     </View>
-                    
-                    {predictions.length > 0 && (
-                      <View style={styles.predictionsContainer}>
-                        {predictions.map((prediction, index) => (
-                          <Pressable
-                            key={`prediction-${index}`}
-                            style={styles.predictionsItem}
-                            onPress={() => handleSelectPlace(prediction.place_id || "")}>
-                            <Text style={styles.predictionText}>{prediction.description}</Text>
-                          </Pressable>
+
+                    {recommendedPlaces.length > 0 && (
+                      <View style={styles.recommendedPlacesContainer}>
+                        <Text style={styles.recommendedPlacesTitle}>Selected Locations</Text>
+                        {recommendedPlaces.map((place, index) => (
+                          <View key={`place-${place.address}-${index}`} style={styles.recommendedPlaceItem}>
+                            <Text style={styles.recommendedPlaceText}>{place.address}</Text>
+                            <Pressable
+                              style={styles.removeButton}
+                              onPress={() => {
+                                setRecommendedPlaces(prev => prev.filter((_, i) => i !== index));
+                              }}>
+                              <IconX size={16} color="#6B7280" />
+                            </Pressable>
+                          </View>
                         ))}
                       </View>
                     )}
                   </View>
-
-                  {recommendedPlaces.length > 0 && (
-                    <View style={styles.recommendedPlacesContainer}>
-                      {recommendedPlaces.map((place, index) => (
-                        <Text key={`place-${place.address}-${index}`} style={styles.recommendedPlacesItem}>
-                          {place.address}
-                          <IconX
-                            size={16}
-                            color="#6B7280"
-                            style={{ marginLeft: 8, cursor: 'pointer' }}
-                            onClick={() => setRecommendedPlaces((prev) => 
-                              prev.filter((_, i) => i !== index)
-                            )}
-                          />
-                        </Text>
-                      ))}
-                    </View>
-                  )}
                 </View>
               )}
 
@@ -675,25 +709,78 @@ export default function SuitabilityCalculator() {
         )
       }
 
-      {recommendationProperties.length > 0 && (
-        <View style={styles.listContainer}>
+      {currentPage === 6 && !isLoading && recommendationProperties.length > 0 && (
+        <View style={styles.recommendedPropertiesContainer}>
+          <Text style={styles.pageTitle}>Recommended Properties</Text>
+          <Text style={styles.pageSubtitle}>Based on your preferences</Text>
           <FlatList
+            style={styles.propertyList}
             data={recommendationProperties}
-            renderItem={renderProperty}
-            keyExtractor={(item) => `property-${item.property_id}`}
-            contentContainerStyle={styles.recommendationsContainer}
-            onEndReached={handleLoadMore}
-            onEndReachedThreshold={0.5}
-            ListFooterComponent={renderFooter}
-            ListEmptyComponent={renderEmpty}
-            showsVerticalScrollIndicator={true}
-            refreshControl={
-              <RefreshControl
-                refreshing={isRefreshing}
-                onRefresh={handleRefresh}
-                colors={['#49a84c']}
-              />
-            }
+            keyExtractor={(item) => item.property_id.toString()}
+            renderItem={({ item }) => (
+              <Pressable
+                id={`property-${item.property_id}`}
+                style={[
+                  styles.recommendedPropertyCard,
+                  selectedRealEstateProperty?.property_id === item.property_id && styles.recommendedPropertyCardSelected
+                ]}
+                onPress={() => handlePropertySelect(item)}
+              >
+                <View style={styles.propertyImageContainer}>
+                  <Image
+                    source={{ uri: item.img_url }}
+                    style={styles.propertyImage}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.propertyBadge}>
+                    <Text style={styles.propertyStatus}>
+                      {item.status === 'for_sale' ? 'For Sale' : item.status}
+                    </Text>
+                  </View>
+                  <View style={styles.propertyPriceBadge}>
+                    <Text style={styles.propertyPriceText}>{item.price}</Text>
+                  </View>
+                </View>
+                <View style={styles.propertyContent}>
+                  <View style={styles.propertyHeader}>
+                    <View style={styles.propertyTitleSection}>
+                      <Text style={styles.propertyType}>{item.property_type}</Text>
+                      <Text style={styles.propertyAddress}>{item.address_line}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.propertyFeatureGrid}>
+                    <View style={styles.featureItem}>
+                      <IconBed size={18} color="#374151" />
+                      <Text style={styles.featureText}>{item.num_beds || '-'} Beds</Text>
+                    </View>
+                    {item.num_baths && (
+                      <View style={styles.featureItem}>
+                        <IconBath size={18} color="#374151" />
+                        <Text style={styles.featureText}>{item.num_baths} Baths</Text>
+                      </View>
+                    )}
+                    {item.size_sqft && (
+                      <View style={styles.featureItem}>
+                        <IconRuler size={18} color="#374151" />
+                        <Text style={styles.featureText}>{item.size_sqft} sqft</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Pressable
+                    style={[
+                      styles.viewOnMapButton,
+                      selectedRealEstateProperty?.property_id === item.property_id && styles.viewOnMapButtonSelected
+                    ]}
+                    onPress={() => handleViewOnMap(item)}
+                  >
+                    <IconMap size={18} color="#ffffff" />
+                    <Text style={styles.viewOnMapText}>View on Map</Text>
+                  </Pressable>
+                </View>
+              </Pressable>
+            )}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.recommendedPropertiesContent}
           />
         </View>
       )}
@@ -896,220 +983,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#111827',
   },
-  searchBoxContainer: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 16,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-    marginBottom: 24,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: '#111827',
-    marginLeft: 12,
-  },
-  predictionsContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  predictionsItem: {
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  predictionText: {
-    fontSize: 14,
-    color: '#374151',
-  },
-  recommendedPlacesContainer: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 16,
-    padding: 24,
-    marginTop: 24,
-  },
-  recommendedPlacesItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-  },
-  recommendedPropertyCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    marginBottom: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  recommendedPropertyCardSelected: {
-    borderColor: '#49a84c',
-    borderWidth: 2,
-    transform: [{ scale: 1.02 }],
-  },
-  propertyImageContainer: {
-    position: 'relative',
-    height: 200,
-    width: '100%',
-  },
-  propertyImage: {
-    width: '100%',
-    height: '100%',
-  },
-  propertyBadge: {
-    position: 'absolute',
-    top: 12,
-    left: 12,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  propertyPriceBadge: {
-    position: 'absolute',
-    bottom: 12,
-    right: 12,
-    backgroundColor: '#49a84c',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  propertyStatus: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  propertyPriceText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  propertyContent: {
-    padding: 16,
-  },
-  propertyHeader: {
-    marginBottom: 16,
-  },
-  propertyTitleSection: {
-    gap: 4,
-  },
-  propertyType: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#49a84c',
-    marginBottom: 4,
-  },
-  propertyAddress: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#111827',
-    lineHeight: 24,
-  },
-  propertyFeatureGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-    marginBottom: 16,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#f3f4f6',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  featureText: {
-    fontSize: 14,
-    color: '#374151',
-    fontWeight: '500',
-  },
-  viewOnMapButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#49a84c',
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 8,
-  },
-  viewOnMapText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  stepContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 40,
-    paddingHorizontal: 24,
-  },
-  stepWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  stepCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#F9FAFB',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-  },
-  stepCompleted: {
-    backgroundColor: '#49a84c',
-    borderColor: '#49a84c',
-  },
-  stepCurrent: {
-    borderColor: '#49a84c',
-    backgroundColor: 'white',
-  },
-  stepNumber: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  stepNumberActive: {
-    color: '#49a84c',
-  },
-  stepLine: {
-    width: 80,
-    height: 2,
-    backgroundColor: '#E5E7EB',
-    marginHorizontal: 8,
-  },
-  stepLineCompleted: {
-    backgroundColor: '#49a84c',
-  },
   searchSection: {
-    marginBottom: 24,
+    width: '100%',
+    position: 'relative',
+    marginTop: 16,
+  },
+  pageContent: {
+    padding: 24,
+    gap: 16,
   },
   selectedLocationCard: {
     backgroundColor: '#F9FAFB',
@@ -1188,7 +1069,27 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   header: {
-    marginBottom: 24,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  closeButton: {
+    position: 'absolute',
+    right: -10,
+    top: -10,
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#49A84C',
+    zIndex: 10,
   },
   stepClickable: {
     cursor: 'pointer',
@@ -1319,5 +1220,264 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#374151',
     marginBottom: 8,
+  },
+  recommendedPropertyCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    marginBottom: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    minHeight: 420,
+  },
+  recommendedPropertyCardSelected: {
+    borderColor: '#49a84c',
+    borderWidth: 2,
+    backgroundColor: '#fafffe',
+  },
+  propertyContent: {
+    padding: 16,
+    minHeight: 200,
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  recommendedPropertiesContainer: {
+    flex: 1,
+    width: '100%',
+    padding: 16,
+  },
+  propertyList: {
+    flex: 1,
+  },
+  recommendedPropertiesContent: {
+    paddingTop: 16,
+    gap: 12,
+  },
+  propertyImageContainer: {
+    position: 'relative',
+    height: 220,
+    width: '100%',
+  },
+  propertyImage: {
+    width: '100%',
+    height: '100%',
+  },
+  propertyBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  propertyPriceBadge: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    backgroundColor: '#49a84c',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  propertyStatus: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  propertyPriceText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  propertyHeader: {
+    marginBottom: 20,
+  },
+  propertyTitleSection: {
+    gap: 6,
+  },
+  propertyType: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#49a84c',
+  },
+  propertyAddress: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#111827',
+    lineHeight: 24,
+  },
+  propertyFeatureGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 'auto',
+    paddingBottom: 16,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  featureText: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  viewOnMapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#49a84c',
+    paddingVertical: 14,
+    borderRadius: 8,
+    marginTop: 'auto',
+  },
+  viewOnMapButtonSelected: {
+    backgroundColor: '#3b8c3e',
+  },
+  viewOnMapText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  stepContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 40,
+    paddingHorizontal: 24,
+  },
+  stepWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stepCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F9FAFB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+  },
+  stepCompleted: {
+    backgroundColor: '#49a84c',
+    borderColor: '#49a84c',
+  },
+  stepCurrent: {
+    borderColor: '#49a84c',
+    backgroundColor: 'white',
+  },
+  stepNumber: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  stepNumberActive: {
+    color: '#49a84c',
+  },
+  stepLine: {
+    width: 80,
+    height: 2,
+    backgroundColor: '#E5E7EB',
+    marginHorizontal: 8,
+  },
+  stepLineCompleted: {
+    backgroundColor: '#49a84c',
+  },
+  searchBoxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  input: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 16,
+    color: '#111827',
+  },
+  predictionsContainer: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  predictionsItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  predictionText: {
+    fontSize: 14,
+    color: '#374151',
+  },
+  recommendedPlacesContainer: {
+    marginTop: 24,
+  },
+  recommendedPlacesTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 12,
+  },
+  recommendedPlaceItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  recommendedPlaceText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#374151',
+    marginRight: 8,
+  },
+  removeButton: {
+    padding: 4,
+    borderRadius: 4,
+    backgroundColor: '#E5E7EB',
   },
 });
