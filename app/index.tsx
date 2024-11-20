@@ -26,9 +26,9 @@ const teamMembers = [
     { name: "Ayesha Virk", role: "Founder, Full Stack Developer", image: "https://i.pinimg.com/736x/0a/7d/c3/0a7dc35b8155aba1008c563bbbe34441.jpg" },
     { name: "Robert Bui", role: "Product lead, Backend Lead", image: "https://i.pinimg.com/736x/c6/dd/02/c6dd02eef170fb8accaf180faf0fdea8.jpg" },
     { name: "Vikramaditya Dhumal", role: "Frontend Lead, Full Stack Developer", image: "https://i.pinimg.com/736x/79/36/6a/79366a3b921eb0c283e19b28edc80e61.jpg" },
+    { name: "Aditya Sengupta", role: "Frontend, Full Stack Developer", image: "https://i.pinimg.com/736x/a0/9a/e4/a09ae493347c98b507b43e8e2bed85be.jpg" },
     { name: "Humera", role: "Backend Developer, DB Developer", image: "https://i.pinimg.com/736x/9f/90/0f/9f900f10d2ffdfd34c95ae39487eff85.jpg" },
     { name: "Yaseen", role: "Backend Developer", image: "https://i.pinimg.com/736x/d6/66/88/d66688f7a1f37ba4f0448d62876e028f.jpg" },
-    { name: "Aditya Sengupta", role: "Frontend, Full Stack Developer", image: "https://i.pinimg.com/736x/a0/9a/e4/a09ae493347c98b507b43e8e2bed85be.jpg" },
     { name: "Dip", role: "Backend, Full Stack Developer", image: "https://i.pinimg.com/736x/e2/89/34/e2893485506bbf68ea7ac95c1dbb4bcd.jpg" },
     { name: "Zainab Rashid", role: "Frontend Developer, UI/UX Lead", image: "https://i.pinimg.com/736x/af/c5/57/afc557911778f8935553c46f5898dd39.jpg" },
     { name: "Shelian Gladis", role: "Frontend Developer, Designer", image: "https://i.pinimg.com/474x/ff/1c/d9/ff1cd938ef943a6af3b58ec33d39a81a.jpg" },
@@ -189,8 +189,8 @@ export default function Index() {
 const HeroContent = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const translateY = useRef(new Animated.Value(20)).current;
-
-    const device = useDevice()
+    const { width } = useWindowDimensions();
+    const device = useDevice();
 
     useEffect(() => {
         Animated.parallel([
@@ -211,11 +211,52 @@ const HeroContent = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
         ]).start();
     }, []);
 
+    const getResponsiveStyles = () => {
+        if (width < 768) { // Mobile
+            return {
+                padding: 20,
+                iconSize: 24,
+                titleSize: 18,
+                descriptionSize: 14,
+                detailSize: 12,
+                iconContainerSize: 48,
+                marginBottom: 16
+            };
+        } else if (width < 1024) { // Tablet
+            return {
+                padding: 24,
+                iconSize: 28,
+                titleSize: 20,
+                descriptionSize: 15,
+                detailSize: 13,
+                iconContainerSize: 56,
+                marginBottom: 20
+            };
+        } else { // Desktop
+            return {
+                padding: 32,
+                iconSize: 32,
+                titleSize: 24,
+                descriptionSize: 16,
+                detailSize: 14,
+                iconContainerSize: 64,
+                marginBottom: 24
+            };
+        }
+    };
+
+    const responsive = getResponsiveStyles();
+
     return (
-        <Animated.View style={[styles.heroContent, {
-            opacity: fadeAnim,
-            transform: [{ translateY }],
-        }]}>
+        <Animated.View style={[
+            styles.heroContent,
+            {
+                opacity: fadeAnim,
+                transform: [{ translateY }],
+                padding: responsive.padding,
+                maxWidth: 1200,
+            }
+        ]}>
             <Text style={[styles.heroSubtitle, {
                 fontSize: device === "mobile" ? 14 : 16,
                 letterSpacing: device === "mobile" ? 1 : 2
@@ -329,9 +370,8 @@ const FeatureCard = ({ feature, index }: any) => {
                 opacity: fadeAnim,
                 transform: [{ translateY }],
                 padding: responsive.padding,
-                width: device === "mobile" ? '100%' : 
-                       device === "tablet" ? '45%' : '30%',
-                minWidth: device === "mobile" ? 'auto' : 300,
+                height: '100%',
+                flex: 1
             }
         ]}>
             <View style={[styles.featureIconContainer, {
@@ -479,53 +519,62 @@ const FeaturesSection = () => {
                 colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.9)', '#000']}
                 style={StyleSheet.absoluteFill}
             />
-            <Animated.View style={[
-                styles.featuresSectionHeader,
-                {
-                    opacity: fadeAnim,
-                    width: responsive.headerWidth,
-                    transform: [{ translateY }]
-                }
-            ]}>
-                <Text style={[
-                    styles.featuresSubtitle,
-                    { fontSize: responsive.subtitleSize, textAlign: 'center' }
+            <View style={styles.featuresContainer}>
+                <Animated.View style={[
+                    styles.featuresSectionHeader,
+                    {
+                        opacity: fadeAnim,
+                        width: responsive.headerWidth,
+                        transform: [{ translateY }]
+                    }
                 ]}>
-                    POWERFUL FEATURES
-                </Text>
-                <Text style={[
-                    styles.featuresTitle,
-                    { fontSize: responsive.titleSize }
-                ]}>
-                    Everything you need to make informed real estate decisions
-                </Text>
-                <Text style={[
-                    styles.featuresDescription,
-                    { fontSize: responsive.descriptionSize }
-                ]}>
-                    Discover how our comprehensive suite of tools and features can help you find,
-                    analyze, and secure your ideal property.
-                </Text>
-            </Animated.View>
+                    <Text style={[
+                        styles.featuresSubtitle,
+                        { fontSize: responsive.subtitleSize, textAlign: 'center' }
+                    ]}>
+                        POWERFUL FEATURES
+                    </Text>
+                    <Text style={[
+                        styles.featuresTitle,
+                        { fontSize: responsive.titleSize }
+                    ]}>
+                        Everything you need to make informed real estate decisions
+                    </Text>
+                    <Text style={[
+                        styles.featuresDescription,
+                        { fontSize: responsive.descriptionSize }
+                    ]}>
+                        Discover how our comprehensive suite of tools and features can help you find,
+                        analyze, and secure your ideal property.
+                    </Text>
+                </Animated.View>
 
-            <View style={[
-                styles.featuresGrid,
-                {
-                    flexDirection: 'row',
-                    flexWrap: 'wrap',
-                    justifyContent: 'center',
-                    gap: width < 768 ? 16 : 24
-                }
-            ]}>
-                {features.map((feature, index) => (
-                    <View key={index} style={{
-                        width: width < 768 ? '100%' : 
-                               width < 1024 ? '45%' : '30%',
-                        minWidth: width < 768 ? 'auto' : 300
-                    }}>
-                        <FeatureCard feature={feature} index={index} />
-                    </View>
-                ))}
+                <View style={[
+                    styles.featuresGrid,
+                    {
+                        flexDirection: 'row',
+                        flexWrap: 'wrap',
+                        justifyContent: 'flex-start',
+                        gap: 24,
+                        paddingHorizontal: width < 768 ? 16 : 48,
+                        maxWidth: 1600,
+                        alignSelf: 'center',
+                        width: '100%',
+                        marginLeft: width < 768 ? 0 : 40
+                    }
+                ]}>
+                    {features.map((feature, index) => (
+                        <View key={index} style={{
+                            width: width < 768 ? '100%' : 
+                                   width < 1024 ? 'calc(50% - 12px)' : 'calc(33.33% - 16px)',
+                            minWidth: width < 768 ? 'auto' : 340,
+                            maxWidth: width < 768 ? 'none' : 460,
+                            marginBottom: 24
+                        }}>
+                            <FeatureCard feature={feature} index={index} />
+                        </View>
+                    ))}
+                </View>
             </View>
         </View>
     );
@@ -1033,12 +1082,16 @@ const styles = StyleSheet.create({
 
     },
     featuresSection: {
-        padding: Platform.select({ web: 120, default: 40 }), // Reduced padding for mobile
+        padding: Platform.select({ web: 120, default: 40 }),
         position: 'relative',
         backgroundColor: '#111',
-        display: 'flex',
-        alignItems: 'center',
         width: '100%',
+    },
+    featuresContainer: {
+        maxWidth: 1400,
+        marginHorizontal: 'auto',
+        width: '100%',
+        alignItems: 'center',
     },
     featuresSectionHeader: {
         width: '100%',
@@ -1069,23 +1122,17 @@ const styles = StyleSheet.create({
         lineHeight: Platform.select({ web: 28, default: 24 }),
     },
     featuresGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
-        gap: Platform.select({ web: 32, default: 16 }), // Reduced gap for mobile
         width: '100%',
-        maxWidth: 1400,
-        alignSelf: 'center',
+        alignItems: 'stretch',
     },
     featureCard: {
         backgroundColor: 'rgba(255,255,255,0.03)',
         borderRadius: 24,
-        padding: Platform.select({ web: 32, default: 24 }), // Reduced padding for mobile
-        width: Platform.OS === 'web' ? 400 : '100%', // Full width on mobile
+        padding: Platform.select({ web: 32, default: 24 }),
+        height: '100%',
         position: 'relative',
         overflow: 'hidden',
         borderWidth: 1,
-        height: '100%',
         borderColor: 'rgba(255,255,255,0.05)',
     },
     featureGradient: {
@@ -1097,29 +1144,29 @@ const styles = StyleSheet.create({
         opacity: 0.5,
     },
     featureIconContainer: {
-        width: Platform.select({ web: 64, default: 48 }), // Smaller icon container for mobile
+        width: Platform.select({ web: 64, default: 48 }),
         height: Platform.select({ web: 64, default: 48 }),
         borderRadius: Platform.select({ web: 20, default: 16 }),
         backgroundColor: 'rgba(0,122,255,0.1)',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 24,
-        alignSelf: 'center', // Center icon container
+        alignSelf: 'center', 
     },
     featureTitle: {
-        fontSize: Platform.select({ web: 24, default: 20 }), // Smaller font for mobile
+        fontSize: Platform.select({ web: 24, default: 20 }),
         fontWeight: 'bold',
         color: '#fff',
         marginBottom: 12,
-        textAlign: 'center', // Center align text
+        textAlign: 'center', 
     },
     featureDescription: {
-        fontSize: Platform.select({ web: 16, default: 14 }), // Smaller font for mobile
+        fontSize: Platform.select({ web: 16, default: 14 }),
         color: '#fff',
         opacity: 0.8,
         marginBottom: 24,
-        lineHeight: Platform.select({ web: 24, default: 20 }), // Adjusted line height
-        textAlign: 'center', // Center align text
+        lineHeight: Platform.select({ web: 24, default: 20 }),
+        textAlign: 'center', 
     },
     featureDetails: {
         gap: 12,
