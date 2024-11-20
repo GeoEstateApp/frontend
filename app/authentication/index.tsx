@@ -479,6 +479,8 @@ export default function AuthScreen() {
             }
 
             // success
+            await AsyncStorage.setItem('username', username);
+            console.log('Username created successfully:', username);
             setShowUsernameModal(false);
             setPendingGoogleUser(null);
             router.push('/explore');
@@ -702,6 +704,29 @@ export default function AuthScreen() {
                             },
                         ]}
                     >
+                        <TouchableOpacity
+                            style={[styles.googleButton, isGoogleLoading && styles.buttonDisabled]}
+                            onPress={handleGoogleSignIn}
+                            disabled={isGoogleLoading}
+                        >
+                            {isGoogleLoading ? (
+                                <ActivityIndicator color="#ea4335" />
+                            ) : (
+                                <>
+                                    <FontAwesome name="google" size={20} color="#ea4335" />
+                                    <Text style={styles.googleButtonText}>
+                                        Continue with Google
+                                    </Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+
+                        <View style={styles.dividerContainer}>
+                            <View style={styles.divider} />
+                            <Text style={styles.dividerText}>or</Text>
+                            <View style={styles.divider} />
+                        </View>
+
                         {!isLogin && (
                             <>
                                 <View style={styles.inputContainer}>
@@ -792,29 +817,6 @@ export default function AuthScreen() {
                                 <Text style={styles.buttonText}>
                                     {isLogin ? 'Sign In' : 'Create Account'}
                                 </Text>
-                            )}
-                        </TouchableOpacity>
-
-                        <View style={styles.dividerContainer}>
-                            <View style={styles.divider} />
-                            <Text style={styles.dividerText}>or</Text>
-                            <View style={styles.divider} />
-                        </View>
-
-                        <TouchableOpacity
-                            style={[styles.googleButton, isGoogleLoading && styles.buttonDisabled]}
-                            onPress={handleGoogleSignIn}
-                            disabled={isGoogleLoading}
-                        >
-                            {isGoogleLoading ? (
-                                <ActivityIndicator color="#ea4335" />
-                            ) : (
-                                <>
-                                    <FontAwesome name="google" size={20} color="#ea4335" />
-                                    <Text style={styles.googleButtonText}>
-                                        Continue with Google
-                                    </Text>
-                                </>
                             )}
                         </TouchableOpacity>
 

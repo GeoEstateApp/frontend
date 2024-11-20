@@ -7,6 +7,9 @@ interface MapStore {
 
   selectedPlacePolygonCoordinates: PolygonCoordinates[];
   setSelectedPlacePolygonCoordinates: (polygon: PolygonCoordinates[]) => void;
+
+  goToPlace: number,
+  setGoToPlace: (place: number) => void;
 }
 
 export const useMapStore = create<MapStore>((set) => ({
@@ -15,4 +18,7 @@ export const useMapStore = create<MapStore>((set) => ({
 
   selectedPlacePolygonCoordinates: [],
   setSelectedPlacePolygonCoordinates: (polygon) => set({ selectedPlacePolygonCoordinates: polygon }),
+
+  goToPlace: 0,
+  setGoToPlace: (place) => set({ goToPlace: place })
 }))

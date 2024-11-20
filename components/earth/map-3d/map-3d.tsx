@@ -144,11 +144,13 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
 
   const handleRealEstatePropertyRender = async () => {
     if (!map3DElement) return
-    if (!selectedRealEstateProperty) {
-      const polygon = map3DElement.querySelector('#real-estate') as any
-      if (polygon) map3DElement.removeChild(polygon)
-      return
+
+    const existingPolygon = map3DElement.querySelector('#real-estate')
+    if (existingPolygon) {
+      map3DElement.removeChild(existingPolygon)
     }
+
+    if (!selectedRealEstateProperty) return
 
     const lat = selectedRealEstateProperty.coordinate_lat || 0
     const lng = selectedRealEstateProperty.coordinate_lon || 0
@@ -156,15 +158,10 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
     const polygonCoordinates = await fetchPolygonCoordinates(lat, lng)
     if (polygonCoordinates && polygonCoordinates.length <= 0) return
 
-    let polygon = map3DElement.querySelector('#real-estate') as any
-    try {
-      if (polygon) polygon.outerCoordinates = emptyPolygonCoordinates
-    } catch (e) { }
-
-    polygon = document.createElement('gmp-polygon-3d')
+    const polygon = document.createElement('gmp-polygon-3d')
     if (!polygon) return
 
-    const { fill, stroke } = SUPPORTED_FILTERS_MAP.real_estate
+    const { fill, stroke } = selectedRealEstateProperty.status === "for_sale" ? SUPPORTED_FILTERS_MAP.real_estate_buy : SUPPORTED_FILTERS_MAP.real_estate_rent
 
     polygon.setAttribute('altitude-mode', 'relative-to-ground')
     polygon.setAttribute('fill-color', fill)
