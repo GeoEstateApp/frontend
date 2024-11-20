@@ -43,8 +43,7 @@ function HeaderNav() {
 
     return (
         <View style={styles.headerNav}>
-            <Text style={styles.headerLink}>Features</Text>
-            <Text style={styles.headerLink}>About</Text>
+         
             <TouchableOpacity
                 style={styles.headerButton}
                 onPress={() => router.push(isLoggedIn ? '/explore' : '/authentication')}
