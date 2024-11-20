@@ -26,7 +26,7 @@ const TARGET_ALTITUDE = 200;
 const TARGET_ZIPCODE_ALTITUDE = 1200;
 
 export default function Earth() {
-  const { selectedPlace, setSelectedPlacePolygonCoordinates } = useMapStore();
+  const { selectedPlace, setSelectedPlacePolygonCoordinates, goToPlace } = useMapStore();
   const [viewProps, setViewProps] = useState(INITIAL_VIEW_PROPS);
   const { polygon } = useZipcodeInsights();
   const { selectedRealEstateProperty } = useSidePanelStore()
@@ -88,6 +88,20 @@ export default function Earth() {
 
     fetchData();
   }, [selectedPlace]);
+
+  useEffect(() => {
+    if (!selectedPlace) return;
+
+    const newProps: Map3DCameraProps = {
+      center: { lat: selectedPlace.geometry?.location?.lat() || 0, lng: selectedPlace.geometry?.location?.lng() || 0, altitude: TARGET_ALTITUDE },
+      range: 300,
+      heading: 0,
+      tilt: 45,
+      roll: 0
+    };
+
+    smoothTransportToLocation(newProps);
+  }, [goToPlace])
 
   useEffect(() => {
     if (!selectedRealEstateProperty) return;

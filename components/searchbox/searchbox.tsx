@@ -22,7 +22,7 @@ export default function SearchBox() {
   const places = useMapsLibrary('places')
 
   const { setSelectedPlace } = useMapStore()
-  const { showPanel, setShowPanel, setSidePanelPlace } = useSidePanelStore()
+  const { showPanel, setShowPanel, setSidePanelPlace, setSelectedRealEstateProperty } = useSidePanelStore()
   const { showBucketListPanel, setShowBucketListPanel } = useBucketListPanelStore()
   const { showFavPanel ,setShowFavPanel } = useFavoritesPanelStore()
   const { showZipcodePanel, setShowZipcodePanel } = useZipcodeInsights()
@@ -66,6 +66,7 @@ export default function SearchBox() {
     setSidePanelPlace(null)
     setShowFavPanel(false)
     setShowBucketListPanel(false)
+    setSelectedRealEstateProperty(null)
 
     const placesService = new places.PlacesService(document.createElement('div'))
     placesService.getDetails({ placeId }, (place, status) => {

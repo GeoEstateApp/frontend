@@ -15,11 +15,13 @@ import { Animated } from 'react-native';
 import { auth } from '@/lib/firebase';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { useFilterStore } from '@/states/filterstore';
+import { useMapStore } from '@/states/map';
 
 export default function SidePanel() {
   const { toggleFavPanel, showFavPanel, setShowFavPanel } = useFavoritesPanelStore()
   const { toggleBucketListPanel, showBucketListPanel, setShowBucketListPanel } = useBucketListPanelStore()
-  const { reset: resetSidePanel, selectedPlace, realEstateProperties, setSelectedRealEstateProperty, selectedRealEstateProperty } = useSidePanelStore()
+  const { reset: resetSidePanel, selectedPlace, setSidePanelPlace, realEstateProperties, setSelectedRealEstateProperty, selectedRealEstateProperty } = useSidePanelStore()
+  const { setGoToPlace } = useMapStore()
 
   const { insights, setInsights } = useInsightsStore()
 
@@ -34,6 +36,7 @@ export default function SidePanel() {
   const [bucketList, setBucketList] = useState<any[]>([])
   const [username, setUsername] = useState<string>('');
   const [userid, setUserid] = useState<string | null>(null);
+  const [realEstateFilter, setRealEstateFilter] = useState<'all' | 'for_sale' | 'for_rent'>('all');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -386,6 +389,11 @@ export default function SidePanel() {
     setInsights([])
   }
 
+  const filteredRealEstateProperties = realEstateProperties?.filter(property => {
+    if (realEstateFilter === 'all') return true;
+    return property.status === realEstateFilter;
+  });
+
   return (
     <View style={styles.container}>
       <View style={styles.panel}>
@@ -446,40 +454,63 @@ export default function SidePanel() {
                 )
               }
 
-              <View style={styles.selectedPlace}>
-                <Image source={{ uri: imageUri || selectedPlace.photosUrl[0] }} style={{ width: 400, height: 300, objectFit: 'cover' }} />
-                <View style={styles.placeHeader}>
-                  <Text style={styles.placeTitle}>{selectedPlace.address}</Text>
-                  <View style={styles.actionButtons}>
+                <Pressable style={styles.selectedPlace} onPress={() => setGoToPlace(Math.floor(Math.random() * 100) + 1)}>
+                  <Image source={{ uri: imageUri || selectedPlace.photosUrl[0] }} style={{ width: 400, height: 300, objectFit: 'cover' }} />
+                  <View style={styles.placeHeader}>
+                    <Text style={styles.placeTitle}>{selectedPlace.address}</Text>
+                    <View style={styles.actionButtons}>
                     <Pressable onPress={handleFavoriteToggle}>
                       {isFavorite ? (
-                        <IconHeartFilled size={24} color="#ff4444" />
+                      <IconHeartFilled size={24} color="#ff4444" />
                       ) : (
-                        <IconHeart size={24} color="#000" />
+                      <IconHeart size={24} color="#000" />
                       )}
                     </Pressable>
                     <Pressable onPress={handleBucketList} style={{ marginLeft: 10 }}>
                       {isInBucketList ? (
-                        <IconBookmarkFilled size={24} color="#4444ff" />
+                      <IconBookmarkFilled size={24} color="#4444ff" />
                       ) : (
-                        <IconBookmark size={24} color="#000" />
+                      <IconBookmark size={24} color="#000" />
                       )}
                     </Pressable>
+                    </View>
                   </View>
-                </View>
-              </View>
+                </Pressable>
 
               {getAuth().currentUser !== null && realEstateProperties && realEstateProperties.length > 0 && (
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10, marginTop: 24 }}>
                     Real Estate Properties
                   </Text>
+                  
+                  {/* Add filter buttons */}
+                  <View style={styles.realEstateFilters}>
+                    <Pressable 
+                      style={[styles.filterButton, realEstateFilter === 'all' && styles.filterButtonSelected]}
+                      onPress={() => setRealEstateFilter('all')}
+                    >
+                      <Text style={[styles.filterText, realEstateFilter === 'all' && styles.filterTextSelected]}>ALL</Text>
+                    </Pressable>
+                    <Pressable 
+                      style={[styles.filterButton, realEstateFilter === 'for_sale' && styles.filterButtonSelected]}
+                      onPress={() => setRealEstateFilter('for_sale')}
+                    >
+                      <Text style={[styles.filterText, realEstateFilter === 'for_sale' && styles.filterTextSelected]}>SALE</Text>
+                    </Pressable>
+                    <Pressable 
+                      style={[styles.filterButton, realEstateFilter === 'for_rent' && styles.filterButtonSelected]}
+                      onPress={() => setRealEstateFilter('for_rent')}
+                    >
+                      <Text style={[styles.filterText, realEstateFilter === 'for_rent' && styles.filterTextSelected]}>RENT</Text>
+                    </Pressable>
+                  </View>
+
                   <ScrollView 
                     style={{ flex: 1 }}
                     contentContainerStyle={{ gap: 8 }}
                     showsVerticalScrollIndicator={false}
                   >
-                    {realEstateProperties.map((property, index) => (
+                    {(filteredRealEstateProperties || []).map((property, index) => (
                       <Pressable 
                         style={[
                           styles.realEstateProperty, 
@@ -494,7 +525,7 @@ export default function SidePanel() {
                           <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>Property: {property.property_type.split('_').join(' ').toUpperCase()}</Text>
                           {property.size_sqft && <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>Size: {property.size_sqft} ft²</Text>}
                           <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.price}</Text>
-                          <Text style={{ fontSize: 12, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.status}</Text>
+                          <Text style={{ fontSize: 12, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.status.split('_').join(' ').toUpperCase()}</Text>
                         </View>
                       </Pressable>
                     ))}
@@ -742,5 +773,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#4b5563',
     textAlign: 'center',
+  },
+  realEstateFilters: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
   },
 })

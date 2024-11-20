@@ -87,6 +87,8 @@ export const SUPPORTED_FILTERS_MAP = {
   post_office: { fill: "#00968850", stroke: "#009688" },
   primary_school: { fill: "#3F51B550", stroke: "#3F51B5" },
   real_estate: { fill: "#49A84C50", stroke: "#49A84C" },
+  real_estate_buy: { fill: "#00800050", stroke: "#008000" },
+  real_estate_rent: { fill: "#0000FF50", stroke: "#0000FF" },
   real_estate_agency: { fill: "#673AB750", stroke: "#673AB7" },
   restaurant: { fill: "#FF3D0050", stroke: "#FF3D00" },
   roofing_contractor: { fill: "#FF980050", stroke: "#FF9800" },

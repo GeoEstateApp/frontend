@@ -7,54 +7,18 @@ import { IconX, IconSearch, IconArrowLeft, IconArrowRight, IconBed, IconBath, Ic
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSidePanelStore } from '@/states/sidepanel';
 import { useMapStore } from '@/states/map';
-import { useSuitability } from '@/states/suitability';
+import { Prefs, RecommendationPlace, RecommendationProperties, useSuitability } from '@/states/suitability';
 
-interface Prefs {
-  minBeds: number,
-  minBaths: number,
-  rentOrBuy: 'buy' | 'rent',
-  priceMin: number,
-  priceMax: number,
-  age: number | null,
-  homeValuePriority: boolean,
-  filterByMedianAge: boolean,
-  anchorAddresses: number[][],
-  propsToReturn: number
-}
+const MIN_SEARCH_LENGTH = 3
 
-export interface RecommendationProperties {
-  property_id: number,
-  address_line: string,
-  coordinate_lat: number,
-  coordinate_lon: number,
-  size_sqft: number,
-  property_type: string,
-  price: string,
-  status: string,
-  zip_code_id: number,
-  num_beds: number,
-  num_baths: number,
-  prop_url: string,
-  img_url: string,
-  geom: string
-}
-
-interface RecommendationPlace {
-  address: string
-  lat: number
-  lng: number
-}
+const MIN_PRICE = 10000
+const MAX_PRICE = 9999999
 
 interface StepIndicatorProps {
   currentStep: number;
   totalSteps?: number;
   onStepClick: (step: number) => void;
 }
-
-const MIN_SEARCH_LENGTH = 3
-
-const MIN_PRICE = 10000
-const MAX_PRICE = 9999999
 
 const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps = 6, onStepClick }) => {
   return (
@@ -87,19 +51,52 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps =
 };
 
 export default function SuitabilityCalculator() {
-  const [currentPage, setCurrentPage] = useState(0)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(true)
-  const [isRefreshing, setIsRefreshing] = useState(false)
+  const { 
+    isModalOpen,
+    setIsModalOpen,
+    currentPage,
+    setCurrentPage,
+    isLoading,
+    setIsLoading,
+    isLoadingMore,
+    setIsLoadingMore,
+    error,
+    setError,
+    page,
+    setPage,
+    hasMore,
+    setHasMore,
+    isRefreshing,
+    setIsRefreshing,
+    recommendationProperties,
+    setRecommendationProperties,
+    rentOrBuy,
+    setRentOrBuy,
+    noOfBathrooms,
+    setNoOfBathrooms,
+    noOfBedrooms,
+    setNoOfBedrooms,
+    minPrice,
+    setMinPrice,
+    maxPrice,
+    setMaxPrice,
+    wantPropertyRecommendationAge,
+    setWantPropertyRecommendationAge,
+    propertyRecommendationAge,
+    setPropertyRecommendationAge,
+    wantAnyRecommendedPlaces,
+    setWantAnyRecommendedPlaces,
+    recommendedPlaces,
+    setRecommendedPlaces,
+    searchText,
+    setSearchText,
+    resetStore
+  } = useSuitability()
 
-  const [recommendationProperties, setRecommendationProperties] = useState<RecommendationProperties[]>([])
+  const places = useMapsLibrary('places')
 
   const { setSelectedRealEstateProperty, selectedRealEstateProperty } = useSidePanelStore()
   const { setSelectedPlace, setSelectedPlacePolygonCoordinates } = useMapStore()
-  const { isModalOpen, setIsModalOpen } = useSuitability()
 
   useEffect(() => {
     if (!isModalOpen) {
@@ -131,28 +128,8 @@ export default function SuitabilityCalculator() {
     setSelectedPlacePolygonCoordinates([]);
   };
 
-  // Page One
-  const [rentOrBuy, setRentOrBuy] = useState<"rent" | "buy" | null>(null)
-
-  // Page Two
-  const [noOfBathrooms, setNoOfBathrooms] = useState(0)
-  const [noOfBedrooms, setNoOfBedrooms] = useState(0)
-
-  // Page Three
-  const [minPrice, setMinPrice] = useState(MIN_PRICE)
-  const [maxPrice, setMaxPrice] = useState(MAX_PRICE)
-
-  // Page Four
-  const [wantPropertyRecommendationAge, setWantPropertyRecommendationAge] = useState<boolean | null>(null)
-  const [propertyRecommendationAge, setPropertyRecommendationAge] = useState<number | string>('')
-
-  // Page Five
-  const [wantAnyRecommendedPlaces, setWantAnyRecommendedPlaces] = useState<boolean | null>(null)
-  const [recommendedPlaces, setRecommendedPlaces] = useState<RecommendationPlace[]>([])
   const [placeAutocompleteService, setPlaceAutocompleteService] = useState<google.maps.places.AutocompleteService | null>(null)
   const [predictions, setPredictions] = useState<Array<google.maps.places.AutocompletePrediction>>([])
-  const [searchText, setSearchText] = useState("")
-  const places = useMapsLibrary('places')
 
   useEffect(() => {
     if (!places) return
@@ -199,6 +176,7 @@ export default function SuitabilityCalculator() {
   const handleSelectPlace = (placeId: string) => {
     if (placeId === "" || placeId === undefined || !places) return
 
+    const newPlaces: RecommendationPlace[] = []
     const placesService = new places.PlacesService(document.createElement('div'))
     placesService.getDetails({ placeId }, (place, status) => {
       if (status !== google.maps.places.PlacesServiceStatus.OK) return
@@ -210,10 +188,12 @@ export default function SuitabilityCalculator() {
 
       setSearchText(place.name || "")
       setPredictions([])
-      setRecommendedPlaces((prev) => [...prev, { address, lat, lng }])
+      newPlaces.push({ address, lat, lng })
     })
+
+    setRecommendedPlaces(newPlaces)
   }
-  const nextPage = () => setCurrentPage((prev) => prev + 1)
+  const nextPage = () => setCurrentPage(currentPage + 1)
 
   const handlePageOne = (answer: "rent" | "buy") => {
     setRentOrBuy(answer);
@@ -266,11 +246,8 @@ export default function SuitabilityCalculator() {
       if (refresh) {
         setRecommendationProperties(properties)
       } else {
-        setRecommendationProperties(prev => {
-          const existingIds = new Set(prev.map(p => p.property_id))
-          const uniqueNewProperties = properties.filter(p => !existingIds.has(p.property_id))
-          return [...prev, ...uniqueNewProperties]
-        })
+        const newProperties = properties.filter(p => !recommendationProperties.find(rp => rp.property_id === p.property_id))
+        setRecommendationProperties(newProperties)
       }
       
       setHasMore(properties.length === 10)
@@ -282,15 +259,6 @@ export default function SuitabilityCalculator() {
       console.error(error);
       setError(error instanceof Error ? error.message : "Failed to get recommendations. Please try again.");
     }
-  }
-
-  const handleLoadMore = async () => {
-    if (!hasMore || isLoadingMore) return;
-    
-    setIsLoadingMore(true);
-    await loadProperties(page + 1);
-    setPage(prev => prev + 1);
-    setIsLoadingMore(false);
   }
 
   const handleRefresh = async () => {
@@ -419,6 +387,11 @@ export default function SuitabilityCalculator() {
     if (isStepValid()) {
       nextPage();
     }
+  };
+
+  const handleReset = () => {
+    resetStore();
+    setCurrentPage(0);
   };
 
   return (
@@ -680,7 +653,8 @@ export default function SuitabilityCalculator() {
                             <Pressable
                               style={styles.removeButton}
                               onPress={() => {
-                                setRecommendedPlaces(prev => prev.filter((_, i) => i !== index));
+                                const places = recommendedPlaces.filter((_, i) => i !== index);
+                                setRecommendedPlaces(places);
                               }}>
                               <IconX size={16} color="#6B7280" />
                             </Pressable>
@@ -716,7 +690,7 @@ export default function SuitabilityCalculator() {
               {currentPage > 0 && currentPage < 6 && (
                 <Pressable 
                   style={styles.secondaryButton} 
-                  onPress={() => setCurrentPage(prev => prev - 1)}>
+                  onPress={() => setCurrentPage(currentPage - 1)}>
                   <IconArrowLeft size={20} color="#49a84c" />
                   <Text style={styles.secondaryButtonText}>Back</Text>
                 </Pressable>
@@ -754,8 +728,18 @@ export default function SuitabilityCalculator() {
 
       {currentPage === 6 && !isLoading && recommendationProperties.length > 0 && (
         <View style={styles.recommendedPropertiesContainer}>
-          <Text style={styles.pageTitle}>Recommended Properties</Text>
-          <Text style={styles.pageSubtitle}>Based on your preferences</Text>
+          <View style={styles.recommendedPropertiesHeader}>
+            <View>
+              <Text style={styles.pageTitle}>Recommended Properties</Text>
+              <Text style={styles.pageSubtitle}>Based on your preferences</Text>
+            </View>
+          </View>
+          <Pressable 
+              style={styles.resetButton} 
+              onPress={handleReset}>
+              <IconX size={16} color="#DC2626" />
+              <Text style={styles.resetButtonText}>Start Over</Text>
+            </Pressable>
           <FlatList
             style={styles.propertyList}
             data={recommendationProperties}
@@ -901,7 +885,6 @@ const styles = StyleSheet.create({
   pageSubtitle: {
     fontSize: 16,
     color: '#6B7280',
-    marginBottom: 32,
     lineHeight: 24,
   },
   choiceContainer: {
@@ -1603,5 +1586,34 @@ const styles = StyleSheet.create({
     padding: 4,
     borderRadius: 4,
     backgroundColor: '#E5E7EB',
+  },
+  resetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+    backgroundColor: '#FEE2E2',
+    ...(Platform.OS === 'web' && {
+      cursor: 'pointer',
+      transition: 'all 0.2s ease-in-out',
+      ':hover': {
+        backgroundColor: '#FEE2E2',
+        transform: [{ translateY: -1 }],
+      },
+    }),
+  },
+  resetButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#DC2626',
+  },
+  recommendedPropertiesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
   },
 });
