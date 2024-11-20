@@ -132,7 +132,7 @@ export default function SuitabilityCalculator() {
   };
 
   // Page One
-  const [rentOrBuy, setRentOrBuy] = useState<"rent" | "buy">("buy")
+  const [rentOrBuy, setRentOrBuy] = useState<"rent" | "buy" | null>(null)
 
   // Page Two
   const [noOfBathrooms, setNoOfBathrooms] = useState(0)
@@ -215,11 +215,9 @@ export default function SuitabilityCalculator() {
   }
   const nextPage = () => setCurrentPage((prev) => prev + 1)
 
-  const handlePageOne = (answer: string) => {
-    if (answer === "rent" || answer === "buy") setRentOrBuy(answer)
-
-    nextPage()
-  }
+  const handlePageOne = (answer: "rent" | "buy") => {
+    setRentOrBuy(answer);
+  };
 
   const loadProperties = async (pageNumber: number, refresh = false) => {
     try {
@@ -228,8 +226,11 @@ export default function SuitabilityCalculator() {
         throw new Error('Authentication required');
       }
 
+      if (!rentOrBuy) {
+        throw new Error('Rent or Buy preference must be selected');
+      }
       const prefs: Prefs = {
-        rentOrBuy,
+        rentOrBuy: rentOrBuy,
         anchorAddresses: wantAnyRecommendedPlaces ? recommendedPlaces.map((place) => [place.lat, place.lng]) : [],
         minBaths: noOfBathrooms,
         minBeds: noOfBedrooms,
@@ -396,6 +397,30 @@ export default function SuitabilityCalculator() {
     </Pressable>
   );
 
+  const isStepValid = () => {
+    switch (currentPage) {
+      case 1:
+        return rentOrBuy !== null;
+      case 2:
+        return true; // No validation needed as we have default values
+      case 3:
+        return minPrice !== null && maxPrice !== null;
+      case 4:
+        return wantPropertyRecommendationAge !== null && 
+          (!wantPropertyRecommendationAge || (wantPropertyRecommendationAge && propertyRecommendationAge !== ''));
+      case 5:
+        return true; // Location is optional
+      default:
+        return true;
+    }
+  };
+
+  const handleNextStep = () => {
+    if (isStepValid()) {
+      nextPage();
+    }
+  };
+
   return (
     <View style={recommendationProperties && recommendationProperties.length > 0 ? styles.sideModal : styles.modal}>
       <Pressable 
@@ -431,8 +456,11 @@ export default function SuitabilityCalculator() {
                     <Pressable 
                       style={[styles.choiceCard, rentOrBuy === 'rent' && styles.choiceCardActive]} 
                       onPress={() => handlePageOne('rent')}>
-                      <View style={styles.choiceIconContainer}>
-                        <IconHome size={24} color={rentOrBuy === 'rent' ? '#fff' : '#666'} />
+                      <View style={[
+                        styles.choiceIconContainer,
+                        rentOrBuy === 'rent' && styles.choiceIconContainerActive
+                      ]}>
+                        <IconHome size={24} color={rentOrBuy === 'rent' ? '#ffffff' : '#666666'} />
                       </View>
                       <Text style={[styles.choiceTitle, rentOrBuy === 'rent' && styles.choiceTitleActive]}>Renting</Text>
                       <Text style={[styles.choiceDescription, rentOrBuy === 'rent' && styles.choiceDescriptionActive]}>
@@ -442,8 +470,11 @@ export default function SuitabilityCalculator() {
                     <Pressable 
                       style={[styles.choiceCard, rentOrBuy === 'buy' && styles.choiceCardActive]} 
                       onPress={() => handlePageOne('buy')}>
-                      <View style={styles.choiceIconContainer}>
-                        <IconKey size={24} color={rentOrBuy === 'buy' ? '#fff' : '#666'} />
+                      <View style={[
+                        styles.choiceIconContainer,
+                        rentOrBuy === 'buy' && styles.choiceIconContainerActive
+                      ]}>
+                        <IconKey size={24} color={rentOrBuy === 'buy' ? '#ffffff' : '#666666'} />
                       </View>
                       <Text style={[styles.choiceTitle, rentOrBuy === 'buy' && styles.choiceTitleActive]}>Buying</Text>
                       <Text style={[styles.choiceDescription, rentOrBuy === 'buy' && styles.choiceDescriptionActive]}>
@@ -548,11 +579,12 @@ export default function SuitabilityCalculator() {
                   <View style={styles.choiceContainer}>
                     <Pressable 
                       style={[styles.choiceCard, wantPropertyRecommendationAge === true && styles.choiceCardActive]} 
-                      onPress={() => {
-                        setWantPropertyRecommendationAge(true)
-                      }}>
-                      <View style={styles.choiceIconContainer}>
-                        <IconHome size={24} color={wantPropertyRecommendationAge === true ? '#fff' : '#666'} />
+                      onPress={() => setWantPropertyRecommendationAge(true)}>
+                      <View style={[
+                        styles.choiceIconContainer,
+                        wantPropertyRecommendationAge === true && styles.choiceIconContainerActive
+                      ]}>
+                        <IconHome size={24} color={wantPropertyRecommendationAge === true ? '#ffffff' : '#666666'} />
                       </View>
                       <Text style={[styles.choiceTitle, wantPropertyRecommendationAge === true && styles.choiceTitleActive]}>
                         Yes, I'll input my age
@@ -567,8 +599,11 @@ export default function SuitabilityCalculator() {
                         setWantPropertyRecommendationAge(false)
                         setPropertyRecommendationAge('')
                       }}>
-                      <View style={styles.choiceIconContainer}>
-                        <IconHome size={24} color={wantPropertyRecommendationAge === false ? '#fff' : '#666'} />
+                      <View style={[
+                        styles.choiceIconContainer,
+                        wantPropertyRecommendationAge === false && styles.choiceIconContainerActive
+                      ]}>
+                        <IconHome size={24} color={wantPropertyRecommendationAge === false ? '#ffffff' : '#666666'} />
                       </View>
                       <Text style={[styles.choiceTitle, wantPropertyRecommendationAge === false && styles.choiceTitleActive]}>
                         No preference
@@ -689,17 +724,25 @@ export default function SuitabilityCalculator() {
               
               {currentPage > 0 && currentPage < 5 && (
                 <Pressable 
-                  style={[styles.primaryButton, styles.navigationButton]} 
-                  onPress={() => nextPage()}>
-                  <Text style={styles.primaryButtonText}>Continue</Text>
-                  <IconArrowRight size={20} color="#ffffff" />
+                  style={[
+                    styles.primaryButton, 
+                    styles.navigationButton,
+                    !isStepValid() && styles.primaryButtonDisabled
+                  ]} 
+                  onPress={handleNextStep}
+                  disabled={!isStepValid()}>
+                  <Text style={[
+                    styles.primaryButtonText,
+                    !isStepValid() && styles.primaryButtonTextDisabled
+                  ]}>Continue</Text>
+                  <IconArrowRight size={20} color={isStepValid() ? "#ffffff" : "#9CA3AF"} />
                 </Pressable>
               )}
 
               {currentPage === 5 && (
                 <Pressable 
                   style={[styles.primaryButton, styles.navigationButton]} 
-                  onPress={() => nextPage()}>
+                  onPress={handleNextStep}>
                   <Text style={styles.primaryButtonText}>Continue</Text>
                   <IconArrowRight size={20} color="#ffffff" />
                 </Pressable>
@@ -868,7 +911,7 @@ const styles = StyleSheet.create({
   },
   choiceCard: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     borderRadius: 16,
     padding: 24,
     borderWidth: 2,
@@ -896,10 +939,13 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
+  },
+  choiceIconContainerActive: {
+    backgroundColor: '#3b8c3e',
   },
   choiceTitle: {
     fontSize: 18,

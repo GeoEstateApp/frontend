@@ -56,6 +56,8 @@ export default function SidePanel() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => { }, [realEstateProperties])
+
   useEffect(() => {
     if (!selectedPlace) return
 

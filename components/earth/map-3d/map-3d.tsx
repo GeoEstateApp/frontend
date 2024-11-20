@@ -121,6 +121,8 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
         const types = place.types || []
         const url = place.url || ""
 
+        fetchRealestateData(lat, lng)
+
         setSidePanelPlace({
           placeId: place.place_id || '',
           name: place.name || '',
@@ -242,7 +244,6 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
 
     setPolygon(null)
 
-
     if (selectedPlacePolygonCoordinates.length <= 0) {
       customElements.whenDefined(polygon.localName).then(() => {
         try {
@@ -258,13 +259,12 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
       } catch (e) { }
     })
 
-    // Fetch RealEstate data
-    fetchRealestateData()
-  }, [selectedPlacePolygonCoordinates])
-
-  const fetchRealestateData = async () => {
     if (!selectedPlace) return
 
+    fetchRealestateData(selectedPlace.geometry?.location?.lat() || 0, selectedPlace.geometry?.location?.lng() || 0)
+  }, [selectedPlacePolygonCoordinates])
+
+  const fetchRealestateData = async (lat: number, lon: number) => {
     const { idToken, uid } = await getAuthTokens()
     if (!idToken || !uid) {
       console.log("No auth tokens found.")
@@ -272,7 +272,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
     }
 
     try {
-      const response = await fetch(`https://photo-gateway-7fw1yavc.ue.gateway.dev/api/properties?target_lat=${selectedPlace.geometry?.location?.lat()}&target_lon=${selectedPlace.geometry?.location?.lng()}`, {
+      const response = await fetch(`https://photo-gateway-7fw1yavc.ue.gateway.dev/api/properties?target_lat=${lat}&target_lon=${lon}`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${idToken}`
@@ -295,7 +295,6 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
   useDeepCompareEffect(() => {
     if (!map3DElement) return
 
-    // copy all values from map3dOptions to the map3D element itself
     Object.assign(map3DElement, map3dOptions)
   }, [map3DElement, map3dOptions])
 

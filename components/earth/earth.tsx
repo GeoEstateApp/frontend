@@ -22,7 +22,7 @@ const TARGET_VIEW_PROPS: Map3DCameraProps = {
   roll: 0
 };
 
-const TARGET_ALTITUDE = 120;
+const TARGET_ALTITUDE = 200;
 const TARGET_ZIPCODE_ALTITUDE = 1200;
 
 export default function Earth() {
