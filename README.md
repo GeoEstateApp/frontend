@@ -8,19 +8,18 @@ Before you begin, ensure that you have **Node.js** and **Expo CLI** installed. Y
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-org/geoestate-frontend.git
-   cd geoestate-frontend
+     git clone https://github.com/your-org/geoestate-frontend.git
+     cd geoestate-frontend
 2. Install dependencies:
 
    ```bash
-   npm install
+     npm install
 3. Set up environment variables:
 
 Create a .env file in the root directory with the necessary configurations for connecting to the backend and other services.
 Get Started
 Start the development server:
 
-     ```bash
      npm start
 
 Open the Expo app on your mobile device or use the emulator to view the app in action. For the web, it will launch in your browser at http://localhost:19006.
