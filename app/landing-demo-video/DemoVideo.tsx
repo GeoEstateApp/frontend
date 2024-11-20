@@ -4,8 +4,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Dimensions, useWindowDimensio
 import React, { useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 
-const VIDEO_URL = 'https://www.youtube.com/watch?v=CvFH_6DNRCY';
-const YOUTUBE_THUMBNAIL = 'https://img.youtube.com/vi/CvFH_6DNRCY/maxresdefault.jpg';
+const VIDEO_URL = 'https://youtu.be/_O32zTo_-CM?si=H4UyMB_5Pr4hAEkj';
+const YOUTUBE_THUMBNAIL = 'https://youtu.be/_O32zTo_-CM?si=H4UyMB_5Pr4hAEkj/maxresdefault.jpg';
 
 export default function VideoSection() {
     const { width: windowWidth } = useWindowDimensions();
