@@ -22,7 +22,6 @@ import FavoritesPanel from '@/components/favoritespanel/favoritespanel'
 import { useZipcodeInsights } from '@/states/zipcode_insights'
 
 const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY
-const GOOGLE_MAP_VERSION = 'alpha'
 
 function HeaderButton({ isLoggedIn }: { isLoggedIn: boolean }) {
   const router = useRouter()
@@ -221,15 +220,21 @@ export default function index() {
     setShowZipcodePanel(false)
   }
 
-
   if (isAppLoading) {
     return <LoadingPage />
+  }
+
+  const nonAlphaVersionLoaded = Boolean(globalThis && globalThis.google?.maps?.version && !globalThis.google?.maps?.version.endsWith('-alpha'))
+
+  if (nonAlphaVersionLoaded) {
+    location.reload()
+    return
   }
 
   return (
     <View style={styles.container}>
       <HeaderButton isLoggedIn />
-      <APIProvider apiKey={API_KEY} version={GOOGLE_MAP_VERSION}>
+      <APIProvider apiKey={API_KEY} version={'alpha'}>
 
         <Earth />
         <SearchBox />

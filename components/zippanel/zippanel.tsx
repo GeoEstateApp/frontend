@@ -293,7 +293,7 @@ export default function ZipPanel() {
                     <Text style={styles.sectionTitle}>Community Discussion</Text>
                     <Pressable
                       style={styles.aiSummaryButton}
-                      onPress={() => setShowAICommentSummary(!showAICommentSummary)}
+                      onPress={() => comments.length > 0 && setShowAICommentSummary(!showAICommentSummary)}
                     >
                       <IconSparkles size={20} color="#fff" />
                     </Pressable>

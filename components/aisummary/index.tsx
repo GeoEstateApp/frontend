@@ -20,7 +20,7 @@ export default function AICommentsSummary({ onClose, insights }: { onClose: (str
     if (insights !== "") {
       setSummary(insights)
       return
-    } 
+    }
 
     const { idToken, uid } = await getAuthTokens()
     if (idToken === null || uid === null) return
@@ -50,7 +50,7 @@ export default function AICommentsSummary({ onClose, insights }: { onClose: (str
       if (!response.ok) throw new Error("Network response was not ok")
 
       const data = await response.json()
-      
+
       const prompt = `Analyze the following community feedback for zipcode ${zipcode}. 
 Format the response in markdown using h2 headers (##).
 
@@ -79,10 +79,18 @@ Provide a comprehensive analysis that includes:
 - Areas for improvement
 - Key considerations for prospective residents
 
-Keep the analysis balanced, data-driven, and focused on actionable insights.`
+Keep the analysis balanced, data-driven, and focused on actionable insights. Limit the response to 250 words.`
 
-      const result = await model.generateContent(prompt)
-  
+      const result = await model.generateContent({
+        contents: [{
+          role: "user",
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          maxOutputTokens: 250, // 1 token is roughly 4 characters
+        },
+      })
+
       const aiResponse = result.response
       const text = aiResponse.text()
       setSummary(text)
@@ -115,7 +123,7 @@ Keep the analysis balanced, data-driven, and focused on actionable insights.`
             </Text>
           </TouchableOpacity>
 
-          {isLoading && <ActivityIndicator style={{flex: 1}} size='large' />}
+          {isLoading && <ActivityIndicator style={{ flex: 1 }} size='large' />}
 
           {!isLoading && (
             <ScrollView showsVerticalScrollIndicator={false}>
