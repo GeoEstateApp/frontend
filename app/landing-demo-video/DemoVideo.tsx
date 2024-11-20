@@ -1,16 +1,13 @@
-import { Video, ResizeMode } from 'expo-av';  
+import { Video, ResizeMode } from 'expo-av';
+import { WebView } from 'react-native-webview';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, useWindowDimensions } from 'react-native';
 import React, { useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 
-const VIDEO_URL = require('../../assets/videos/dummy-demo.mp4');
+const VIDEO_URL = 'https://www.youtube.com/watch?v=CvFH_6DNRCY';
 
 export default function VideoSection() {
     const { width: windowWidth } = useWindowDimensions();
-    const videoRef = useRef<Video>(null); 
-    const [isPlaying, setIsPlaying] = useState(false); 
-    const [isMuted, setIsMuted] = useState(false); 
-
     const getResponsiveWidth = () => {
         if (windowWidth < 768) return '95%';
         if (windowWidth < 1024) return '80%';
@@ -83,27 +80,6 @@ export default function VideoSection() {
         },
     });
 
-    // Rest of your component logic remains the same
-    const togglePlayPause = async () => {
-        if (videoRef.current) {
-            if (isPlaying) {
-                await videoRef.current.pauseAsync();
-            } else {
-                await videoRef.current.playAsync();
-            }
-            setIsPlaying(!isPlaying);
-        }
-    };
-
-    const handlePlaybackStatusUpdate = (status: any) => {
-        if (status.didJustFinish) {
-            if (videoRef.current) {
-                videoRef.current.setPositionAsync(0);
-                setIsPlaying(false);
-            }
-        }
-    };
-
     return (
         <View style={styles.container}>
             <View style={styles.textContainer}>
@@ -114,27 +90,12 @@ export default function VideoSection() {
                 </Text>
             </View>
 
-            <Video
-                ref={videoRef}
-                source={VIDEO_URL}
+            <WebView
+                source={{ uri: VIDEO_URL }}
                 style={styles.video}
-                useNativeControls={false}
-                resizeMode={ResizeMode.COVER}
-                isMuted={isMuted}
-                onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+                allowsFullscreenVideo={true}
+                mediaPlaybackRequiresUserAction={false}
             />
-
-            <TouchableOpacity
-                style={styles.pauseButton}
-                onPress={togglePlayPause}
-                activeOpacity={0.8}
-            >
-                <Ionicons
-                    name={isPlaying ? 'pause' : 'play'}
-                    size={windowWidth < 768 ? 20 : 24}
-                    color="white"
-                />
-            </TouchableOpacity>
         </View>
     );
 }
