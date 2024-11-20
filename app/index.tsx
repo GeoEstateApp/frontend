@@ -17,7 +17,7 @@ import DemoVideo from './landing-demo-video/DemoVideo';
 
 const teamMembers = [
     { name: "Ayesha Virk", role: "Founder, Full Stack Developer", image: "https://i.pinimg.com/736x/0a/7d/c3/0a7dc35b8155aba1008c563bbbe34441.jpg" },
-    { name: "Robert Bui", role: "CEO, Backend Lead", image: "https://i.pinimg.com/736x/c6/dd/02/c6dd02eef170fb8accaf180faf0fdea8.jpg" },
+    { name: "Robert Bui", role: "Product lead, Backend Lead", image: "https://i.pinimg.com/736x/c6/dd/02/c6dd02eef170fb8accaf180faf0fdea8.jpg" },
     { name: "Vikramaditya Dhumal", role: "Frontend Lead, Full Stack Developer", image: "https://i.pinimg.com/736x/79/36/6a/79366a3b921eb0c283e19b28edc80e61.jpg" },
     { name: "Humera", role: "Backend Developer, DB Developer", image: "https://i.pinimg.com/736x/9f/90/0f/9f900f10d2ffdfd34c95ae39487eff85.jpg" },
     { name: "Yaseen", role: "Backend Developer", image: "https://i.pinimg.com/736x/d6/66/88/d66688f7a1f37ba4f0448d62876e028f.jpg" },
@@ -169,7 +169,7 @@ export default function Index() {
               <View style={styles.teamSection}>
                 <TeamDetail teamMembers={teamMembers} />
               </View>
-              <ReviewSection />
+              {/* <ReviewSection /> */}
               {/* Footer Section */}
               <Footer />
               <Toast position="top" topOffset={20} />
@@ -340,32 +340,32 @@ const FeaturesSection = () => {
     const features = [
         {
             title: "Interactive Real Estate Map with Geospatial Data",
-            description: "Enhanced Neighborhood Visualization: Add layers to your map that visualize different aspects of neighborhoods, such as proximity to schools, hospitals, parks, and local amenities.",
+            description: "Enhanced Neighborhood Visualization: Use our features to analyze and visualize neighborhoods, such as proximity to schools, hospitals, parks, and local amenities.",
             icon: MapPin,
             details: [
-                "Real-Time Data Integration",
+                "Extensive Data Integration",
                 "Interactive Points of Interest",
                 "360-Degree Building Views"
             ]
         },
         {
             title: "Suitability Calculator with Custom Analytics for Homebuyers",
-            description: "Energy Efficiency Insights: Incorporate details about the energy sources for buildings in each neighborhood, and allow users to filter for buildings powered by renewable energy.",
+            description: "Using our Suitability Calculator, you can input details about your dream property, and get a suitable match based on our algorithm.",
             icon: Calculator,
             details: [
-                "Transportation & Commute Times",
-                "Environmental Impact Indicators",
-                "Neighborhood Vibes"
+                "Address, Neighborhood, and Building Details",
+                "Unique Suitability Score",
+                "Choose where points of interest to live near."
             ]
         },
         {
-            title: "AI for Map Navigation and Surroundings Visualization",
-            description: "Personalized Suggestions Based on User Preferences: Leverage AI to analyze users’ past searches or inputs to suggest areas, properties, or amenities that fit their needs.",
+            title: "Zipcode Chat and Zipcode Search",
+            description: "Get insights and real user information about youe dream properties neighbourhood. Helping you make informed decisions.",
             icon: Search,
             details: [
-                "Augmented Reality (AR) Layer",
-                "3D Guided Tours",
-                "Voice Assistance for Enhanced Interactivity"
+                "Unique ZipCode Chat",
+                "Analytics and Insights for Zipcodes", 
+                "Gemini Ai for Chat Summarision"
             ]
         },
     ];
@@ -384,7 +384,7 @@ const FeaturesSection = () => {
                 <Text style={styles.featuresTitle}>Everything you need to make informed real estate decisions</Text>
                 <Text style={styles.featuresDescription}>
                     Discover how our comprehensive suite of tools and features can help you find,
-                    analyze, and secure your ideal property investment.
+                    analyze, and secure your ideal property.
                 </Text>
             </Animated.View>
             <View style={styles.featuresGrid}>
@@ -447,16 +447,16 @@ const WhyUsSection = () => {
                                 <MapPin size={32} color="#007AFF" strokeWidth={1.5} />
                                 <Text style={styles.whyUsItemTitle}>Immersive 3D Maps</Text>
                                 <Text style={styles.whyUsItemDescription}>
-                                    Explore properties like never before with photorealistic 3D maps. Get a virtual tour of the neighborhood, including nearby amenities, schools, and parks.
+                                    Explore properties like never before with Google's photorealistic 3D maps. Get a virtual tour of the neighborhood, including nearby amenities, schools, and parks.
                                 </Text>
                             </View>
                             <View style={styles.connectorLine} />
 
                             <View style={styles.whyUsBox}>
                                 <Calculator size={32} color="#007AFF" strokeWidth={1.5} />
-                                <Text style={styles.whyUsItemTitle}>Personalized Analytics</Text>
+                                <Text style={styles.whyUsItemTitle}>Suitability Calculator</Text>
                                 <Text style={styles.whyUsItemDescription}>
-                                    With our Suitability Calculator, make data-driven decisions based on real-time analytics tailored to your energy efficiency, environmental impact, and accessibility needs.
+                                    With our Suitability Calculator, make data-driven decisions based on analytics tailored to your preferences, financial budget, and accessibility needs.
                                 </Text>
                             </View>
                             <View style={styles.connectorLine} />
@@ -510,86 +510,88 @@ const WhyUsSection = () => {
     );
 };
 
-const ReviewSection = () => {
-    const scrollViewRef = useRef<ScrollView>(null);
+// Review Section
+//
+// const ReviewSection = () => {
+//     const scrollViewRef = useRef<ScrollView>(null);
 
-    const scrollTo = (direction: 'left' | 'right') => {
-        if (scrollViewRef.current) {
-            scrollViewRef.current.scrollTo({
-                x: direction === 'left' ? 350 : -350,
-                animated: true,
-            });
-        }
-    };
+//     const scrollTo = (direction: 'left' | 'right') => {
+//         if (scrollViewRef.current) {
+//             scrollViewRef.current.scrollTo({
+//                 x: direction === 'left' ? 350 : -350,
+//                 animated: true,
+//             });
+//         }
+//     };
 
-    return (
-        <View style={styles.mainContainer}>
-            <Text style={styles.ReviewSubtitle}>REVIEWS</Text>
-            <Text style={styles.sectionLabel}>What Our Clients Say</Text>
-            <Text style={styles.tagline}>Hear about the experiences of our happy clients!</Text>
+//     return (
+//         <View style={styles.mainContainer}>
+//             <Text style={styles.ReviewSubtitle}>REVIEWS</Text>
+//             <Text style={styles.sectionLabel}>What Our Clients Say</Text>
+//             <Text style={styles.tagline}>Hear about the experiences of our happy clients!</Text>
 
-            <View style={styles.reviewContainer}>
-                {/* left arrow */}
-                <TouchableOpacity onPress={() => scrollTo('left')} style={[styles.arrowButton, styles.leftArrowButton]}>
-                    <Ionicons name="chevron-back" size={40} color="#007AFF" />
-                </TouchableOpacity>
+//             <View style={styles.reviewContainer}>
+//                 {/* left arrow */}
+//                 <TouchableOpacity onPress={() => scrollTo('left')} style={[styles.arrowButton, styles.leftArrowButton]}>
+//                     <Ionicons name="chevron-back" size={40} color="#007AFF" />
+//                 </TouchableOpacity>
 
-                {/* ScrollView for reviews */}
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.horizontalScrollContainer}
-                    ref={scrollViewRef}
-                    snapToInterval={350}
-                    decelerationRate="fast"
-                    snapToAlignment="center"
-                >
-                    {/* reviews */}
-                    <LinearGradient
-                        colors={['#2d2d2d', '#000000', '#4c4c4c']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.reviewCard}
-                    >
-                        <Image source={require("../assets/images/person.jpg")} style={styles.personImage} />
-                        <View style={styles.reviewContent}>
-                            <Text style={styles.reviewText}>
-                                "GeoEstate has completely transformed the way I view real estate. The 3D maps and
-                                personalized suggestions really helped me find the perfect property. I highly
-                                recommend it!"
-                            </Text>
-                            <Text style={styles.reviewerName}>- Michael Kai</Text>
-                        </View>
-                    </LinearGradient>
+//                 {/* ScrollView for reviews */}
+//                 <ScrollView
+//                     horizontal
+//                     showsHorizontalScrollIndicator={false}
+//                     contentContainerStyle={styles.horizontalScrollContainer}
+//                     ref={scrollViewRef}
+//                     snapToInterval={350}
+//                     decelerationRate="fast"
+//                     snapToAlignment="center"
+//                 >
+//                     {/* reviews */}
+//                     <LinearGradient
+//                         colors={['#2d2d2d', '#000000', '#4c4c4c']}
+//                         start={{ x: 0, y: 0 }}
+//                         end={{ x: 1, y: 1 }}
+//                         style={styles.reviewCard}
+//                     >
+//                         <Image source={require("../assets/images/person.jpg")} style={styles.personImage} />
+//                         <View style={styles.reviewContent}>
+//                             <Text style={styles.reviewText}>
+//                                 "GeoEstate has completely transformed the way I view real estate. The 3D maps and
+//                                 personalized suggestions really helped me find the perfect property. I highly
+//                                 recommend it!"
+//                             </Text>
+//                             <Text style={styles.reviewerName}>- Michael Kai</Text>
+//                         </View>
+//                     </LinearGradient>
 
-                    <LinearGradient
-                        colors={['#2d2d2d', '#000000', '#4c4c4c']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.reviewCard}
-                    >
-                        <Image source={require("../assets/images/person2.jpg")} style={styles.personImage} />
-                        <View style={styles.reviewContent}>
-                            <Text style={styles.reviewText}>
-                                "The experience was outstanding! GeoEstate's user interface is smooth and intuitive.
-                                The 3D map feature helped me navigate the market with ease. Definitely worth checking
-                                out."
-                            </Text>
-                            <Text style={styles.reviewerName}>- Clara Smith</Text>
-                        </View>
-                    </LinearGradient>
+//                     <LinearGradient
+//                         colors={['#2d2d2d', '#000000', '#4c4c4c']}
+//                         start={{ x: 0, y: 0 }}
+//                         end={{ x: 1, y: 1 }}
+//                         style={styles.reviewCard}
+//                     >
+//                         <Image source={require("../assets/images/person2.jpg")} style={styles.personImage} />
+//                         <View style={styles.reviewContent}>
+//                             <Text style={styles.reviewText}>
+//                                 "The experience was outstanding! GeoEstate's user interface is smooth and intuitive.
+//                                 The 3D map feature helped me navigate the market with ease. Definitely worth checking
+//                                 out."
+//                             </Text>
+//                             <Text style={styles.reviewerName}>- Clara Smith</Text>
+//                         </View>
+//                     </LinearGradient>
 
 
-                </ScrollView>
+//                 </ScrollView>
 
-                {/* right arrow */}
-                <TouchableOpacity onPress={() => scrollTo('right')} style={[styles.arrowButton, styles.rightArrowButton]}>
-                    <Ionicons name="chevron-forward" size={40} color="#007AFF" />
-                </TouchableOpacity>
-            </View>
-        </View>
-    );
-};
+//                 {/* right arrow */}
+//                 <TouchableOpacity onPress={() => scrollTo('right')} style={[styles.arrowButton, styles.rightArrowButton]}>
+//                     <Ionicons name="chevron-forward" size={40} color="#007AFF" />
+//                 </TouchableOpacity>
+//             </View>
+//         </View>
+//     );
+// };
 
 const Footer = () => (
     <SafeAreaView style={styles.footer}>
@@ -619,7 +621,7 @@ const Footer = () => (
                     <View style={styles.footerLinks}>
                         <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/about")}>About us</Text></Text>
                         <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/terms")}>Terms and Privacy</Text></Text>
-                        <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/home")}>Home</Text></Text>
+                        <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geo.estate/explore")}>Explore</Text></Text>
                         <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/help")}>Help</Text></Text>
                     </View>
                 </View>
