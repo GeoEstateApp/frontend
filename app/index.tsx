@@ -171,7 +171,7 @@ export default function Index() {
               </View>
               {/* <ReviewSection /> */}
               {/* Footer Section */}
-              <Footer />
+              <Footer scrollToAbout={scrollToAbout} />
               <Toast position="top" topOffset={20} />
             </Animated.ScrollView>
           </>
@@ -593,7 +593,7 @@ const WhyUsSection = () => {
 //     );
 // };
 
-const Footer = () => (
+const Footer = ({ scrollToAbout }: { scrollToAbout: () => void }) => (
     <SafeAreaView style={styles.footer}>
         <View style={styles.footerContent}>
 
@@ -619,7 +619,7 @@ const Footer = () => (
                     <View style={styles.underline} />
 
                     <View style={styles.footerLinks}>
-                        <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/about")}>About us</Text></Text>
+                        <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={scrollToAbout}>About us</Text></Text>
                         <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/terms")}>Terms and Privacy</Text></Text>
                         <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geo.estate/explore")}>Explore</Text></Text>
                         <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://discord.gg/DpnaCxCtam")}>Help</Text></Text>
