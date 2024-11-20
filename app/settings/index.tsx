@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react'
 import { Alert, Image, StyleSheet, Text, TouchableOpacity, View, Linking } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Modal, TextInput, ActivityIndicator } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 type ModalType = 'password' | 'email' | 'profile' | null
 
 export default function SettingsScreen() {
@@ -134,6 +135,7 @@ export default function SettingsScreen() {
     try {
       await signOut(auth)
       router.replace('/')
+      await AsyncStorage.clear()
     } catch (error) {
       Alert.alert('Error', 'Failed to sign out')
     }

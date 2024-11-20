@@ -13,7 +13,7 @@ import { addToBucketList, removeFromBucketList, getBucketList } from '@/api/buck
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Animated } from 'react-native';
 import { auth } from '@/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { useFilterStore } from '@/states/filterstore';
 
 export default function SidePanel() {
@@ -400,7 +400,7 @@ export default function SidePanel() {
             </View>
 
           ) : (
-            <View style={{ display: 'flex', flexDirection: 'column' }}>
+            <View style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -438,7 +438,7 @@ export default function SidePanel() {
 
               {
                 selectedFilters.length > 0 && (
-                  <Pressable style={{ ...styles.toggleButton, width: 'auto', backgroundColor: '#ff4444' }} onPress={handleRemoveInsights}>
+                  <Pressable style={{ ...styles.toggleButton, width: 'auto', backgroundColor: '#ff4444', marginTop: 10 }} onPress={handleRemoveInsights}>
                     <IconTrashX size={24} color="#fff" />
                   </Pressable>
                 )
@@ -467,29 +467,46 @@ export default function SidePanel() {
                 </View>
               </View>
 
-              {realEstateProperties && realEstateProperties.length > 0 && <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10, marginTop: 24 }}>Real Estate Properties</Text>}
-              <ScrollView showsVerticalScrollIndicator={false}>
-                {
-                  realEstateProperties && realEstateProperties.length > 0 && (
-                    <View style={{ gap: 8, flexDirection: 'column' }}>
-                      {
-                        realEstateProperties.map((property, index) => {
-                          return <Pressable style={{ ...styles.realEstateProperty, backgroundColor: selectedRealEstateProperty?.property_id === property.property_id ? '#49A84C' : 'white' }} key={index} onPress={() => setSelectedRealEstateProperty(property)}>
-                            <Image source={{ uri: property.img_url }} style={{ width: 100, objectFit: 'cover', borderRadius: 6 }} />
-                            <View style={{ gap: 4, display: 'flex', flexDirection: 'column' }}>
-                              <Text style={{ fontSize: 16, fontWeight: 'bold', color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.address_line}</Text>
-                              <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>Property: {property.property_type.split('_').join(' ').toUpperCase()}</Text>
-                              {property.size_sqft && <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>Size: {property.size_sqft} ft²</Text>}
-                              <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.price}</Text>
-                              <Text style={{ fontSize: 12, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.status}</Text>
-                            </View>
-                          </Pressable>
-                        })
-                      }
-                    </View>
-                  )
-                }
-              </ScrollView>
+              {getAuth().currentUser !== null && realEstateProperties && realEstateProperties.length > 0 && (
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10, marginTop: 24 }}>
+                    Real Estate Properties
+                  </Text>
+                  <ScrollView 
+                    style={{ flex: 1 }}
+                    contentContainerStyle={{ gap: 8 }}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    {realEstateProperties.map((property, index) => (
+                      <Pressable 
+                        style={[
+                          styles.realEstateProperty, 
+                          selectedRealEstateProperty?.property_id === property.property_id && { backgroundColor: '#49A84C' }
+                        ]} 
+                        key={index} 
+                        onPress={() => setSelectedRealEstateProperty(property)}
+                      >
+                        <Image source={{ uri: property.img_url }} style={{ width: 100, objectFit: 'cover', borderRadius: 6 }} />
+                        <View style={{ gap: 4, display: 'flex', flexDirection: 'column' }}>
+                          <Text style={{ fontSize: 16, fontWeight: 'bold', color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.address_line}</Text>
+                          <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>Property: {property.property_type.split('_').join(' ').toUpperCase()}</Text>
+                          {property.size_sqft && <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>Size: {property.size_sqft} ft²</Text>}
+                          <Text style={{ fontSize: 14, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.price}</Text>
+                          <Text style={{ fontSize: 12, color: selectedRealEstateProperty?.property_id === property.property_id ? 'white' : 'black' }}>{property.status}</Text>
+                        </View>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+
+              {!getAuth().currentUser && (
+                <View style={styles.loginPrompt}>
+                  <Text style={styles.loginPromptText}>
+                    Please login to get real estate recommendations
+                  </Text>
+                </View>
+              )}
             </View>
           )
         }
@@ -539,6 +556,7 @@ const styles = StyleSheet.create({
     elevation: 4,
     borderRightWidth: 1,
     borderColor: 'rgba(221, 221, 221, 0.5)',
+    flex: 1, // Add this
   },
   filters: {
     display: 'flex',
@@ -605,7 +623,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
-    marginBottom: 8,
   },
   toggleButton: {
     display: 'flex',
@@ -711,5 +728,17 @@ const styles = StyleSheet.create({
   },
   filterTextDisabled: {
     opacity: 0.5,
-  }
+  },
+  loginPrompt: {
+    padding: 16,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+    marginTop: 24,
+    alignItems: 'center',
+  },
+  loginPromptText: {
+    fontSize: 16,
+    color: '#4b5563',
+    textAlign: 'center',
+  },
 })

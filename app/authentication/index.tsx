@@ -675,19 +675,22 @@ export default function AuthScreen() {
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
                 >
-                    <Animated.View
-                        style={[
-                            styles.header,
-                            {
-                                opacity: fadeAnim,
-                                transform: [{ translateY: slideAnim }, { translateX: shakeAnim }],
-                            },
-                        ]}
-                    >
-                        <Text style={styles.logoText}>GeoEstate</Text>
-                        <Text style={styles.subtitle}>
-                            {isLogin ? 'Welcome back!' : 'Create your account'}
-                        </Text>
+                    <Animated.View style={[styles.header, {
+                        opacity: fadeAnim,
+                        transform: [{ translateY: slideAnim }, { translateX: shakeAnim }],
+                    }]}>
+                        <TouchableOpacity 
+                            style={styles.backButton}
+                            onPress={() => router.push('/explore')}
+                        >
+                            <FontAwesome name="arrow-left" size={24} color="#2c3e50" />
+                        </TouchableOpacity>
+                        <View style={styles.headerContent}>
+                            <Text style={styles.logoText}>GeoEstate</Text>
+                            <Text style={styles.subtitle}>
+                                {isLogin ? 'Welcome back!' : 'Create your account'}
+                            </Text>
+                        </View>
                     </Animated.View>
 
                     <Animated.View
@@ -861,8 +864,19 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
     },
     header: {
-        alignItems: 'center',
         paddingVertical: 30,
+        paddingHorizontal: 20,
+        position: 'relative',
+    },
+    backButton: {
+        position: 'absolute',
+        left: 20,
+        top: 30,
+        zIndex: 1,
+        padding: 10,
+    },
+    headerContent: {
+        alignItems: 'center',
     },
     logoText: {
         fontSize: 32,

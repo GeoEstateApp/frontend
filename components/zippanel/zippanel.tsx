@@ -8,6 +8,7 @@ import { addComment, Comment, getComments } from '@/api/comments';
 import Toast from 'react-native-toast-message';
 import { IconUser, IconSend, IconSparkles, IconArrowLeft } from '@tabler/icons-react';
 import AICommentsSummary from '../aisummary';
+import { getAuth } from 'firebase/auth';
 
 export default function ZipPanel() {
   const [searchingZipcodeText, setSearchingZipcodeText] = useState<string>('');
@@ -19,6 +20,7 @@ export default function ZipPanel() {
   const [loadingComments, setLoadingComments] = useState(false);
   const [showAICommentSummary, setShowAICommentSummary] = useState(false);
   const [summaryInsight, setSummaryInsight] = useState("")
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   const { zipcode, zipcodes, setPolygon, setZipcode, setZipcodes, setZipcodeInsights, zipcodeInsights, setPolygons } = useZipcodeInsights();
   const [zipcodeName, setZipcodeName] = useState("")  
@@ -45,7 +47,9 @@ export default function ZipPanel() {
   }, [zipcode]);
 
   useEffect(() => {
-    if (zipcodes.length === 0) getAllZipcodes();
+    setIsLoggedIn(getAuth().currentUser !== null)
+
+    if (zipcodes.length === 0 && getAuth().currentUser !== null) getAllZipcodes();
   }, []);
 
   useEffect(() => {
@@ -240,14 +244,20 @@ export default function ZipPanel() {
   return (
     <View style={styles.container}>
       <View style={styles.panel}>
-        {viewingZipcodeDetails ? (
+        {!getAuth().currentUser ? (
+          <View style={styles.loginPrompt}>
+            <Text style={styles.loginPromptText}>
+              Please login to explore zipcode data and insights
+            </Text>
+          </View>
+        ) : viewingZipcodeDetails ? (
           <>
             <Pressable onPress={handleBackToList} style={styles.backButton}>
               <IconArrowLeft size={20} color="#666" />
               <Text style={styles.backButtonText}>Back to Zipcode List</Text>
             </Pressable>
 
-            <Text style={{ fontSize: 20, fontWeight: 'bold' }}>{zipcodeName} {zipcode}</Text>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', marginTop: 20, marginBottom: 10 }}>{zipcodeName} {zipcode}</Text>
             <ScrollView style={styles.contentScroll} showsVerticalScrollIndicator={false}>
               <ScrollView contentContainerStyle={{ gap: 8 }} showsVerticalScrollIndicator={false}>
                 {/* Zipcode insights */}
@@ -675,5 +685,17 @@ const styles = StyleSheet.create({
   headerText: {
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  loginPrompt: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loginPromptText: {
+    fontSize: 16,
+    color: '#4b5563',
+    textAlign: 'center',
+    lineHeight: 24,
   },
 });
