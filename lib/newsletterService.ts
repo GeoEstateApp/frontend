@@ -4,23 +4,47 @@ import Toast from 'react-native-toast-message';
 
 export const subscribeToNewsletter = async (email: string) => {
   try {
-    // Validate email
+    // Trim and validate email
+    const trimmedEmail = email.trim().toLowerCase();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      throw new Error('Invalid email format');
+    
+    if (!trimmedEmail) {
+      Toast.show({
+        type: 'error',
+        text1: 'Subscription Error',
+        text2: 'Please enter an email address',
+        visibilityTime: 3000,
+      });
+      return false;
+    }
+
+    if (!emailRegex.test(trimmedEmail)) {
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Email',
+        text2: 'Please enter a valid email address',
+        visibilityTime: 3000,
+      });
+      return false;
     }
 
     // Check if email already exists
-    const q = query(collection(db, 'newsletter_subscribers'), where('email', '==', email.toLowerCase()));
+    const q = query(collection(db, 'newsletter_subscribers'), where('email', '==', trimmedEmail));
     const querySnapshot = await getDocs(q);
 
     if (!querySnapshot.empty) {
-      throw new Error('This email is already subscribed');
+      Toast.show({
+        type: 'info',
+        text1: 'Already Subscribed',
+        text2: 'This email is already on our mailing list',
+        visibilityTime: 3000,
+      });
+      return false;
     }
 
     // Add new subscriber
     await addDoc(collection(db, 'newsletter_subscribers'), {
-      email: email.toLowerCase(),
+      email: trimmedEmail,
       subscribedAt: new Date(),
       status: 'active'
     });
@@ -28,8 +52,8 @@ export const subscribeToNewsletter = async (email: string) => {
     // Show success toast with more details
     Toast.show({
       type: 'success',
-      text1: 'Newsletter Subscription',
-      text2: `${email} has been added to our mailing list`,
+      text1: 'Subscription Successful',
+      text2: `${trimmedEmail} has been added to our newsletter`,
       visibilityTime: 3000,
     });
 
@@ -46,6 +70,6 @@ export const subscribeToNewsletter = async (email: string) => {
     });
 
     console.error('Newsletter subscription error:', error);
-    throw error;
+    return false;
   }
 };
