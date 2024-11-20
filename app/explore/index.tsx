@@ -3,6 +3,7 @@ import { AICommentsSummary } from '@/components'
 import { APIProvider } from '@vis.gl/react-google-maps'
 import { ActivityIndicator, Button, Image, Linking, Pressable, StyleSheet, Text, View, Animated } from 'react-native'
 import { useEffect, useState } from 'react'
+import LoadingPage from '@/components/loading/LoadingPage'
 import { TouchableOpacity } from 'react-native'
 import { useRouter } from 'expo-router'
 import { IconUser, IconLogin, IconFilter, IconZip, IconSparkles, IconBed, IconBath, IconBuildingSkyscraper, IconAi, IconLiveView, IconGenderMale, IconGenderFemale, IconX, IconHeart, IconBookmark, IconMapPin } from '@tabler/icons-react'
@@ -49,11 +50,21 @@ function HeaderButton({ isLoggedIn }: { isLoggedIn: boolean }) {
 }
 
 export default function index() {
+  const [isAppLoading, setIsAppLoading] = useState(true)
   const { showZipcodePanel, setShowZipcodePanel } = useZipcodeInsights()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   const [showNeighbourhoodInsights, setNeighbourhoodInsights] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+
+  // Simulate app loading
+  useEffect(() => {
+    const loadingTimer = setTimeout(() => {
+      setIsAppLoading(false)
+    }, 3000) // Adjust time as needed
+
+    return () => clearTimeout(loadingTimer)
+  }, [])
 
   const { setShowPanel, toggleShowPanel, showPanel, selectedRealEstateProperty, setSelectedRealEstateProperty } = useSidePanelStore()
   const { isModalOpen } = useSuitability()
@@ -210,6 +221,10 @@ export default function index() {
     setShowZipcodePanel(false)
   }
 
+
+  if (isAppLoading) {
+    return <LoadingPage />
+  }
 
   return (
     <View style={styles.container}>
