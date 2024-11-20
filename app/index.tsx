@@ -593,83 +593,87 @@ const WhyUsSection = () => {
 //     );
 // };
 
-const Footer = ({ scrollToAbout }: { scrollToAbout: () => void }) => (
-    <SafeAreaView style={styles.footer}>
-        <View style={styles.footerContent}>
+const Footer = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
+    const router = useRouter();
 
-            <View style={styles.footerColumns}>
-                <View style={styles.leftColumn}>
-                    <Text style={styles.startUsingLabel}>Unlock Your{"\n"}Perfect Space☺️</Text>
+    return (
+        <SafeAreaView style={styles.footer}>
+            <View style={styles.footerContent}>
 
-                    <Text style={styles.emailLabel}>Subscribe</Text>
-                    <View style={styles.emailInputContainer}>
-                        <TextInput
-                            style={styles.emailInput}
-                            placeholder="Enter your email"
-                            placeholderTextColor="#A1A1A1"
-                        />
-                        <TouchableOpacity style={styles.arrowIconContainer}>
-                            <ArrowRight size={20} color="#fff" />
-                        </TouchableOpacity>
+                <View style={styles.footerColumns}>
+                    <View style={styles.leftColumn}>
+                        <Text style={styles.startUsingLabel}>Unlock Your{"\n"}Perfect Space☺️</Text>
+
+                        <Text style={styles.emailLabel}>Subscribe</Text>
+                        <View style={styles.emailInputContainer}>
+                            <TextInput
+                                style={styles.emailInput}
+                                placeholder="Enter your email"
+                                placeholderTextColor="#A1A1A1"
+                            />
+                            <TouchableOpacity style={styles.arrowIconContainer}>
+                                <ArrowRight size={20} color="#fff" />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    <View style={styles.centerColumn}>
+                        <Text style={styles.companyLabel}>Company</Text>
+                        <View style={styles.underline} />
+
+                        <View style={styles.footerLinks}>
+                            <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={scrollToAbout}>About us</Text></Text>
+                            <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/terms")}>Terms and Privacy</Text></Text>
+                            <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => router.push('/explore')}>Explore</Text></Text>
+                            <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://discord.gg/DpnaCxCtam")}>Help</Text></Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.resourcesColumn}>
+                        <Text style={styles.companyLabel}>Resources</Text>
+                        <View style={styles.underline} />
+
+                        <View style={styles.footerLinks}>
+                            
+                            <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://discord.gg/DpnaCxCtam")}>Support</Text></Text>
+                            <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://discord.gg/DpnaCxCtam")}>Contact Us</Text></Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.followUsColumn}>
+                        <Text style={styles.companyLabel}>Follow Us</Text>
+                        <View style={styles.underline} />
+
+                        <View style={styles.iconLinks}>
+                            <Facebook
+                                size={30}
+                                color="white"
+                                style={styles.icon}
+                            />
+                            <Instagram
+                                size={30}
+                                color="white"
+                                style={styles.icon}
+                            />
+                            <Mail
+                                size={30}
+                                color="white"
+                                style={styles.icon}
+                            />
+                            <Twitter
+                                size={30}
+                                color="white"
+                                style={styles.icon}
+                            />
+                        </View>
                     </View>
                 </View>
 
-                <View style={styles.centerColumn}>
-                    <Text style={styles.companyLabel}>Company</Text>
-                    <View style={styles.underline} />
-
-                    <View style={styles.footerLinks}>
-                        <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={scrollToAbout}>About us</Text></Text>
-                        <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/terms")}>Terms and Privacy</Text></Text>
-                        <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geo.estate/explore")}>Explore</Text></Text>
-                        <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://discord.gg/DpnaCxCtam")}>Help</Text></Text>
-                    </View>
-                </View>
-
-                <View style={styles.resourcesColumn}>
-                    <Text style={styles.companyLabel}>Resources</Text>
-                    <View style={styles.underline} />
-
-                    <View style={styles.footerLinks}>
-                        
-                        <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://discord.gg/DpnaCxCtam")}>Support</Text></Text>
-                        <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://discord.gg/DpnaCxCtam")}>Contact Us</Text></Text>
-                    </View>
-                </View>
-
-                <View style={styles.followUsColumn}>
-                    <Text style={styles.companyLabel}>Follow Us</Text>
-                    <View style={styles.underline} />
-
-                    <View style={styles.iconLinks}>
-                        <Facebook
-                            size={30}
-                            color="white"
-                            style={styles.icon}
-                        />
-                        <Instagram
-                            size={30}
-                            color="white"
-                            style={styles.icon}
-                        />
-                        <Mail
-                            size={30}
-                            color="white"
-                            style={styles.icon}
-                        />
-                        <Twitter
-                            size={30}
-                            color="white"
-                            style={styles.icon}
-                        />
-                    </View>
-                </View>
+                <Text style={styles.footerText}> 2024 GeoEstate. All Rights Reserved.</Text>
             </View>
-
-            <Text style={styles.footerText}> 2024 GeoEstate. All Rights Reserved.</Text>
-        </View>
-    </SafeAreaView>
-);
+        </SafeAreaView>
+    );
+};
 
 
 const styles = StyleSheet.create({
