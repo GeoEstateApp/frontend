@@ -8,7 +8,7 @@ const LoadingPage: React.FC = () => {
     const rotateAnimation = Animated.loop(
       Animated.timing(spinValue, {
         toValue: 1,
-        duration: 2000, 
+        duration: 1100, 
         useNativeDriver: true,
       })
     );
