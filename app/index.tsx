@@ -597,13 +597,54 @@ const WhyUsSection = () => {
 const Footer = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
     const router = useRouter();
     const [email, setEmail] = useState('');
+    const [subscriptionStatus, setSubscriptionStatus] = useState<{
+        type: 'error' | 'success' | null;
+        message: string;
+    }>({ type: null, message: '' });
 
     const handleSubscribe = async () => {
+        // Reset previous status
+        setSubscriptionStatus({ type: null, message: '' });
+
+        // Validate email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email.trim()) {
+            setSubscriptionStatus({ 
+                type: 'error', 
+                message: 'Please enter an email address' 
+            });
+            return;
+        }
+
+        if (!emailRegex.test(email.trim())) {
+            setSubscriptionStatus({ 
+                type: 'error', 
+                message: 'Please enter a valid email address' 
+            });
+            return;
+        }
+
         try {
-            await subscribeToNewsletter(email);
-            setEmail('');
+            const result = await subscribeToNewsletter(email);
+            
+            if (result) {
+                setSubscriptionStatus({ 
+                    type: 'success', 
+                    message: 'Thank you for subscribing!' 
+                });
+                setEmail('');
+            } else {
+                // This could be a duplicate email or other error
+                setSubscriptionStatus({ 
+                    type: 'error', 
+                    message: 'This email is already registered' 
+                });
+            }
         } catch (error) {
-            // Error handling is done in the service
+            setSubscriptionStatus({ 
+                type: 'error', 
+                message: 'Subscription failed. Please try again.' 
+            });
         }
     };
 
@@ -617,24 +658,36 @@ const Footer = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
 
                         <Text style={styles.emailLabel}>Subscribe</Text>
                         <View style={styles.emailInputContainer}>
-                            <TextInput
-                                style={styles.emailInput}
-                                placeholder="Your email address"
-                                placeholderTextColor="#A1A1A1"
-                                value={email}
-                                onChangeText={setEmail}
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                returnKeyType="send"
-                                onSubmitEditing={handleSubscribe}
-                                blurOnSubmit={false}
-                            />
-                            <TouchableOpacity 
-                                style={styles.arrowIconContainer} 
-                                onPress={handleSubscribe}
-                            >
-                                <ArrowRight size={20} color="#fff" />
-                            </TouchableOpacity>
+                            <View>
+                                <TextInput
+                                    style={styles.emailInput}
+                                    placeholder="Your email address"
+                                    placeholderTextColor="#A1A1A1"
+                                    value={email}
+                                    onChangeText={setEmail}
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                    returnKeyType="send"
+                                    onSubmitEditing={handleSubscribe}
+                                    blurOnSubmit={false}
+                                />
+                                <TouchableOpacity 
+                                    style={styles.arrowIconContainer} 
+                                    onPress={handleSubscribe}
+                                >
+                                    <ArrowRight size={20} color="#fff" />
+                                </TouchableOpacity>
+                                {subscriptionStatus.type && (
+                                    <Text style={[
+                                        styles.subscriptionStatusText,
+                                        subscriptionStatus.type === 'error' 
+                                            ? styles.errorText 
+                                            : styles.successText
+                                    ]}>
+                                        {subscriptionStatus.message}
+                                    </Text>
+                                )}
+                            </View>
                         </View>
                     </View>
 
@@ -1188,6 +1241,17 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingLeft: 10,
         marginTop: 20,
+    },
+    subscriptionStatusText: {
+        marginTop: 10,
+        fontSize: 12,
+        textAlign: 'left',
+    },
+    errorText: {
+        color: 'red',
+    },
+    successText: {
+        color: 'green',
     },
     startUsingLabel: {
         fontSize: Platform.select({ web: 40, default: 27 }),
