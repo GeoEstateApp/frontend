@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initializeApp } from 'firebase/app';
 import { getAuth, setPersistence, browserLocalPersistence, onIdTokenChanged } from 'firebase/auth';
 import { getVertexAI, getGenerativeModel } from "firebase/vertexai";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
     apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -24,8 +25,9 @@ onIdTokenChanged(auth, async (user) => {
 })
 
 const vertexAI = getVertexAI(app);
+const db = getFirestore(app);
 
 const instructions = "The following are comments about a zip code on a website that hosts user reviews of zip codes. Glean insights from these comments to display to the users looking to find a new zip code to move to."
 const model = getGenerativeModel(vertexAI, { model: "gemini-1.5-flash", systemInstruction: instructions });
 
-export { app, auth, model };
+export { app, auth, model, db };

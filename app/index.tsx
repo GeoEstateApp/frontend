@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import Globe from '../components/globe/Globe';
 import { auth } from '@/lib/firebase'
+import { subscribeToNewsletter } from '@/lib/newsletterService'
 import { onAuthStateChanged } from 'firebase/auth'
 import { IconUser, IconLogin } from '@tabler/icons-react'
 import { Image } from "react-native";
@@ -595,6 +596,16 @@ const WhyUsSection = () => {
 
 const Footer = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
     const router = useRouter();
+    const [email, setEmail] = useState('');
+
+    const handleSubscribe = async () => {
+        try {
+            await subscribeToNewsletter(email);
+            setEmail('');
+        } catch (error) {
+            // Error handling is done in the service
+        }
+    };
 
     return (
         <SafeAreaView style={styles.footer}>
@@ -610,8 +621,15 @@ const Footer = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
                                 style={styles.emailInput}
                                 placeholder="Enter your email"
                                 placeholderTextColor="#A1A1A1"
+                                value={email}
+                                onChangeText={setEmail}
+                                keyboardType="email-address"
+                                autoCapitalize="none"
                             />
-                            <TouchableOpacity style={styles.arrowIconContainer}>
+                            <TouchableOpacity 
+                                style={styles.arrowIconContainer} 
+                                onPress={handleSubscribe}
+                            >
                                 <ArrowRight size={20} color="#fff" />
                             </TouchableOpacity>
                         </View>
