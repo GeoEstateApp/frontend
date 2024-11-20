@@ -374,7 +374,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
           extruded=""
           ref={(el: any) => {
             if (el && marker.pin) {
-              el.append(marker.pin);
+              el.replaceChildren(marker.pin);
               customElements.whenDefined(el.localName).then(() => {
                 el.extruded = true;
                 el.altitudeMode = 'RELATIVE_TO_GROUND';
