@@ -1252,9 +1252,8 @@ const styles = StyleSheet.create({
     subscriptionStatusText: {
         marginTop: 10,
         fontSize: 12,
-        textAlign: 'center',
-        width: '100%',
-        alignSelf: 'center',
+        textAlign: 'left',
+ 
     },
     errorText: {
         color: 'red',
