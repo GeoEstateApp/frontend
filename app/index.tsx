@@ -619,12 +619,15 @@ const Footer = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
                         <View style={styles.emailInputContainer}>
                             <TextInput
                                 style={styles.emailInput}
-                                placeholder="Enter your email"
+                                placeholder="Your email address"
                                 placeholderTextColor="#A1A1A1"
                                 value={email}
                                 onChangeText={setEmail}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
+                                returnKeyType="send"
+                                onSubmitEditing={handleSubscribe}
+                                blurOnSubmit={false}
                             />
                             <TouchableOpacity 
                                 style={styles.arrowIconContainer} 

@@ -11,34 +11,38 @@ export const subscribeToNewsletter = async (email: string) => {
     }
 
     // Check if email already exists
-    const q = query(collection(db, 'newsletter_subscribers'), where('email', '==', email));
+    const q = query(collection(db, 'newsletter_subscribers'), where('email', '==', email.toLowerCase()));
     const querySnapshot = await getDocs(q);
 
     if (!querySnapshot.empty) {
-      throw new Error('Email already subscribed');
+      throw new Error('This email is already subscribed');
     }
 
     // Add new subscriber
     await addDoc(collection(db, 'newsletter_subscribers'), {
-      email,
+      email: email.toLowerCase(),
       subscribedAt: new Date(),
       status: 'active'
     });
 
-    // Show success toast
+    // Show success toast with more details
     Toast.show({
       type: 'success',
-      text1: 'Subscription Successful!',
-      text2: 'Thank you for subscribing to our newsletter.',
+      text1: 'Newsletter Subscription',
+      text2: `${email} has been added to our mailing list`,
+      visibilityTime: 3000,
     });
 
     return true;
   } catch (error) {
-    // Show error toast
+    // Detailed error handling
+    const errorMessage = error instanceof Error ? error.message : 'Subscription failed';
+    
     Toast.show({
       type: 'error',
-      text1: 'Subscription Failed',
-      text2: error instanceof Error ? error.message : 'Please try again',
+      text1: 'Subscription Error',
+      text2: errorMessage,
+      visibilityTime: 3000,
     });
 
     console.error('Newsletter subscription error:', error);
