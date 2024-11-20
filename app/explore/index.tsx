@@ -288,13 +288,13 @@ export default function index() {
                 top: -20,
                 left: -20,
                 backgroundColor: '#49A84C',
-                borderRadius: 4,
+                borderRadius: 10,
                 cursor: 'pointer',
-                padding: 4,
+                padding: 8,
               }}
               color='white'
               onClick={() => setSelectedRealEstateProperty(null)}
-              size={28}
+              size={20}
             />
 
             <View style={{ gap: 6, display: 'flex', flexDirection: 'column', position: 'relative' }}>

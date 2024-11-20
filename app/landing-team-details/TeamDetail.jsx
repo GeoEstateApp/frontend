@@ -301,7 +301,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
-    marginRight: 240,
     padding: 60,
     flexDirection: "row", 
   },

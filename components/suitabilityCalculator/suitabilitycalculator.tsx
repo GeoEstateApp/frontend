@@ -397,10 +397,10 @@ export default function SuitabilityCalculator() {
   return (
     <View style={recommendationProperties && recommendationProperties.length > 0 ? styles.sideModal : styles.modal}>
       <Pressable 
-        style={styles.closeButton} 
+        style={{...styles.closeButton, backgroundColor: "#49a84c" }} 
         onPress={handleClose}
       >
-        <IconX size={20} color="#6B7280" />
+        <IconX size={20} color="white" />
       </Pressable>
       {error && (
         <View style={styles.errorContainer}>
