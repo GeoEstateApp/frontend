@@ -8,13 +8,14 @@ import Globe from '../components/globe/Globe';
 import { auth } from '@/lib/firebase'
 import { subscribeToNewsletter } from '@/lib/newsletterService'
 import { onAuthStateChanged } from 'firebase/auth'
-import { IconUser, IconLogin } from '@tabler/icons-react'
+import { IconUser, IconLogin, IconBrandFacebook, IconBrandInstagram, IconMail, IconBrandTwitter } from '@tabler/icons-react'
 import { Image } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message'
 import LoadingPage from "@/components/loading/LoadingPage";
 import TeamDetail from "./landing-team-details/TeamDetail";
 import DemoVideo from './landing-demo-video/DemoVideo';
+import { useDevice } from "@/hooks";
 
 const teamMembers = [
     { name: "Ayesha Virk", role: "Founder, Full Stack Developer", image: "https://i.pinimg.com/736x/0a/7d/c3/0a7dc35b8155aba1008c563bbbe34441.jpg" },
@@ -27,8 +28,6 @@ const teamMembers = [
     { name: "Zainab Rashid", role: "Frontend Developer, UI/UX Lead", image: "https://i.pinimg.com/736x/af/c5/57/afc557911778f8935553c46f5898dd39.jpg" },
     { name: "Shelian Gladis", role: "Frontend Developer, Designer", image: "https://i.pinimg.com/474x/ff/1c/d9/ff1cd938ef943a6af3b58ec33d39a81a.jpg" },
 ];
-
-
 
 function HeaderNav() {
     const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -43,14 +42,14 @@ function HeaderNav() {
 
     return (
         <View style={styles.headerNav}>
-         
+
             <TouchableOpacity
                 style={styles.headerButton}
                 onPress={() => router.push(isLoggedIn ? '/explore' : '/authentication')}
             >
                 {isLoggedIn ? (
                     <>
-                        <Text style={styles.headerButtonText}>Explore</Text>
+                        <Text style={styles.headerButtonText}>Get Started</Text>
                         <ArrowRight color="white" size={24} style={{ marginLeft: 8 }} />
                     </>
                 ) : (
@@ -71,118 +70,122 @@ export default function Index() {
     const heroHeight = Platform.select({ web: 900, default: 700 });
     const scrollViewRef = useRef<ScrollView>(null);
     const [isLoading, setIsLoading] = useState(true);
-  
+
+    const device = useDevice()
+
     useEffect(() => {
         Toast.show({
-          type: 'info',
-          text1: 'Welcome to GeoEstate!',
-          text2: 'Discover your perfect property',
-          visibilityTime: 2000,
-          autoHide: true,
-          topOffset: 20,
-          text1Style: { fontSize: 16, fontWeight: 'bold' },
-          text2Style: { fontSize: 14 },
+            type: 'info',
+            text1: 'Welcome to GeoEstate!',
+            text2: 'Discover your perfect property',
+            visibilityTime: 2000,
+            autoHide: true,
+            topOffset: 20,
+            text1Style: { fontSize: 16, fontWeight: 'bold' },
+            text2Style: { fontSize: 14 },
         });
-      
-        const loadingTime = 2000; 
+
+        const loadingTime = 2000;
         const timer = setTimeout(() => {
-          setIsLoading(false);
+            setIsLoading(false);
         }, loadingTime);
-      
+
         return () => clearTimeout(timer);
-      }, []);
-      
-  
+    }, []);
+
+
     const headerOpacity = scrollY.interpolate({
-      inputRange: [0, heroHeight / 3],
-      outputRange: [0, 1],
-      extrapolate: 'clamp',
+        inputRange: [0, heroHeight / 3],
+        outputRange: [0, 1],
+        extrapolate: 'clamp',
     });
-  
+
     const scrollIndicatorOpacity = scrollY.interpolate({
-      inputRange: [0, heroHeight / 4],
-      outputRange: [1, 0],
-      extrapolate: 'clamp',
+        inputRange: [0, heroHeight / 4],
+        outputRange: [1, 0],
+        extrapolate: 'clamp',
     });
-  
+
     const scrollToAbout = () => {
-      scrollViewRef.current?.scrollTo({ y: heroHeight, animated: true });
+        scrollViewRef.current?.scrollTo({ y: heroHeight, animated: true });
     };
-  
+
     return (
-      <View style={styles.container}>
-        {/* display loading screen if isLoading is true */}
-        {isLoading ? (
-          <LoadingPage />
-        ) : (
-          <>
-            {/* Floating Header */}
-            <Animated.View style={[styles.header, { opacity: headerOpacity, paddingTop: insets.top }]}>
-              <LinearGradient
-                colors={['rgba(0,0,0,0.9)', 'rgba(0,0,0,0.7)']}
-                style={StyleSheet.absoluteFill}
-              />
-              <View style={styles.headerContent}>
-                <View style={styles.logoContainer}>
-                  <Image
-                    source={require('../assets/images/favicon.png')}
-                    style={styles.logo}
-                  />
-                  <Text style={styles.headerTitle}>GeoEstate</Text>
-                </View>
-                <HeaderNav />
-              </View>
-            </Animated.View>
-  
-            <Animated.ScrollView
-              ref={scrollViewRef}
-              style={styles.scrollView}
-              onScroll={Animated.event(
-                [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                { useNativeDriver: true }
-              )}
-              scrollEventThrottle={16}
-            >
-              <View style={[styles.heroSection, { height: heroHeight }]}>
-                <View style={styles.globeContainer}>
-                  <Globe />
-                </View>
-                <LinearGradient
-                  colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.8)']}
-                  style={styles.gradient}
-                />
-                <HeroContent scrollToAbout={scrollToAbout} />
-  
-                <Animated.View style={[styles.scrollIndicator, { opacity: scrollIndicatorOpacity }]}>
-                  <Text style={styles.scrollText}>Scroll to explore</Text>
-                  <ChevronDown color="white" size={24} />
-                </Animated.View>
-              </View>
-  
-              {/* Features Section */}
-              <FeaturesSection />
-  
-              {/* Video Demo Section */}
-              <DemoVideo />
-              <WhyUsSection />
-              {/* Team Section */}
-              <View style={styles.teamSection}>
-                <TeamDetail teamMembers={teamMembers} />
-              </View>
-              {/* <ReviewSection /> */}
-              {/* Footer Section */}
-              <Footer scrollToAbout={scrollToAbout} />
-              <Toast position="top" topOffset={20} />
-            </Animated.ScrollView>
-          </>
-        )}
-      </View>
+        <View style={styles.container}>
+            {/* display loading screen if isLoading is true */}
+            {isLoading ? (
+                <LoadingPage />
+            ) : (
+                <>
+                    {/* Floating Header */}
+                    <Animated.View style={[styles.header, { opacity: headerOpacity, paddingTop: insets.top }]}>
+                        <LinearGradient
+                            colors={['rgba(0,0,0,0.9)', 'rgba(0,0,0,0.7)']}
+                            style={StyleSheet.absoluteFill}
+                        />
+                        <View style={styles.headerContent}>
+                            <View style={styles.logoContainer}>
+                                <Image
+                                    source={require('../assets/images/favicon.png')}
+                                    style={styles.logo}
+                                />
+                                <Text style={styles.headerTitle}>GeoEstate</Text>
+                            </View>
+                            <HeaderNav />
+                        </View>
+                    </Animated.View>
+
+                    <Animated.ScrollView
+                        ref={scrollViewRef}
+                        style={styles.scrollView}
+                        onScroll={Animated.event(
+                            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                            { useNativeDriver: true }
+                        )}
+                        scrollEventThrottle={16}
+                    >
+                        <View style={[styles.heroSection, { height: heroHeight }]}>
+                            <View style={styles.globeContainer}>
+                                <Globe />
+                            </View>
+                            <LinearGradient
+                                colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.8)']}
+                                style={styles.gradient}
+                            />
+                            <HeroContent scrollToAbout={scrollToAbout} />
+
+                            <Animated.View style={[styles.scrollIndicator, { opacity: scrollIndicatorOpacity }]}>
+                                <Text style={styles.scrollText}>Scroll to explore</Text>
+                                <ChevronDown color="white" size={24} />
+                            </Animated.View>
+                        </View>
+
+                        {/* Features Section */}
+                        <FeaturesSection />
+
+                        {/* Video Demo Section */}
+                        <DemoVideo />
+                        <WhyUsSection />
+                        {/* Team Section */}
+                        <View style={styles.teamSection}>
+                            <TeamDetail teamMembers={teamMembers} />
+                        </View>
+                        {/* <ReviewSection /> */}
+                        {/* Footer Section */}
+                        <Footer scrollToAbout={scrollToAbout} />
+                        <Toast position="top" topOffset={20} />
+                    </Animated.ScrollView>
+                </>
+            )}
+        </View>
     );
-  }
+}
 
 const HeroContent = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const translateY = useRef(new Animated.Value(20)).current;
+
+    const device = useDevice()
 
     useEffect(() => {
         Animated.parallel([
@@ -208,9 +211,20 @@ const HeroContent = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
             opacity: fadeAnim,
             transform: [{ translateY }],
         }]}>
-            <Text style={styles.heroSubtitle}>WELCOME TO THE FUTURE OF REAL ESTATE</Text>
-            <Text style={styles.heroTitle}>Discover Your Perfect Property Anywhere in the World</Text>
-            <Text style={styles.heroDescription}>
+            <Text style={[styles.heroSubtitle, {
+                fontSize: device === "mobile" ? 14 : 16,
+                letterSpacing: device === "mobile" ? 1 : 2
+            }]}>WELCOME TO THE FUTURE OF REAL ESTATE</Text>
+            <Text style={[styles.heroTitle, {
+                fontSize: device === "mobile" ? 32 : 64,
+                lineHeight: device === "mobile" ? 40 : 76,
+                letterSpacing: device === "mobile" ? 0.5 : 1
+            }]}>Discover Your Perfect Property Anywhere in the World</Text>
+            <Text style={[styles.heroDescription, {
+                fontSize: device === "mobile" ? 14 : 20,
+                lineHeight: device === "mobile" ? 20 : 32,
+                letterSpacing: device === "mobile" ? 0.25 : 0.5
+            }]}>
                 Experience real estate exploration like never before with our interactive global platform.
                 Find, analyze, and invest in properties across the globe.
             </Text>
@@ -223,13 +237,19 @@ const HeroContent = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
                             end={{ x: 1, y: 0 }}
                             style={styles.gradientButton}
                         >
-                            <Text style={styles.primaryButtonText}>Start Exploring</Text>
+                            <Text style={[styles.primaryButtonText, {
+                                fontSize: device === "mobile" ? 16 : 18,
+                                letterSpacing: device === "mobile" ? 0.5 : 1
+                            }]}>Start Exploring</Text>
                             <ArrowRight color="white" size={24} />
                         </LinearGradient>
                     </Pressable>
                 </Link>
                 <Pressable style={styles.secondaryButton} onPress={scrollToAbout}>
-                    <Text style={styles.secondaryButtonText}>Learn More</Text>
+                    <Text style={[styles.secondaryButtonText, {
+                        fontSize: device === "mobile" ? 16 : 18,
+                        letterSpacing: device === "mobile" ? 0.5 : 1
+                    }]}>Learn More</Text>
                 </Pressable>
             </View>
         </Animated.View>
@@ -239,6 +259,8 @@ const HeroContent = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
 const FeatureCard = ({ feature, index }: any) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const translateY = useRef(new Animated.Value(50)).current;
+    const { width } = useWindowDimensions();
+    const device = useDevice();
 
     useEffect(() => {
         Animated.parallel([
@@ -259,24 +281,88 @@ const FeatureCard = ({ feature, index }: any) => {
         ]).start();
     }, []);
 
+    const getResponsiveStyles = () => {
+        if (width < 768) { // Mobile
+            return {
+                padding: 20,
+                iconSize: 24,
+                titleSize: 18,
+                descriptionSize: 14,
+                detailSize: 12,
+                iconContainerSize: 48,
+                marginBottom: 16
+            };
+        } else if (width < 1024) { // Tablet
+            return {
+                padding: 24,
+                iconSize: 28,
+                titleSize: 20,
+                descriptionSize: 15,
+                detailSize: 13,
+                iconContainerSize: 56,
+                marginBottom: 20
+            };
+        } else { // Desktop
+            return {
+                padding: 32,
+                iconSize: 32,
+                titleSize: 24,
+                descriptionSize: 16,
+                detailSize: 14,
+                iconContainerSize: 64,
+                marginBottom: 24
+            };
+        }
+    };
+
+    const responsive = getResponsiveStyles();
+
     return (
         <Animated.View style={[
             styles.featureCard,
             {
                 opacity: fadeAnim,
                 transform: [{ translateY }],
+                padding: responsive.padding,
+                width: device === "mobile" ? '100%' : 
+                       device === "tablet" ? '45%' : '30%',
+                minWidth: device === "mobile" ? 'auto' : 300
             }
         ]}>
-            <View style={styles.featureIconContainer}>
-                <feature.icon size={32} color="#007AFF" strokeWidth={1.5} />
+            <View style={[styles.featureIconContainer, {
+                width: responsive.iconContainerSize,
+                height: responsive.iconContainerSize,
+                marginBottom: responsive.marginBottom
+            }]}>
+                <feature.icon 
+                    size={responsive.iconSize} 
+                    color="#007AFF" 
+                    strokeWidth={1.5} 
+                />
             </View>
-            <Text style={styles.featureTitle}>{feature.title}</Text>
-            <Text style={styles.featureDescription}>{feature.description}</Text>
+            <Text style={[styles.featureTitle, {
+                fontSize: responsive.titleSize,
+                marginBottom: responsive.marginBottom / 2
+            }]}>
+                {feature.title}
+            </Text>
+            <Text style={[styles.featureDescription, {
+                fontSize: responsive.descriptionSize,
+                marginBottom: responsive.marginBottom
+            }]}>
+                {feature.description}
+            </Text>
             <View style={styles.featureDetails}>
                 {feature.details.map((detail: any, idx: number) => (
-                    <View key={idx} style={styles.detailItem}>
+                    <View key={idx} style={[styles.detailItem, {
+                        marginBottom: idx < feature.details.length - 1 ? 8 : 0
+                    }]}>
                         <View style={styles.detailDot} />
-                        <Text style={styles.detailText}>{detail}</Text>
+                        <Text style={[styles.detailText, {
+                            fontSize: responsive.detailSize
+                        }]}>
+                            {detail}
+                        </Text>
                     </View>
                 ))}
             </View>
@@ -293,7 +379,9 @@ const FeatureCard = ({ feature, index }: any) => {
 const FeaturesSection = () => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const translateY = useRef(new Animated.Value(30)).current;
-    const sectionRef = useRef()
+    const sectionRef = useRef();
+    const device = useDevice();
+    const { width } = useWindowDimensions();
 
     useEffect(() => {
         Animated.parallel([
@@ -312,30 +400,40 @@ const FeaturesSection = () => {
                 easing: Easing.out(Easing.cubic),
             }),
         ]).start();
-    });
-
-    useEffect(() => {
-        if (!sectionRef.current) return;
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        observer.unobserve(entry.target);
-                    }
-                });
-            },
-            { threshold: 0.4 }
-        );
-
-        observer.observe(sectionRef.current);
-
-        return () => {
-            if (sectionRef.current) {
-                observer.unobserve(sectionRef.current);
-            }
-        };
     }, []);
+
+    const getResponsiveStyles = () => {
+        if (width < 768) { // Mobile
+            return {
+                container: { padding: 16 },
+                headerWidth: Platform.OS === 'web' ? '100%' as const : '100%' as const,
+                titleSize: 24,
+                subtitleSize: 14,
+                descriptionSize: 14,
+                gridColumns: 1
+            };
+        } else if (width < 1024) { // Tablet
+            return {
+                container: { padding: 24 },
+                headerWidth: Platform.OS === 'web' ? '90%' as const : '90%' as const,
+                titleSize: 26,
+                subtitleSize: 15,
+                descriptionSize: 15,
+                gridColumns: 2
+            };
+        } else { // Desktop
+            return {
+                container: { padding: 32 },
+                headerWidth: Platform.OS === 'web' ? '80%' as const : '80%' as const,
+                titleSize: 28,
+                subtitleSize: 16,
+                descriptionSize: 16,
+                gridColumns: 3
+            };
+        }
+    };
+
+    const responsive = getResponsiveStyles();
 
     const features = [
         {
@@ -349,7 +447,7 @@ const FeaturesSection = () => {
             ]
         },
         {
-            title: "Suitability Calculator with Custom Analytics for Homebuyers",
+            title: "Suitability Calculator with Custom Analytics",
             description: "Using our Suitability Calculator, you can input details about your dream property, and get a suitable match based on our algorithm.",
             icon: Calculator,
             details: [
@@ -364,43 +462,74 @@ const FeaturesSection = () => {
             icon: Search,
             details: [
                 "Unique ZipCode Chat",
-                "Analytics and Insights for Zipcodes", 
+                "Analytics and Insights for Zipcodes",
                 "Gemini Ai for Chat Summarision"
             ]
         },
     ];
 
     return (
-        <View style={styles.featuresSection}>
+        <View style={[styles.featuresSection, responsive.container]}>
             <LinearGradient
                 colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.9)', '#000']}
                 style={StyleSheet.absoluteFill}
             />
-            <Animated.View style={[styles.featuresSectionHeader, {
-                opacity: fadeAnim,
-                transform: [{ translateY }]
-            }]}>
-                <Text style={styles.featuresSubtitle}>POWERFUL FEATURES</Text>
-                <Text style={styles.featuresTitle}>Everything you need to make informed real estate decisions</Text>
-                <Text style={styles.featuresDescription}>
+            <Animated.View style={[
+                styles.featuresSectionHeader,
+                {
+                    opacity: fadeAnim,
+                    width: responsive.headerWidth,
+                    transform: [{ translateY }]
+                }
+            ]}>
+                <Text style={[
+                    styles.featuresSubtitle,
+                    { fontSize: responsive.subtitleSize, textAlign: 'center' }
+                ]}>
+                    POWERFUL FEATURES
+                </Text>
+                <Text style={[
+                    styles.featuresTitle,
+                    { fontSize: responsive.titleSize }
+                ]}>
+                    Everything you need to make informed real estate decisions
+                </Text>
+                <Text style={[
+                    styles.featuresDescription,
+                    { fontSize: responsive.descriptionSize }
+                ]}>
                     Discover how our comprehensive suite of tools and features can help you find,
                     analyze, and secure your ideal property.
                 </Text>
             </Animated.View>
-            <View style={styles.featuresGrid}>
+
+            <View style={[
+                styles.featuresGrid,
+                {
+                    flexDirection: 'row',
+                    flexWrap: 'wrap',
+                    justifyContent: 'center',
+                    gap: width < 768 ? 16 : 24
+                }
+            ]}>
                 {features.map((feature, index) => (
-                    <FeatureCard key={index} feature={feature} index={index} />
+                    <View key={index} style={{
+                        width: width < 768 ? '100%' : 
+                               width < 1024 ? '45%' : '30%',
+                        minWidth: width < 768 ? 'auto' : 300
+                    }}>
+                        <FeatureCard feature={feature} index={index} />
+                    </View>
                 ))}
             </View>
         </View>
     );
 };
 
-
-
 const WhyUsSection = () => {
     const fadeAnim = useRef(new Animated.Value(100)).current;
     const translateY = useRef(new Animated.Value(0)).current;
+    const device = useDevice();
 
     useEffect(() => {
         Animated.parallel([
@@ -430,80 +559,89 @@ const WhyUsSection = () => {
                 />
                 <Animated.View style={[styles.whyUsHeader, {
                     opacity: fadeAnim,
-                    transform: [{ translateY }]
+                    transform: [{ translateY }],
+                    paddingHorizontal: device === "mobile" ? 20 : 40
                 }]}>
-                    <Text style={styles.whyUsSubtitle}>WHY CHOOSE GEOESTATE?</Text>
-                    <Text style={styles.whyUsTitle}>The Future of Real Estate Exploration</Text>
-                    <Text style={styles.whyUsDescription}>
+                    <Text style={[styles.whyUsSubtitle, {
+                        fontSize: device === "mobile" ? 14 : 18
+                    }]}>WHY CHOOSE GEOESTATE?</Text>
+                    <Text style={[styles.whyUsTitle, {
+                        fontSize: device === "mobile" ? 24 : 28
+                    }]}>The Future of Real Estate Exploration</Text>
+                    <Text style={[styles.whyUsDescription, {
+                        fontSize: device === "mobile" ? 14 : 16
+                    }]}>
                         GeoEstate isn't just a real estate platform—it's your personalized, interactive guide to finding the perfect property. Here's why GeoEstate is the best choice for your property journey:
                     </Text>
                 </Animated.View>
 
-                <View style={styles.whyUsContentWrapper}>
-                    <View style={styles.leftColumn1}>
+                <View style={[styles.whyUsContentWrapper, {
+                    flexDirection: device === "mobile" ? 'column' : 'row',
+                    paddingHorizontal: device === "mobile" ? 20 : 40
+                }]}>
+                    <View style={[styles.leftColumn1, {
+                        paddingRight: device === "mobile" ? 0 : 15,
+                        paddingLeft: device === "mobile" ? 0 : 30
+                    }]}>
                         <View style={styles.whyUsContent}>
-
-                            <View style={styles.whyUsBox}>
-                                <MapPin size={32} color="#007AFF" strokeWidth={1.5} />
-                                <Text style={styles.whyUsItemTitle}>Immersive 3D Maps</Text>
-                                <Text style={styles.whyUsItemDescription}>
-                                    Explore properties like never before with Google's photorealistic 3D maps. Get a virtual tour of the neighborhood, including nearby amenities, schools, and parks.
-                                </Text>
-                            </View>
-                            <View style={styles.connectorLine} />
-
-                            <View style={styles.whyUsBox}>
-                                <Calculator size={32} color="#007AFF" strokeWidth={1.5} />
-                                <Text style={styles.whyUsItemTitle}>Suitability Calculator</Text>
-                                <Text style={styles.whyUsItemDescription}>
-                                    With our Suitability Calculator, make data-driven decisions based on analytics tailored to your preferences, financial budget, and accessibility needs.
-                                </Text>
-                            </View>
-                            <View style={styles.connectorLine} />
-
-                            <View style={styles.whyUsBox}>
-                                <Facebook size={32} color="#007AFF" strokeWidth={1.5} />
-                                <Text style={styles.whyUsItemTitle}>Neighbourhood Insights</Text>
-                                <Text style={styles.whyUsItemDescription}>
-                                    Share and view comments about the neighborhood by zipcode. Learn from locals and potential buyers to better understand your future home’s surroundings.
-                                </Text>
-                            </View>
-                            <View style={styles.connectorLine} />
-
-                            <View style={styles.whyUsBox}>
-                                <Heart size={32} color="#007AFF" strokeWidth={1.5} />
-                                <Text style={styles.whyUsItemTitle}>Favourite Your Dream Home</Text>
-                                <Text style={styles.whyUsItemDescription}>
-                                    Love a building? Add it to your favorites and revisit it later to compare with other options or share it with your friends.
-                                </Text>
-                            </View>
-                            <View style={styles.connectorLine} />
-
-                            <View style={styles.whyUsBox}>
-                                <Brain size={32} color="#007AFF" strokeWidth={1.5} />
-                                <Text style={styles.whyUsItemTitle}>AI-Powered Insights</Text>
-                                <Text style={styles.whyUsItemDescription}>
-                                    Our AI scans and summarizes comments from the neighborhood based on zip code, helping you make informed decisions with real-time sentiment analysis.
-                                </Text>
-                            </View>
-                            <View style={styles.connectorLine} />
-
-
+                            {[
+                                {
+                                    icon: MapPin,
+                                    title: "Immersive 3D Maps",
+                                    description: "Explore properties like never before with Google's photorealistic 3D maps. Get a virtual tour of the neighborhood, including nearby amenities, schools, and parks."
+                                },
+                                {
+                                    icon: Calculator,
+                                    title: "Suitability Calculator",
+                                    description: "With our Suitability Calculator, make data-driven decisions based on analytics tailored to your preferences, financial budget, and accessibility needs."
+                                },
+                                {
+                                    icon: IconBrandFacebook,
+                                    title: "Neighbourhood Insights",
+                                    description: "Share and view comments about the neighborhood by zipcode. Learn from locals and potential buyers to better understand your future home's surroundings."
+                                },
+                                {
+                                    icon: Heart,
+                                    title: "Favourite Your Dream Home",
+                                    description: "Love a building? Add it to your favorites and revisit it later to compare with other options or share it with your friends."
+                                },
+                                {
+                                    icon: Brain,
+                                    title: "AI-Powered Insights",
+                                    description: "Our AI scans and summarizes comments from the neighborhood based on zip code, helping you make informed decisions with real-time sentiment analysis."
+                                }
+                            ].map((item, index) => (
+                                <React.Fragment key={index}>
+                                    <View style={[styles.whyUsBox, {
+                                        padding: device === "mobile" ? 15 : 20
+                                    }]}>
+                                        <item.icon size={device === "mobile" ? 24 : 32} color="#007AFF" strokeWidth={1.5} />
+                                        <Text style={[styles.whyUsItemTitle, {
+                                            fontSize: device === "mobile" ? 18 : 22
+                                        }]}>{item.title}</Text>
+                                        <Text style={[styles.whyUsItemDescription, {
+                                            fontSize: device === "mobile" ? 14 : 16
+                                        }]}>{item.description}</Text>
+                                    </View>
+                                    {index < 4 && <View style={styles.connectorLine} />}
+                                </React.Fragment>
+                            ))}
                         </View>
                     </View>
 
-                    <View style={styles.rightColumn}>
-                        <Image
-                            source={require('../assets/images/Globe3.jpg')}
-                            style={styles.whyUsImage}
-                            resizeMode="cover"
-                        />
-                        <LinearGradient
-                            colors={['rgba(0, 0, 0, 0.2)', 'rgba(0, 0, 0, 0.5)']}
-                            style={StyleSheet.absoluteFillObject}
-                        />
-                    </View>
-
+                    {device !== "mobile" && (
+                        <View style={styles.rightColumn}>
+                            <Image
+                                source={require('../assets/images/Globe3.jpg')}
+                                style={styles.whyUsImage}
+                                resizeMode="cover"
+                            />
+                            <LinearGradient
+                                colors={['rgba(0, 0, 0, 0.2)', 'rgba(0, 0, 0, 0.5)']}
+                                style={StyleSheet.absoluteFillObject}
+                            />
+                        </View>
+                    )}
                 </View>
             </View>
         </SafeAreaView>
@@ -600,156 +738,137 @@ const Footer = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
         type: 'error' | 'success' | null;
         message: string;
     }>({ type: null, message: '' });
+    const device = useDevice();
 
     const handleSubscribe = async () => {
-        // Reset previous status
-        setSubscriptionStatus({ type: null, message: '' });
-
-        // Validate email
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!email.trim()) {
-            setSubscriptionStatus({ 
-                type: 'error', 
-                message: 'Please enter an email address' 
+        if (!email) {
+            setSubscriptionStatus({
+                type: 'error',
+                message: 'Please enter an email address'
             });
             return;
         }
-
-        if (!emailRegex.test(email.trim())) {
-            setSubscriptionStatus({ 
-                type: 'error', 
-                message: 'Please enter a valid email address' 
-            });
-            return;
-        }
-
         try {
-            const result = await subscribeToNewsletter(email);
-            
-            if (result) {
-                setSubscriptionStatus({ 
-                    type: 'success', 
-                    message: 'Thank you for subscribing!' 
-                });
-                setEmail('');
-            } else {
-                // This could be a duplicate email or other error
-                setSubscriptionStatus({ 
-                    type: 'error', 
-                    message: 'This email is already registered' 
-                });
-            }
+            await subscribeToNewsletter(email);
+            setSubscriptionStatus({
+                type: 'success',
+                message: 'Successfully subscribed!'
+            });
+            setEmail('');
         } catch (error) {
-            setSubscriptionStatus({ 
-                type: 'error', 
-                message: 'Subscription failed. Please try again.' 
+            setSubscriptionStatus({
+                type: 'error',
+                message: 'Failed to subscribe. Please try again.'
             });
         }
     };
 
     return (
-        <SafeAreaView style={styles.footer}>
-            <View style={styles.footerContent}>
+        <View style={styles.footerContainer}>
+            <LinearGradient
+                colors={['rgba(0,0,0,0.95)', 'rgba(0,0,0,0.98)']}
+                style={StyleSheet.absoluteFill}
+            />
+            
+            {/* Main Footer Content */}
+            <View style={[styles.footerContent, { 
+                flexDirection: device === 'mobile' ? 'column' : 'row',
+                paddingHorizontal: device === 'mobile' ? 20 : 40
+            }]}>
+                {/* Left Column - Subscribe Section */}
+                <View style={[styles.footerColumn, styles.subscribeSection, {
+                    width: device === 'mobile' ? '100%' : '40%',
+                    marginBottom: device === 'mobile' ? 40 : 0
+                }]}>
+                    <Image
+                        source={require('../assets/images/favicon.png')}
+                        style={styles.footerLogo}
+                    />
+                    <Text style={styles.footerLogoText}>GeoEstate</Text>
+                    <Text style={styles.subscribeText}>
+                        Subscribe to our newsletter to get updates on new features and releases.
+                    </Text>
+                    <View style={styles.subscribeInputContainer}>
+                        <TextInput
+                            style={styles.subscribeInput}
+                            placeholder="Enter your email"
+                            placeholderTextColor="#666"
+                            value={email}
+                            onChangeText={setEmail}
+                        />
+                        <TouchableOpacity onPress={handleSubscribe} style={styles.subscribeButton}>
+                            <Text style={styles.subscribeButtonText}>Subscribe</Text>
+                        </TouchableOpacity>
+                    </View>
+                    {subscriptionStatus.type && (
+                        <Text style={[styles.statusText, 
+                            subscriptionStatus.type === 'error' ? styles.errorText : styles.successText
+                        ]}>
+                            {subscriptionStatus.message}
+                        </Text>
+                    )}
+                </View>
 
-                <View style={styles.footerColumns}>
-                    <View style={styles.leftColumn}>
-                        <Text style={styles.startUsingLabel}>Unlock Your{"\n"}Perfect Space☺️</Text>
+                {/* Right Section - Links */}
+                <View style={[styles.footerLinksContainer, {
+                    width: device === 'mobile' ? '100%' : '60%',
+                    flexDirection: device === 'mobile' ? 'column' : 'row'
+                }]}>
+                    {/* Company Links */}
+                    <View style={styles.linkColumn}>
+                        <Text style={styles.linkHeader}>Company</Text>
+                        <TouchableOpacity onPress={scrollToAbout}>
+                            <Text style={styles.linkText}>About Us</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => router.push('/explore')}>
+                            <Text style={styles.linkText}>Explore</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity>
+                            <Text style={styles.linkText}>Terms & Privacy</Text>
+                        </TouchableOpacity>
+                    </View>
 
-                        <Text style={styles.emailLabel}>Subscribe</Text>
-                        <View style={styles.emailInputWrapper}>
-                            <View style={styles.emailInputContainer}>
-                                <TextInput
-                                    style={styles.emailInput}
-                                    placeholder="Your email address"
-                                    placeholderTextColor="#A1A1A1"
-                                    value={email}
-                                    onChangeText={setEmail}
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                    returnKeyType="send"
-                                    onSubmitEditing={handleSubscribe}
-                                    blurOnSubmit={false}
-                                    autoComplete="off"
-                                    textContentType="none"
-                                />
-                            </View>
-                            <TouchableOpacity 
-                                style={styles.arrowIconContainer} 
-                                onPress={handleSubscribe}
-                            >
-                                <ArrowRight size={20} color="#fff" />
+                    {/* Support Links */}
+                    <View style={styles.linkColumn}>
+                        <Text style={styles.linkHeader}>Support</Text>
+                        <TouchableOpacity>
+                            <Text style={styles.linkText}>Help Center</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity>
+                            <Text style={styles.linkText}>Contact Us</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity>
+                            <Text style={styles.linkText}>FAQ</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Social Links */}
+                    <View style={styles.linkColumn}>
+                        <Text style={styles.linkHeader}>Connect</Text>
+                        <View style={styles.socialLinks}>
+                            <TouchableOpacity style={styles.socialIcon}>
+                                <Facebook size={20} color="#fff" />
                             </TouchableOpacity>
-                        </View>
-                        {subscriptionStatus.type && (
-                            <Text style={[
-                                styles.subscriptionStatusText,
-                                subscriptionStatus.type === 'error' 
-                                    ? styles.errorText 
-                                    : styles.successText
-                            ]}>
-                                {subscriptionStatus.message}
-                            </Text>
-                        )}
-                    </View>
-
-                    <View style={styles.centerColumn}>
-                        <Text style={styles.companyLabel}>Company</Text>
-                        <View style={styles.underline} />
-
-                        <View style={styles.footerLinks}>
-                            <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={scrollToAbout}>About us</Text></Text>
-                            <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://www.geoestate.com/terms")}>Terms and Privacy</Text></Text>
-                            <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => router.push('/explore')}>Explore</Text></Text>
-                            <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://discord.gg/DpnaCxCtam")}>Help</Text></Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.resourcesColumn}>
-                        <Text style={styles.companyLabel}>Resources</Text>
-                        <View style={styles.underline} />
-
-                        <View style={styles.footerLinks}>
-                            
-                            <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://discord.gg/DpnaCxCtam")}>Support</Text></Text>
-                            <Text style={styles.bulletPoint}>• <Text style={styles.footerLink} onPress={() => Linking.openURL("https://discord.gg/DpnaCxCtam")}>Contact Us</Text></Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.followUsColumn}>
-                        <Text style={styles.companyLabel}>Follow Us</Text>
-                        <View style={styles.underline} />
-
-                        <View style={styles.iconLinks}>
-                            <Facebook
-                                size={30}
-                                color="white"
-                                style={styles.icon}
-                            />
-                            <Instagram
-                                size={30}
-                                color="white"
-                                style={styles.icon}
-                            />
-                            <Mail
-                                size={30}
-                                color="white"
-                                style={styles.icon}
-                            />
-                            <Twitter
-                                size={30}
-                                color="white"
-                                style={styles.icon}
-                            />
+                            <TouchableOpacity style={styles.socialIcon}>
+                                <Twitter size={20} color="#fff" />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.socialIcon}>
+                                <Instagram size={20} color="#fff" />
+                            </TouchableOpacity>
                         </View>
                     </View>
                 </View>
-
-                <Text style={styles.footerText}> 2024 GeoEstate. All Rights Reserved.</Text>
             </View>
-        </SafeAreaView>
+
+            {/* Footer Bottom */}
+            <View style={styles.footerBottom}>
+                <Text style={styles.copyrightText}>
+                    {`\u00A9 2024 GeoEstate. All rights reserved.`}
+                </Text>
+            </View>
+        </View>
     );
 };
-
 
 const styles = StyleSheet.create({
     //team section styles 
@@ -760,7 +879,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontSize: Platform.select({ web: 56, default: 48 }),
     },
-
 
     container: {
         flex: 1,
@@ -792,7 +910,7 @@ const styles = StyleSheet.create({
     },
     headerLink: {
         color: '#fff',
-         fontSize: Platform.select({ web: 18, default: 16 }),
+        fontSize: Platform.select({ web: 18, default: 16 }),
     },
     headerButton: {
         flexDirection: 'row',
@@ -907,17 +1025,23 @@ const styles = StyleSheet.create({
 
     },
     featuresSection: {
-        padding: Platform.select({ web: 120, default: 80 }),
+        padding: Platform.select({ web: 120, default: 40 }), // Reduced padding for mobile
         position: 'relative',
         backgroundColor: '#111',
+        display: 'flex',
+        alignItems: 'center',
+        width: '100%',
     },
     featuresSectionHeader: {
+        width: '100%',
         alignItems: 'center',
         marginBottom: 80,
     },
     featuresSubtitle: {
         fontSize: 16,
         fontWeight: '600',
+        width: '100%',
+        flex: 1,
         color: '#007AFF',
         letterSpacing: 2,
         marginBottom: 16,
@@ -928,29 +1052,28 @@ const styles = StyleSheet.create({
         color: '#fff',
         textAlign: 'center',
         marginBottom: 24,
-        maxWidth: 800,
     },
     featuresDescription: {
         fontSize: Platform.select({ web: 16, default: 16 }),
         color: '#fff',
         opacity: 0.8,
         textAlign: 'center',
-        maxWidth: 600,
         lineHeight: Platform.select({ web: 28, default: 24 }),
     },
     featuresGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'center',
-        gap: 32,
+        gap: Platform.select({ web: 32, default: 16 }), // Reduced gap for mobile
+        width: '100%',
         maxWidth: 1400,
         alignSelf: 'center',
     },
     featureCard: {
         backgroundColor: 'rgba(255,255,255,0.03)',
         borderRadius: 24,
-        padding: 32,
-        width: Platform.OS === "web" ? 400 : '100%',
+        padding: Platform.select({ web: 32, default: 24 }), // Reduced padding for mobile
+        width: Platform.OS === 'web' ? 400 : '100%', // Full width on mobile
         position: 'relative',
         overflow: 'hidden',
         borderWidth: 1,
@@ -965,26 +1088,29 @@ const styles = StyleSheet.create({
         opacity: 0.5,
     },
     featureIconContainer: {
-        width: 64,
-        height: 64,
-        borderRadius: 20,
+        width: Platform.select({ web: 64, default: 48 }), // Smaller icon container for mobile
+        height: Platform.select({ web: 64, default: 48 }),
+        borderRadius: Platform.select({ web: 20, default: 16 }),
         backgroundColor: 'rgba(0,122,255,0.1)',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 24,
+        alignSelf: 'center', // Center icon container
     },
     featureTitle: {
-        fontSize: 24,
+        fontSize: Platform.select({ web: 24, default: 20 }), // Smaller font for mobile
         fontWeight: 'bold',
         color: '#fff',
         marginBottom: 12,
+        textAlign: 'center', // Center align text
     },
     featureDescription: {
-        fontSize: 16,
+        fontSize: Platform.select({ web: 16, default: 14 }), // Smaller font for mobile
         color: '#fff',
         opacity: 0.8,
         marginBottom: 24,
-        lineHeight: 24,
+        lineHeight: Platform.select({ web: 24, default: 20 }), // Adjusted line height
+        textAlign: 'center', // Center align text
     },
     featureDetails: {
         gap: 12,
@@ -1093,7 +1219,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         paddingTop: 30,
-        paddingBottom: 80, 
+        paddingBottom: 80,
         position: 'relative',
     },
     ReviewSubtitle: {
@@ -1177,143 +1303,110 @@ const styles = StyleSheet.create({
     rightArrowButton: {
         right: -75,
     },
-
-
-    //footer
-    footer: {
-        backgroundColor: '#091015',
-        paddingVertical: 20,
-        paddingHorizontal: 10,
-        borderTopColor: '#d1d7e0',
-        borderTopLeftRadius: 40,
-        borderTopRightRadius: 40,
-        overflow: 'hidden',
+    footerContainer: {
+        width: '100%',
+        backgroundColor: '#000',
+        paddingTop: 60,
+        position: 'relative',
     },
     footerContent: {
-        alignItems: 'center',
+        maxWidth: 1200,
+        marginHorizontal: 'auto',
+        paddingBottom: 40,
     },
-    footerColumns: {
+    footerColumn: {
+        flex: 1,
+    },
+    subscribeSection: {
+        paddingRight: 40,
+    },
+    footerLogo: {
+        width: 40,
+        height: 40,
+        marginBottom: 12,
+    },
+    footerLogoText: {
+        color: '#fff',
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 16,
+    },
+    subscribeText: {
+        color: '#999',
+        fontSize: 14,
+        marginBottom: 20,
+        lineHeight: 22,
+    },
+    subscribeInputContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
+        marginBottom: 12,
     },
-    leftColumn: {
-        flex: 2,
-        paddingRight: 10,
+    subscribeInput: {
+        flex: 1,
+        height: 44,
+        backgroundColor: '#111',
+        borderRadius: 8,
+        paddingHorizontal: 16,
+        color: '#fff',
+        marginRight: 8,
     },
-    emailLabel: {
+    subscribeButton: {
+        backgroundColor: '#007AFF',
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        justifyContent: 'center',
+    },
+    subscribeButtonText: {
+        color: '#fff',
+        fontWeight: '600',
+    },
+    footerLinksContainer: {
+        justifyContent: 'space-around',
+    },
+    linkColumn: {
+        marginBottom: 30,
+    },
+    linkHeader: {
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
-        marginTop: 20,
-        marginLeft: 35,
+        marginBottom: 20,
     },
-    emailInputWrapper: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 10,
-        marginLeft: 32,
-        width: 320,
-    },
-    emailInputContainer: {
-        flex: 1,
-        borderWidth: 1,
-        borderColor: '#007AFF',
-        borderRadius: 20,
-        paddingHorizontal: 15,
-        paddingVertical: 5,
-    },
-    emailInput: {
-        color: '#fff',
+    linkText: {
+        color: '#999',
         fontSize: 14,
+        marginBottom: 12,
     },
-    arrowIconContainer: {
-        backgroundColor: '#007AFF',
-        borderRadius: 20,
-        padding: 10,
-        marginLeft: 10,
+    socialLinks: {
+        flexDirection: 'row',
+        gap: 16,
     },
-    centerColumn: {
-        flex: 1,
-        paddingHorizontal: 10,
-        marginTop: 20,
+    socialIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#222',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    resourcesColumn: {
-        flex: 1,
-        paddingLeft: 10,
-        marginTop: 20,
+    footerBottom: {
+        borderTopWidth: 1,
+        borderTopColor: '#222',
+        paddingVertical: 20,
+        alignItems: 'center',
     },
-    followUsColumn: {
-        flex: 1,
-        paddingLeft: 10,
-        marginTop: 20,
-    },
-    subscriptionStatusText: {
-        marginTop: 10,
+    copyrightText: {
+        color: '#666',
         fontSize: 12,
-        textAlign: 'left',
- 
+    },
+    statusText: {
+        fontSize: 12,
+        marginTop: 8,
     },
     errorText: {
-        color: 'red',
+        color: '#ff4444',
     },
     successText: {
-        color: 'green',
-    },
-    startUsingLabel: {
-        fontSize: Platform.select({ web: 40, default: 27 }),
-        fontWeight: 'bold',
-        color: '#fff',
-        textAlign: 'left',
-        marginBottom: 10,
-        lineHeight: 40,
-        marginLeft: 40,
-        marginTop: 20,
-    },
-    companyLabel: {
-        color: 'white',
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 10,
-    },
-    underline: {
-        borderBottomColor: '#007AFF',
-        borderBottomWidth: 1,
-        width: '30%',
-        marginBottom: 10,
-    },
-    bulletPoint: {
-        color: '#007AFF',
-        marginVertical: 5,
-        fontSize: 14,
-    },
-    socialLink: {
-        color: '#007AFF',
-        marginVertical: 5,
-        fontSize: 14,
-    },
-    footerLinks: {
-        flexDirection: 'column',
-        marginTop: 10,
-    },
-    footerLink: {
-        color: 'white',
-        marginVertical: 5,
-    },
-    iconLinks: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        marginTop: 10,
-        marginRight: 30,
-    },
-    icon: {
-        padding: 10,
-        marginHorizontal: 5,
-    },
-    footerText: {
-        color: 'white',
-        fontSize: 14,
-        marginTop: 20,
-        textAlign: 'center',
+        color: '#00C851',
     },
 });
