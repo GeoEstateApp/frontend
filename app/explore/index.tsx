@@ -60,7 +60,7 @@ export default function index() {
   useEffect(() => {
     const loadingTimer = setTimeout(() => {
       setIsAppLoading(false)
-    }, 3000) // Adjust time as needed
+    }, 1200) // Adjust time as needed
 
     return () => clearTimeout(loadingTimer)
   }, [])
