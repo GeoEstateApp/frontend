@@ -9,6 +9,7 @@ import Toast from 'react-native-toast-message';
 import { IconUser, IconSend, IconSparkles, IconArrowLeft, IconHeart } from '@tabler/icons-react';
 import AICommentsSummary from '../aisummary';
 import { getAuth } from 'firebase/auth';
+import { useSidePanelStore } from '@/states/sidepanel';
 
 export default function ZipPanel() {
   const [searchingZipcodeText, setSearchingZipcodeText] = useState<string>('');
@@ -23,6 +24,7 @@ export default function ZipPanel() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   const { zipcode, zipcodes, setPolygon, setZipcode, setZipcodes, setZipcodeInsights, zipcodeInsights, setPolygons } = useZipcodeInsights();
+  const { setSelectedRealEstateProperty } = useSidePanelStore()
   const [zipcodeName, setZipcodeName] = useState("")  
 
   const handleZipcodeFilter = (text: string) => {
@@ -50,6 +52,8 @@ export default function ZipPanel() {
     setIsLoggedIn(getAuth().currentUser !== null)
 
     if (zipcodes.length === 0 && getAuth().currentUser !== null) getAllZipcodes();
+
+    setSelectedRealEstateProperty(null)
   }, []);
 
   useEffect(() => {

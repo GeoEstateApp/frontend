@@ -1,5 +1,5 @@
-import { RecommendationProperties } from '@/components/suitabilityCalculator/suitabilitycalculator'
 import { create } from 'zustand'
+import { RecommendationProperties } from './suitability'
 
 interface SelectedPlace {
   placeId: string

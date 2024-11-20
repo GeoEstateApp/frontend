@@ -1,28 +1,29 @@
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, Text } from 'react-native';
 import { Map3D, Map3DCameraProps } from './map-3d';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMapStore } from '@/states/map';
 import { fetchPolygonCoordinates, polygonCentroid } from '@/api/osm';
 import { useZipcodeInsights } from '@/states/zipcode_insights';
 import { useSidePanelStore } from '@/states/sidepanel';
+import { IconRotate360 } from '@tabler/icons-react';
 
 const INITIAL_VIEW_PROPS: Map3DCameraProps = {
-  center: { lat: 40.7212803, lng: -74.0004602, altitude: 12000 },
-  range: 9000000,
+  center: { lat: 40.75805519944667, lng: -73.98306559396511, altitude: 5000000 }, // Much higher altitude
+  range: 2000000,
   heading: 0,
-  tilt: 45,
+  tilt: 0,
   roll: 0
 };
 
 const TARGET_VIEW_PROPS: Map3DCameraProps = {
-  center: { lat: 40.74832121218563, lng: -73.98572747259036, altitude: 186 },
-  range: 5639.068019132246,
-  heading: 0,
-  tilt: 45,
+  center: { lat: 40.75805519944667, lng: -73.98306559396511, altitude: 1500 },
+  range: 3500,
+  heading: 5,
+  tilt: 55,
   roll: 0
 };
 
-const TARGET_ALTITUDE = 200;
+const TARGET_ALTITUDE = 200; 
 const TARGET_ZIPCODE_ALTITUDE = 1200;
 
 export default function Earth() {
@@ -30,29 +31,44 @@ export default function Earth() {
   const [viewProps, setViewProps] = useState(INITIAL_VIEW_PROPS);
   const { polygon } = useZipcodeInsights();
   const { selectedRealEstateProperty } = useSidePanelStore()
+  const [isRotating, setIsRotating] = useState(false);
+  const rotationRef = useRef<number>();
 
-  const smoothTransportToLocation = (newProps: Map3DCameraProps) => {
+  const smoothTransportToLocation = (newProps: Map3DCameraProps, duration: number = 2000) => {
     const startProps = { ...viewProps };
     let startTime = Date.now();
+
+    // Adjust target latitude and altitude
+    const adjustedNewProps = {
+      ...newProps,
+      center: {
+        ...newProps.center,
+        lat: newProps.center.lat,
+        altitude: newProps.center.altitude
+      },
+      range: newProps.range, // Remove range multiplier for more accurate targeting
+    };
 
     const animate = () => {
       const currentTime = Date.now();
       const elapsedTime = currentTime - startTime;
-      const progress = Math.min(elapsedTime / 2000, 1); // Faster transition (2 seconds)
+      const progress = Math.min(elapsedTime / duration, 1);
       
-      // Smooth easing function
-      const easeProgress = progress * (2 - progress);
+      // Slower easing for smoother transition
+      const easeProgress = progress < 0.5
+        ? 2 * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
       const interpolated = {
         center: {
-          lat: startProps.center.lat + (newProps.center.lat - startProps.center.lat) * easeProgress,
-          lng: startProps.center.lng + (newProps.center.lng - startProps.center.lng) * easeProgress,
-          altitude: startProps.center.altitude + (newProps.center.altitude - startProps.center.altitude) * easeProgress
+          lat: startProps.center.lat + (adjustedNewProps.center.lat - startProps.center.lat) * easeProgress,
+          lng: startProps.center.lng + (adjustedNewProps.center.lng - startProps.center.lng) * easeProgress,
+          altitude: startProps.center.altitude + (adjustedNewProps.center.altitude - startProps.center.altitude) * easeProgress
         },
-        range: startProps.range + (newProps.range - startProps.range) * easeProgress,
+        range: Math.max(500, Math.min(600, startProps.range + (adjustedNewProps.range - startProps.range) * easeProgress)),
         heading: 0,
         tilt: 45,
-        roll: 0     // Keep roll fixed
+        roll: 0
       };
 
       setViewProps(interpolated);
@@ -64,6 +80,55 @@ export default function Earth() {
 
     requestAnimationFrame(animate);
   };
+
+  const startOrbiting = useCallback(() => {
+    if (isRotating) {
+      setIsRotating(false);
+      if (rotationRef.current) {
+        cancelAnimationFrame(rotationRef.current);
+        rotationRef.current = undefined;
+      }
+      return;
+    }
+
+    setIsRotating(true);
+    let lastTime = Date.now();
+    let currentHeading = viewProps.heading || 0;
+
+    const animate = () => {
+      const currentTime = Date.now();
+      const deltaTime = currentTime - lastTime;
+      lastTime = currentTime;
+
+      // Rotate 45 degrees per second
+      currentHeading = (currentHeading + (deltaTime * 0.045)) % 360;
+
+      setViewProps(prev => ({
+        ...prev,
+        heading: currentHeading,
+      }));
+
+      rotationRef.current = requestAnimationFrame(animate);
+    };
+    
+    rotationRef.current = requestAnimationFrame(animate);
+  }, [isRotating, viewProps.heading]);
+
+  // Make sure to clean up the animation when component unmounts or updates
+  useEffect(() => {
+    if (!isRotating && rotationRef.current) {
+      cancelAnimationFrame(rotationRef.current);
+      rotationRef.current = undefined;
+    }
+  }, [isRotating]);
+
+  useEffect(() => {
+    return () => {
+      if (rotationRef.current) {
+        cancelAnimationFrame(rotationRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!selectedPlace) return;
@@ -77,7 +142,7 @@ export default function Earth() {
 
       const newProps: Map3DCameraProps = {
         center: { lat, lng, altitude: TARGET_ALTITUDE },
-        range: 300,
+        range: 650, // Increased from 300 to 650
         heading: 0,
         tilt: 45,
         roll: 0
@@ -94,7 +159,7 @@ export default function Earth() {
 
     const newProps: Map3DCameraProps = {
       center: { lat: selectedPlace.geometry?.location?.lat() || 0, lng: selectedPlace.geometry?.location?.lng() || 0, altitude: TARGET_ALTITUDE },
-      range: 300,
+      range: 650, // Increased from 300 to 650
       heading: 0,
       tilt: 45,
       roll: 0
@@ -111,7 +176,7 @@ export default function Earth() {
 
       const newProps: Map3DCameraProps = {
         center: { lat, lng, altitude: TARGET_ALTITUDE },
-        range: 300,
+        range: 627, // Increased from 300 to 650
         heading: 0,
         tilt: 45,
         roll: 0
@@ -138,8 +203,8 @@ export default function Earth() {
 
   useEffect(() => {
     setTimeout(() => {
-      smoothTransportToLocation(TARGET_VIEW_PROPS);
-    }, 1500);
+      smoothTransportToLocation(TARGET_VIEW_PROPS, 6000); 
+    }, 100);
   }, []);
 
   const handleCameraChange = useCallback((props: Map3DCameraProps) => {
@@ -153,6 +218,19 @@ export default function Earth() {
         onCameraChange={handleCameraChange}
         defaultLabelsDisabled
       />
+
+      <Pressable 
+        style={[
+          styles.orbitButton,
+          isRotating && styles.orbitButtonActive
+        ]}
+        onPress={startOrbiting}
+      >
+        <IconRotate360 size={24} color="#fff" />
+        <Text style={styles.buttonText}>
+          {isRotating ? 'Stop Rotation' : 'Start 360°'}
+        </Text>
+      </Pressable>
     </View>
   );
 }
@@ -162,5 +240,26 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
-  }
+  },
+  orbitButton: {
+    position: 'absolute',
+    bottom: 20,
+    left: '50%',
+    transform: [{ translateX: -70 }],
+    backgroundColor: '#000000cc',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  orbitButtonActive: {
+    backgroundColor: '#FF4500cc',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
 });

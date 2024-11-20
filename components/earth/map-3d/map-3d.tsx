@@ -49,7 +49,7 @@ const emptyPolygonCoordinates: PolygonCoordinates[] = [{ lat: 0, lng: 0, altitud
 
 export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<google.maps.maps3d.Map3DElement | null>) => {
   const { selectedPlacePolygonCoordinates, setSelectedPlacePolygonCoordinates, selectedPlace } = useMapStore()
-  const { setSidePanelPlace, showPanel, setShowPanel, setRealEstateProperties, selectedRealEstateProperty } = useSidePanelStore()
+  const { setSidePanelPlace, showPanel, setShowPanel, setRealEstateProperties, selectedRealEstateProperty, realEstateProperties } = useSidePanelStore()
   const { insights } = useInsightsStore()
   const { polygon, setPolygon } = useZipcodeInsights()
 
@@ -142,6 +142,7 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
     handleRealEstatePropertyRender()
   }, [selectedRealEstateProperty, map3DElement])
 
+  // come back here
   const handleRealEstatePropertyRender = async () => {
     if (!map3DElement) return
 
@@ -151,6 +152,13 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
     }
 
     if (!selectedRealEstateProperty) return
+
+    const children = Array.from(map3DElement.children);
+    children.forEach(child => {
+      if (child.id.includes('real-estate')) {
+        map3DElement.removeChild(child);
+      }
+    });
 
     const lat = selectedRealEstateProperty.coordinate_lat || 0
     const lng = selectedRealEstateProperty.coordinate_lon || 0
@@ -260,6 +268,41 @@ export const Map3D = forwardRef((props: Map3DProps, forwardedRef: ForwardedRef<g
 
     fetchRealestateData(selectedPlace.geometry?.location?.lat() || 0, selectedPlace.geometry?.location?.lng() || 0)
   }, [selectedPlacePolygonCoordinates])
+
+  useEffect(() => {
+    if (!selectedPlace) return
+    if (!map3DElement) return
+    if (!realEstateProperties) return
+
+    const randomProperties = realEstateProperties.sort(() => 0.5 - Math.random()).slice(0, 7);
+
+    randomProperties.forEach(async (property, idx) => {
+      const lat = property.coordinate_lat || 0
+      const lng = property.coordinate_lon || 0
+
+      const polygonCoordinates = await fetchPolygonCoordinates(lat, lng)
+      if (polygonCoordinates && polygonCoordinates.length <= 0) return
+
+      const polygon = document.createElement('gmp-polygon-3d')
+      if (!polygon) return
+
+      const { fill, stroke } = property.status === "for_sale" ? SUPPORTED_FILTERS_MAP.real_estate_buy : SUPPORTED_FILTERS_MAP.real_estate_rent
+
+      polygon.setAttribute('altitude-mode', 'relative-to-ground')
+      polygon.setAttribute('fill-color', fill)
+      polygon.setAttribute('stroke-color', stroke)
+      polygon.setAttribute('stroke-width', '3')
+      polygon.setAttribute('extruded', '')
+      polygon.setAttribute('id', `real-estate-${idx}`)
+
+      customElements.whenDefined(polygon.localName).then(() => {
+        try {
+          (polygon as any).outerCoordinates = polygonCoordinates
+        } catch (e) { }
+        map3DElement.appendChild(polygon)
+      })
+    })
+  }, [selectedPlace, realEstateProperties])
 
   const fetchRealestateData = async (lat: number, lon: number) => {
     const { idToken, uid } = await getAuthTokens()

@@ -8,7 +8,7 @@ import Globe from '../components/globe/Globe';
 import { auth } from '@/lib/firebase'
 import { subscribeToNewsletter } from '@/lib/newsletterService'
 import { onAuthStateChanged } from 'firebase/auth'
-import { IconUser, IconLogin, IconBrandFacebook, IconBrandInstagram, IconMail, IconBrandTwitter } from '@tabler/icons-react'
+import { IconUser, IconLogin, IconBrandFacebook, IconBrandInstagram, IconMail, IconBrandTwitter, IconBrandX, IconBrandLinkedin } from '@tabler/icons-react'
 import { Image } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message'
@@ -326,7 +326,7 @@ const FeatureCard = ({ feature, index }: any) => {
                 padding: responsive.padding,
                 width: device === "mobile" ? '100%' : 
                        device === "tablet" ? '45%' : '30%',
-                minWidth: device === "mobile" ? 'auto' : 300
+                minWidth: device === "mobile" ? 'auto' : 300,
             }
         ]}>
             <View style={[styles.featureIconContainer, {
@@ -846,14 +846,17 @@ const Footer = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
                     <View style={styles.linkColumn}>
                         <Text style={styles.linkHeader}>Connect</Text>
                         <View style={styles.socialLinks}>
-                            <TouchableOpacity style={styles.socialIcon}>
-                                <Facebook size={20} color="#fff" />
+                            <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.instagram.com/geoestateapp/')}>
+                                <IconBrandInstagram size={20} color="#fff" />
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.socialIcon}>
-                                <Twitter size={20} color="#fff" />
+                            <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.linkedin.com/company/geoestateapp/')}>
+                                <IconBrandLinkedin size={20} color="#fff" />
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.socialIcon}>
-                                <Instagram size={20} color="#fff" />
+                            <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://x.com/geoestateapp')}>
+                                <IconBrandX size={20} color="#fff" />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('mailto:support@geo.estate')}>
+                                <IconMail size={20} color="#fff" />
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -1077,6 +1080,7 @@ const styles = StyleSheet.create({
         position: 'relative',
         overflow: 'hidden',
         borderWidth: 1,
+        height: '100%',
         borderColor: 'rgba(255,255,255,0.05)',
     },
     featureGradient: {
