@@ -15,6 +15,8 @@ import Toast from 'react-native-toast-message'
 import LoadingPage from "@/components/loading/LoadingPage";
 import TeamDetail from "./landing-team-details/TeamDetail";
 import DemoVideo from './landing-demo-video/DemoVideo';
+import { Analytics } from "@vercel/analytics/react"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const teamMembers = [
     { name: "Ayesha Virk", role: "Founder, Full Stack Developer", image: "https://i.pinimg.com/736x/0a/7d/c3/0a7dc35b8155aba1008c563bbbe34441.jpg" },
