@@ -1,8 +1,8 @@
-# GeoEstate - Frontend
+## **GeoEstate - Frontend**
 
 GeoEstate's frontend is built using **React Native Expo** to provide an interactive and immersive real estate experience. The frontend seamlessly integrates with the backend to display property listings, neighborhood insights, and dynamic map visualizations for a user-friendly exploration.
 
-## Setup Environment
+## **Setup Environment**
 
 Before you begin, ensure that you have **Node.js** and **Expo CLI** installed. You can follow the installation guide for Expo here: [Getting Started with Expo](https://docs.expo.dev/get-started/installation/).
 
@@ -16,11 +16,11 @@ Before you begin, ensure that you have **Node.js** and **Expo CLI** installed. Y
      npm install
 3. Set up environment variables:
 
-Create a .env file in the root directory with the necessary configurations for connecting to the backend and other services.
-Get Started
-Start the development server:
-
-     npm start
+   Create a .env file in the root directory with the necessary configurations for connecting to the backend and other services.
+4. Get Started
+   Start the development server:
+     ```
+      npm start
 
 Open the Expo app on your mobile device or use the emulator to view the app in action. For the web, it will launch in your browser at http://localhost:19006.
 
