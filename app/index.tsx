@@ -657,8 +657,8 @@ const Footer = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
                         <Text style={styles.startUsingLabel}>Unlock Your{"\n"}Perfect Space☺️</Text>
 
                         <Text style={styles.emailLabel}>Subscribe</Text>
-                        <View style={styles.emailInputContainer}>
-                            <View>
+                        <View style={styles.emailInputWrapper}>
+                            <View style={styles.emailInputContainer}>
                                 <TextInput
                                     style={styles.emailInput}
                                     placeholder="Your email address"
@@ -671,24 +671,24 @@ const Footer = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
                                     onSubmitEditing={handleSubscribe}
                                     blurOnSubmit={false}
                                 />
-                                <TouchableOpacity 
-                                    style={styles.arrowIconContainer} 
-                                    onPress={handleSubscribe}
-                                >
-                                    <ArrowRight size={20} color="#fff" />
-                                </TouchableOpacity>
-                                {subscriptionStatus.type && (
-                                    <Text style={[
-                                        styles.subscriptionStatusText,
-                                        subscriptionStatus.type === 'error' 
-                                            ? styles.errorText 
-                                            : styles.successText
-                                    ]}>
-                                        {subscriptionStatus.message}
-                                    </Text>
-                                )}
                             </View>
+                            <TouchableOpacity 
+                                style={styles.arrowIconContainer} 
+                                onPress={handleSubscribe}
+                            >
+                                <ArrowRight size={20} color="#fff" />
+                            </TouchableOpacity>
                         </View>
+                        {subscriptionStatus.type && (
+                            <Text style={[
+                                styles.subscriptionStatusText,
+                                subscriptionStatus.type === 'error' 
+                                    ? styles.errorText 
+                                    : styles.successText
+                            ]}>
+                                {subscriptionStatus.message}
+                            </Text>
+                        )}
                     </View>
 
                     <View style={styles.centerColumn}>
@@ -1207,25 +1207,30 @@ const styles = StyleSheet.create({
         marginTop: 20,
         marginLeft: 35,
     },
-    emailInputContainer: {
+    emailInputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
         marginTop: 10,
+        marginLeft: 32,
+        width: 320,
+    },
+    emailInputContainer: {
+        flex: 1,
         borderWidth: 1,
         borderColor: '#007AFF',
         borderRadius: 20,
-        paddingHorizontal: 10,
+        paddingHorizontal: 15,
         paddingVertical: 5,
-        marginLeft: 32,
-        width: 280,
     },
     emailInput: {
-        flex: 1,
         color: '#fff',
         fontSize: 14,
     },
     arrowIconContainer: {
-        paddingLeft: 10,
+        backgroundColor: '#007AFF',
+        borderRadius: 20,
+        padding: 10,
+        marginLeft: 10,
     },
     centerColumn: {
         flex: 1,
