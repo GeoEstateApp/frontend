@@ -6,7 +6,7 @@ import { useZipcodeInsights, ZipcodeData, ZipcodeInsight } from '@/states/zipcod
 import { convexHull } from '@/api/osm';
 import { addComment, Comment, getComments } from '@/api/comments';
 import Toast from 'react-native-toast-message';
-import { IconUser, IconSend, IconSparkles, IconArrowLeft } from '@tabler/icons-react';
+import { IconUser, IconSend, IconSparkles, IconArrowLeft, IconHeart } from '@tabler/icons-react';
 import AICommentsSummary from '../aisummary';
 
 export default function ZipPanel() {
@@ -346,6 +346,32 @@ export default function ZipPanel() {
                                 <Text style={styles.timeAgo}>{timeAgo}</Text>
                               </View>
                               <Text style={styles.commentText}>{comment.comment}</Text>
+                              <View style={styles.commentFooter}>
+                                <Pressable 
+                                  style={styles.likeButton}
+                                  onPress={() => {
+                                    // TODO: Implement like functionality
+                                    // 1. Call API to register like
+                                    // Example pseudo-code:
+                                    // const likeResponse = await likeComment(comment.id);
+                                    // if (likeResponse.success) {
+                                    //   Update local state to reflect like
+                                    // }
+                                  }}
+                                >
+                                  <IconHeart 
+                                    size={20} 
+                                    color="#ef4444" 
+                                    // TODO: Change color based on like state
+                                    // color={comment.liked ? "#ef4444" : "#94a3b8"}
+                                  />
+                                  <Text style={styles.likeButtonText}>
+                                    {/* TODO: Display like count */}
+                                    {/* {comment.likeCount || 0} */}
+                                    Like
+                                  </Text>
+                                </Pressable>
+                              </View>
                             </View>
                           );
                         })}
@@ -666,6 +692,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: '#334155',
+  },
+  commentFooter: {
+    marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+  },
+  likeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 8,
+  },
+  likeButtonText: {
+    color: '#64748b',
+    fontSize: 14,
   },
   header: {
     flexDirection: 'row',
