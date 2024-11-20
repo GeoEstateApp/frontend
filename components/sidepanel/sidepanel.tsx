@@ -399,7 +399,7 @@ export default function SidePanel() {
       <View style={styles.panel}>
         {
           !selectedPlace ? (
-            <View style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+            <View style={styles.noPlaceContainer}>
                 <Text style={styles.noPlaceHeading}>
                 No place selected
                 </Text>
@@ -615,16 +615,36 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
+  noPlaceContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
+    margin: 16,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
   noPlaceHeading: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#1F2937',
-    textAlign: 'center'
+    textAlign: 'center',
+    marginBottom: 8,
   },
   noPlaceSubHeading: {
     fontSize: 16,
     textAlign: 'center',
-    color: '#4B5563',
+    color: '#64748b',
+    lineHeight: 24,
+    maxWidth: 280,
+    fontWeight: '500',
   },
   placeHeader: {
     width: '100%',

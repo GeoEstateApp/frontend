@@ -1,16 +1,14 @@
-import { Video, ResizeMode } from 'expo-av';  
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, useWindowDimensions } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
+import { WebView } from 'react-native-webview';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, useWindowDimensions, Platform, Image } from 'react-native';
 import React, { useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 
-const VIDEO_URL = require('../../assets/videos/dummy-demo.mp4');
+const VIDEO_URL = 'https://www.youtube.com/watch?v=CvFH_6DNRCY';
+const YOUTUBE_THUMBNAIL = 'https://img.youtube.com/vi/CvFH_6DNRCY/maxresdefault.jpg';
 
 export default function VideoSection() {
     const { width: windowWidth } = useWindowDimensions();
-    const videoRef = useRef<Video>(null); 
-    const [isPlaying, setIsPlaying] = useState(false); 
-    const [isMuted, setIsMuted] = useState(false); 
-
     const getResponsiveWidth = () => {
         if (windowWidth < 768) return '95%';
         if (windowWidth < 1024) return '80%';
@@ -83,27 +81,6 @@ export default function VideoSection() {
         },
     });
 
-    // Rest of your component logic remains the same
-    const togglePlayPause = async () => {
-        if (videoRef.current) {
-            if (isPlaying) {
-                await videoRef.current.pauseAsync();
-            } else {
-                await videoRef.current.playAsync();
-            }
-            setIsPlaying(!isPlaying);
-        }
-    };
-
-    const handlePlaybackStatusUpdate = (status: any) => {
-        if (status.didJustFinish) {
-            if (videoRef.current) {
-                videoRef.current.setPositionAsync(0);
-                setIsPlaying(false);
-            }
-        }
-    };
-
     return (
         <View style={styles.container}>
             <View style={styles.textContainer}>
@@ -114,27 +91,35 @@ export default function VideoSection() {
                 </Text>
             </View>
 
-            <Video
-                ref={videoRef}
-                source={VIDEO_URL}
-                style={styles.video}
-                useNativeControls={false}
-                resizeMode={ResizeMode.COVER}
-                isMuted={isMuted}
-                onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-            />
-
-            <TouchableOpacity
-                style={styles.pauseButton}
-                onPress={togglePlayPause}
-                activeOpacity={0.8}
-            >
-                <Ionicons
-                    name={isPlaying ? 'pause' : 'play'}
-                    size={windowWidth < 768 ? 20 : 24}
-                    color="white"
-                />
-            </TouchableOpacity>
+            {Platform.select({
+                web: (
+                    <iframe 
+                        width="100%" 
+                        height="100%" 
+                        src={`https://www.youtube.com/embed/CvFH_6DNRCY`} 
+                        title="YouTube video player" 
+                        frameBorder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowFullScreen
+                        style={{ borderRadius: windowWidth < 768 ? 12 : 20 }}
+                    />
+                ),
+                native: (
+                    <WebView
+                        source={{ uri: VIDEO_URL }}
+                        style={styles.video}
+                        allowsFullscreenVideo={true}
+                        mediaPlaybackRequiresUserAction={false}
+                    />
+                ),
+                default: (
+                    <Image 
+                        source={{ uri: YOUTUBE_THUMBNAIL }} 
+                        style={styles.video} 
+                        resizeMode="cover"
+                    />
+                )
+            })}
         </View>
     );
 }

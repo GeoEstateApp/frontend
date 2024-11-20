@@ -16,6 +16,11 @@ import LoadingPage from "@/components/loading/LoadingPage";
 import TeamDetail from "./landing-team-details/TeamDetail";
 import DemoVideo from './landing-demo-video/DemoVideo';
 import { useDevice } from "@/hooks";
+import { inject } from "@vercel/analytics"
+import { injectSpeedInsights } from '@vercel/speed-insights';
+
+injectSpeedInsights();
+
 
 const teamMembers = [
     { name: "Ayesha Virk", role: "Founder, Full Stack Developer", image: "https://i.pinimg.com/736x/0a/7d/c3/0a7dc35b8155aba1008c563bbbe34441.jpg" },
