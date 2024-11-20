@@ -670,6 +670,8 @@ const Footer = ({ scrollToAbout }: { scrollToAbout: () => void }) => {
                                     returnKeyType="send"
                                     onSubmitEditing={handleSubscribe}
                                     blurOnSubmit={false}
+                                    autoComplete="off"
+                                    textContentType="none"
                                 />
                             </View>
                             <TouchableOpacity 
@@ -1250,7 +1252,9 @@ const styles = StyleSheet.create({
     subscriptionStatusText: {
         marginTop: 10,
         fontSize: 12,
-        textAlign: 'left',
+        textAlign: 'center',
+        width: '100%',
+        alignSelf: 'center',
     },
     errorText: {
         color: 'red',
