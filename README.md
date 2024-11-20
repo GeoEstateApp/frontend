@@ -1,5 +1,7 @@
-# Geoestate
+# Geoestate - Frontend
 - description
+
+## How it Works
 
 ## Setup Enivronment
 
@@ -17,4 +19,3 @@
    ```bash
     npm start
    ```
-## Additional Info
