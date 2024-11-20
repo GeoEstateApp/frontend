@@ -1,10 +1,11 @@
 import { Video, ResizeMode } from 'expo-av';
 import { WebView } from 'react-native-webview';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, useWindowDimensions, Platform, Image } from 'react-native';
 import React, { useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 
 const VIDEO_URL = 'https://www.youtube.com/watch?v=CvFH_6DNRCY';
+const YOUTUBE_THUMBNAIL = 'https://img.youtube.com/vi/CvFH_6DNRCY/maxresdefault.jpg';
 
 export default function VideoSection() {
     const { width: windowWidth } = useWindowDimensions();
@@ -90,12 +91,35 @@ export default function VideoSection() {
                 </Text>
             </View>
 
-            <WebView
-                source={{ uri: VIDEO_URL }}
-                style={styles.video}
-                allowsFullscreenVideo={true}
-                mediaPlaybackRequiresUserAction={false}
-            />
+            {Platform.select({
+                web: (
+                    <iframe 
+                        width="100%" 
+                        height="100%" 
+                        src={`https://www.youtube.com/embed/CvFH_6DNRCY`} 
+                        title="YouTube video player" 
+                        frameBorder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowFullScreen
+                        style={{ borderRadius: windowWidth < 768 ? 12 : 20 }}
+                    />
+                ),
+                native: (
+                    <WebView
+                        source={{ uri: VIDEO_URL }}
+                        style={styles.video}
+                        allowsFullscreenVideo={true}
+                        mediaPlaybackRequiresUserAction={false}
+                    />
+                ),
+                default: (
+                    <Image 
+                        source={{ uri: YOUTUBE_THUMBNAIL }} 
+                        style={styles.video} 
+                        resizeMode="cover"
+                    />
+                )
+            })}
         </View>
     );
 }
